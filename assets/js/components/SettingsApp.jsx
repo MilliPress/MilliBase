@@ -12,7 +12,7 @@ import {
 	Button,
 	Icon,
 } from '@wordpress/components';
-import { warning } from '@wordpress/icons';
+import { cautionFilled } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Header from './Header.jsx';
 import TabRenderer from './TabRenderer.jsx';
@@ -29,7 +29,7 @@ const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 	>
 		<div style={ { marginBottom: '24px' } }>
 			<Icon
-				icon={ warning }
+				icon={ cautionFilled }
 				size={ 48 }
 				style={ { color: '#dc3232', opacity: 0.8 } }
 			/>
