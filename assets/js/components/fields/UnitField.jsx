@@ -13,10 +13,13 @@ const UNIT_MULTIPLIERS = {
 	h: 3600,
 	d: 86400,
 	w: 604800,
+	M: 2592000,
 };
 
 /**
- * Convert a value in seconds to the best display unit.
+ * Convert a value in seconds to the best display number and unit.
+ *
+ * @return {{ number: number, unit: string }}
  */
 const secondsToDisplay = ( seconds, units ) => {
 	const unitValues = units.map( ( u ) => u.value );
@@ -30,11 +33,11 @@ const secondsToDisplay = ( seconds, units ) => {
 	for ( const unit of sorted ) {
 		const multiplier = UNIT_MULTIPLIERS[ unit ] || 1;
 		if ( seconds % multiplier === 0 ) {
-			return `${ seconds / multiplier }${ unit }`;
+			return { number: seconds / multiplier, unit };
 		}
 	}
 
-	return `${ seconds }${ unitValues[ 0 ] || 's' }`;
+	return { number: seconds, unit: unitValues[ 0 ] || 's' };
 };
 
 /**
@@ -57,9 +60,9 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 	];
 
 	const storeAsSeconds = field.store_as === 'seconds';
-	const displayValue = storeAsSeconds
+	const display = storeAsSeconds
 		? secondsToDisplay( value || 0, units )
-		: `${ value || 0 }${ units[ 0 ]?.value || 's' }`;
+		: { number: value || 0, unit: units[ 0 ]?.value || 's' };
 
 	return (
 		<UnitControl
@@ -75,7 +78,8 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 				)
 			}
 			disabled={ disabled }
-			value={ displayValue }
+			value={ `${ display.number }${ display.unit }` }
+			unit={ display.unit }
 			onChange={ ( combinedValue ) => {
 				if ( storeAsSeconds ) {
 					onChange( displayToSeconds( combinedValue ) );
