@@ -195,11 +195,17 @@ final class AdminPage {
 		/** @var array<int, array<string, mixed>> $actions */
 		$actions = $this->config['actions'] ?? array();
 		foreach ( $actions as $action ) {
-			$client_actions[] = array(
-				'name'     => $action['name'] ?? '',
-				'endpoint' => $action['endpoint'] ?? '',
-				'method'   => $action['method'] ?? 'POST',
-			);
+			$names    = (array) ( $action['name'] ?? '' );
+			$endpoint = $action['endpoint'] ?? '';
+			$method   = $action['method'] ?? 'POST';
+
+			foreach ( $names as $name ) {
+				$client_actions[] = array(
+					'name'     => $name,
+					'endpoint' => $endpoint,
+					'method'   => $method,
+				);
+			}
 		}
 
 		$config_json = wp_json_encode(

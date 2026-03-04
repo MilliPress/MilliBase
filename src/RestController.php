@@ -67,6 +67,7 @@ final class RestController {
 	 */
 	public function register_hooks(): void {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_filter( 'rest_authentication_errors', array( $this, 'verify_rest_nonce' ) );
 	}
 
 	/**
@@ -135,6 +136,41 @@ final class RestController {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Verify the REST API nonce for this controller's namespace.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param \WP_Error|null|true $result The current authentication result.
+	 * @return \WP_Error|null|true
+	 */
+	public function verify_rest_nonce( $result ) {
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$namespace   = $this->config_string( 'rest_namespace', 'millibase/v1' );
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
+		if ( ! empty( $request_uri ) && str_contains( $request_uri, "/$namespace/" ) ) {
+			$method = $_SERVER['REQUEST_METHOD'] ?? '';
+			if ( in_array( $method, array( 'GET', 'HEAD', 'OPTIONS' ), true ) ) {
+				return $result;
+			}
+
+			$nonce = $_SERVER['HTTP_X_WP_NONCE'] ?? '';
+			if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new \WP_Error(
+					'invalid_nonce',
+					__( 'Invalid nonce.', 'millibase' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
+		return $result;
 	}
 
 	/**
