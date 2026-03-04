@@ -2,6 +2,7 @@
  * Renders a PanelBody with grouped fields from a section definition.
  */
 
+import { createElement } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
@@ -30,7 +31,8 @@ const groupFieldsIntoRows = ( fields ) => {
 };
 
 const SectionRenderer = ( { section } ) => {
-	const { status, settings, updateSetting } = useSettings();
+	const context = useSettings();
+	const { status, settings, updateSetting } = context;
 	const resolvedSettings = status?.settings?.resolved || {};
 
 	const renderField = ( field ) => {
@@ -80,9 +82,16 @@ const SectionRenderer = ( { section } ) => {
 			title={ section.title }
 			initialOpen={ section.initial_open !== false }
 		>
+			{ section.intro && ( () => {
+				const CustomDesc =
+					window.MilliBase?.customComponents?.[ section.intro ];
+				return CustomDesc
+					? createElement( CustomDesc, context )
+					: <p className="millibase-section-intro">{ section.intro }</p>;
+			} )() }
 			<Flex direction="column" gap="4">
 				{ rows.map( ( row ) => {
-					// Single field — render directly without wrapper.
+					// Single field — render directly without a wrapper.
 					if ( row.length === 1 ) {
 						return renderField( row[ 0 ] );
 					}

@@ -149,6 +149,10 @@ final class Schema {
 				$client_tab['component'] = $tab['component'];
 			}
 
+			if ( isset( $tab['intro'] ) ) {
+				$client_tab['intro'] = $tab['intro'];
+			}
+
 			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
 				$client_tab['sections'] = array();
 
@@ -162,6 +166,10 @@ final class Schema {
 
 					if ( isset( $section['icon'] ) ) {
 						$client_section['icon'] = $section['icon'];
+					}
+
+					if ( isset( $section['intro'] ) ) {
+						$client_section['intro'] = $section['intro'];
 					}
 
 					if ( isset( $section['fields'] ) && is_array( $section['fields'] ) ) {

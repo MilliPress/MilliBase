@@ -4,7 +4,7 @@
  */
 
 import { createElement } from '@wordpress/element';
-import { Panel } from '@wordpress/components';
+import { Panel, PanelBody, PanelRow } from '@wordpress/components';
 import SectionRenderer from './SectionRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
 
@@ -30,6 +30,13 @@ const TabRenderer = ( { tab } ) => {
 	if ( tab.sections ) {
 		return (
 			<Panel>
+				{ tab.intro && ( () => {
+					const CustomDesc =
+						window.MilliBase?.customComponents?.[ tab.intro ];
+					return CustomDesc
+						? createElement( CustomDesc, context )
+						: <PanelBody><PanelRow>{ tab.intro }</PanelRow></PanelBody>;
+				} )() }
 				{ tab.sections.map( ( section ) => (
 					<SectionRenderer key={ section.id } section={ section } />
 				) ) }
