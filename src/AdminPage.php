@@ -2,19 +2,23 @@
 /**
  * Handles admin menu registration and asset enqueuing.
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings;
+namespace MilliBase;
 
 /**
  * Registers the admin menu page and enqueues the pre-built React JS bundle.
+ *
+ * @since 1.0.0
  */
 final class AdminPage {
 
 	/**
 	 * The full settings configuration array.
 	 *
+	 * @since 1.0.0
 	 * @var array<string, mixed>
 	 */
 	private array $config;
@@ -22,12 +26,15 @@ final class AdminPage {
 	/**
 	 * The Schema instance.
 	 *
+	 * @since 1.0.0
 	 * @var Schema
 	 */
 	private Schema $schema;
 
 	/**
 	 * Create a new AdminPage instance.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $config The settings configuration.
 	 * @param Schema               $schema The schema instance.
@@ -40,6 +47,8 @@ final class AdminPage {
 	/**
 	 * Register WordPress hooks.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return void
 	 */
 	public function register_hooks(): void {
@@ -50,18 +59,23 @@ final class AdminPage {
 	/**
 	 * Add the admin menu item.
 	 *
+	 * Registers either a top-level menu page or a submenu page depending
+	 * on whether `menu_parent` is set in the configuration.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @return void
 	 */
 	public function add_admin_menu(): void {
-		$slug        = $this->config['slug'] ?? 'millisettings';
-		$page_title  = $this->config['page_title'] ?? 'Settings';
-		$menu_title  = $this->config['menu_title'] ?? 'Settings';
-		$capability  = $this->config['capability'] ?? 'manage_options';
-		$menu_parent = $this->config['menu_parent'] ?? 'options-general.php';
-		$menu_icon   = $this->config['menu_icon'] ?? '';
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$page_title  = $this->config_string( 'page_title', 'Settings' );
+		$menu_title  = $this->config_string( 'menu_title', 'Settings' );
+		$capability  = $this->config_string( 'capability', 'manage_options' );
+		$menu_parent = $this->config_string( 'menu_parent', 'options-general.php' );
+		$menu_icon   = $this->config_string( 'menu_icon' );
 
 		$render_callback = function () use ( $slug ) {
-			printf( '<div class="wrap millisettings-page" id="%s-settings" data-slug="%s"></div>', esc_attr( $slug ), esc_attr( $slug ) );
+			printf( '<div class="wrap millibase-page" id="%s-settings" data-slug="%s"></div>', esc_attr( $slug ), esc_attr( $slug ) );
 		};
 
 		if ( $menu_parent ) {
@@ -88,13 +102,18 @@ final class AdminPage {
 	/**
 	 * Enqueue the pre-built JS bundle and CSS on the settings page.
 	 *
+	 * Only loads assets when the current screen matches the registered
+	 * settings page hook suffix.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $admin_page The current admin page hook suffix.
 	 *
 	 * @return void
 	 */
 	public function enqueue_settings_assets( string $admin_page ): void {
-		$slug        = $this->config['slug'] ?? 'millisettings';
-		$menu_parent = $this->config['menu_parent'] ?? 'options-general.php';
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$menu_parent = $this->config_string( 'menu_parent', 'options-general.php' );
 
 		// Determine the expected hook suffix.
 		$expected_suffix = $menu_parent
@@ -113,41 +132,43 @@ final class AdminPage {
 	}
 
 	/**
-	 * Enqueue the pre-built millisettings bundle.
+	 * Enqueue the pre-built millibase bundle.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
 	private function enqueue_bundle(): void {
 		$package_dir = $this->resolve_package_dir();
-		$asset_file  = $package_dir . '/build/millisettings.asset.php';
+		$asset_file  = $package_dir . '/build/millibase.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			return;
 		}
 
 		$asset      = include $asset_file;
-		$basename   = $this->config['basename'] ?? '';
+		$basename   = $this->config_string( 'basename' );
 		$plugin_dir = $basename ? plugin_dir_path( WP_PLUGIN_DIR . '/' . $basename ) : $package_dir;
 
-		// Use plugin_dir_url if basename is available, otherwise construct from package dir.
+		// Use plugin_dir_url if the basename is available, otherwise construct from the package dir.
 		if ( $basename ) {
 			$base_url = plugins_url( '', WP_PLUGIN_DIR . '/' . $basename );
 		} else {
-			$base_url = plugins_url( '', $package_dir . '/millisettings.php' );
+			$base_url = plugins_url( '', $package_dir . '/millibase.php' );
 		}
 
 		$build_url = $this->resolve_build_url();
 
 		wp_enqueue_style(
-			'millisettings',
-			$build_url . '/millisettings.css',
+			'millibase',
+			$build_url . '/millibase.css',
 			array(),
 			$asset['version']
 		);
 
 		wp_enqueue_script(
-			'millisettings',
-			$build_url . '/millisettings.js',
+			'millibase',
+			$build_url . '/millibase.js',
 			array_merge( $asset['dependencies'], array( 'wp-api-fetch' ) ),
 			$asset['version'],
 			array( 'in_footer' => true )
@@ -157,16 +178,23 @@ final class AdminPage {
 	/**
 	 * Inject the settings schema configuration via inline script.
 	 *
+	 * Passes the client-safe schema, actions, and header config to the
+	 * React UI through `window.MilliBase.init()`.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @return void
 	 */
 	private function inject_config(): void {
-		$slug           = $this->config['slug'] ?? 'millisettings';
-		$option_name    = $this->config['option_name'] ?? 'millisettings';
-		$rest_namespace = $this->config['rest_namespace'] ?? 'millisettings/v1';
+		$slug           = $this->config_string( 'slug', 'millibase' );
+		$option_name    = $this->config_string( 'option_name', 'millibase' );
+		$rest_namespace = $this->config_string( 'rest_namespace', 'millibase/v1' );
 
 		// Build the client-safe actions list.
 		$client_actions = array();
-		foreach ( ( $this->config['actions'] ?? array() ) as $action ) {
+		/** @var array<int, array<string, mixed>> $actions */
+		$actions = $this->config['actions'] ?? array();
+		foreach ( $actions as $action ) {
 			$client_actions[] = array(
 				'name'     => $action['name'] ?? '',
 				'endpoint' => $action['endpoint'] ?? '',
@@ -189,14 +217,16 @@ final class AdminPage {
 		$escaped_slug = esc_js( $slug );
 
 		wp_add_inline_script(
-			'millisettings',
-			"window.MilliSettings = window.MilliSettings || {}; window.MilliSettings.init = window.MilliSettings.init || function(s,c){ window.MilliSettings.configs = window.MilliSettings.configs || {}; window.MilliSettings.configs[s] = c; }; window.MilliSettings.init('{$escaped_slug}', {$config_json});",
+			'millibase',
+			"window.MilliBase = window.MilliBase || {}; window.MilliBase.init = window.MilliBase.init || function(s,c){ window.MilliBase.configs = window.MilliBase.configs || {}; window.MilliBase.configs[s] = c; }; window.MilliBase.init('{$escaped_slug}', {$config_json});",
 			'before'
 		);
 	}
 
 	/**
 	 * Resolve the package directory (where build/ lives).
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return string
 	 */
@@ -208,26 +238,83 @@ final class AdminPage {
 	/**
 	 * Resolve the URL to the package's build/ directory.
 	 *
+	 * Supports explicit `build_url` override, plugin-relative paths,
+	 * and a wp-content fallback for non-standard installations.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @return string
 	 */
 	private function resolve_build_url(): string {
-		$package_dir = $this->resolve_package_dir();
+		// Allow explicit override (useful for symlinked packages).
+		if ( ! empty( $this->config['build_url'] ) ) {
+			return $this->config_string( 'build_url' );
+		}
 
-		// If the package is inside a plugin's vendor/ or deps/ directory,
-		// construct the URL relative to the consuming plugin.
-		$basename = $this->config['basename'] ?? '';
+		$package_dir = $this->resolve_package_dir();
+		$basename    = $this->config_string( 'basename' );
 
 		if ( $basename ) {
 			$plugin_dir = plugin_dir_path( WP_PLUGIN_DIR . '/' . $basename );
 			$relative   = str_replace( $plugin_dir, '', $package_dir . '/' );
 
-			return plugins_url( $relative . 'build', WP_PLUGIN_DIR . '/' . $basename );
+			// If the package resolves outside the plugin directory (e.g. Composer
+			// path repository symlink), try the vendor path instead.
+			if ( strpos( $relative, '/' ) === 0 || strpos( $relative, DIRECTORY_SEPARATOR ) === 0 ) {
+				$relative = $this->resolve_vendor_relative_path( $plugin_dir );
+			}
+
+			if ( $relative ) {
+				return plugins_url( $relative . 'build', WP_PLUGIN_DIR . '/' . $basename );
+			}
 		}
 
 		// Fallback: assume the package is inside wp-content somewhere.
 		if ( defined( 'WP_CONTENT_DIR' ) && defined( 'WP_CONTENT_URL' ) ) {
 			$relative = str_replace( WP_CONTENT_DIR, '', $package_dir );
 			return WP_CONTENT_URL . $relative . '/build';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get a string value from the config array.
+	 *
+	 * @param string $key     The config key.
+	 * @param string $default The default value.
+	 *
+	 * @return string
+	 */
+	private function config_string( string $key, string $default = '' ): string {
+		$value = $this->config[ $key ] ?? $default;
+		return is_string( $value ) ? $value : $default;
+	}
+
+	/**
+	 * Find the package path relative to the plugin via vendor directory.
+	 *
+	 * When the package is installed as a Composer path repository (symlink),
+	 * __DIR__ resolves to the real path outside the plugin. This method
+	 * walks common vendor paths to find a working relative path.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $plugin_dir The plugin's absolute directory path.
+	 *
+	 * @return string The relative path (with trailing slash) or empty string.
+	 */
+	private function resolve_vendor_relative_path( string $plugin_dir ): string {
+		$candidates = array(
+			'vendor/millipress/millibase/',
+			'deps/millipress/millibase/',
+		);
+
+		foreach ( $candidates as $candidate ) {
+			$candidate_build = $plugin_dir . $candidate . 'build/millibase.asset.php';
+			if ( file_exists( $candidate_build ) ) {
+				return $candidate;
+			}
 		}
 
 		return '';

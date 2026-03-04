@@ -1,26 +1,59 @@
 <?php
+/**
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
+ */
 
-namespace MilliSettings\FieldTypes;
+namespace MilliBase\FieldTypes;
 
+/**
+ * Number field type — clamps values to optional min/max bounds.
+ *
+ * @since 1.0.0
+ */
 final class NumberField implements FieldTypeInterface {
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 1.0.0
+	 */
 	public function get_type(): string {
 		return 'number';
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Clamps the value to the `min` and `max` bounds defined in the
+	 * field definition, if present.
+	 *
+	 * @since 1.0.0
+	 */
 	public function sanitize( $value, array $field ) {
+		/** @var int|float $value */
 		$value = is_numeric( $value ) ? $value + 0 : 0;
 
-		if ( isset( $field['min'] ) && $value < $field['min'] ) {
-			$value = $field['min'];
+		$min = isset( $field['min'] ) && is_numeric( $field['min'] ) ? $field['min'] + 0 : null;
+		$max = isset( $field['max'] ) && is_numeric( $field['max'] ) ? $field['max'] + 0 : null;
+
+		if ( null !== $min && $value < $min ) {
+			$value = $min;
 		}
-		if ( isset( $field['max'] ) && $value > $field['max'] ) {
-			$value = $field['max'];
+		if ( null !== $max && $value > $max ) {
+			$value = $max;
 		}
 
 		return $value;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Includes `minimum` and `maximum` constraints when defined.
+	 *
+	 * @since 1.0.0
+	 */
 	public function get_schema( array $field ): array {
 		$schema = array( 'type' => 'number' );
 

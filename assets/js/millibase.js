@@ -1,8 +1,8 @@
 /**
- * MilliSettings — Entry point + global init function.
+ * MilliBase — Entry point + global init function.
  *
  * This file is the webpack entry point. It:
- * 1. Defines the global MilliSettings registry (init, registerComponent, registerFieldType)
+ * 1. Defines the global MilliBase registry (init, registerComponent, registerFieldType)
  * 2. On DOM ready, auto-mounts a SettingsApp into each container with data-slug
  */
 
@@ -13,26 +13,26 @@ import { SnackbarProvider } from './components/SnackbarProvider.jsx';
 import { SettingsProvider } from './components/SettingsProvider.jsx';
 import { LabelWithTooltip } from './components/LabelWithTooltip.jsx';
 
-import '../css/millisettings.scss';
+import '../css/millibase.scss';
 
 // ─── Global registry ────────────────────────────────────────────────
 
-window.MilliSettings = window.MilliSettings || {};
+window.MilliBase = window.MilliBase || {};
 
 // Configs store: { slug: configObject }
-window.MilliSettings.configs = window.MilliSettings.configs || {};
+window.MilliBase.configs = window.MilliBase.configs || {};
 
 // Custom components store: { name: Component }
-window.MilliSettings.customComponents = window.MilliSettings.customComponents || {};
+window.MilliBase.customComponents = window.MilliBase.customComponents || {};
 
 // Custom field types store: { type: Component }
-window.MilliSettings.customFieldTypes = window.MilliSettings.customFieldTypes || {};
+window.MilliBase.customFieldTypes = window.MilliBase.customFieldTypes || {};
 
 /**
  * Register a config for a slug. Called by wp_add_inline_script() from PHP.
  */
-window.MilliSettings.init = window.MilliSettings.init || function ( slug, config ) {
-	window.MilliSettings.configs[ slug ] = config;
+window.MilliBase.init = window.MilliBase.init || function ( slug, config ) {
+	window.MilliBase.configs[ slug ] = config;
 };
 
 /**
@@ -41,8 +41,8 @@ window.MilliSettings.init = window.MilliSettings.init || function ( slug, config
  * @param {string}   name      The component name (referenced in schema as `component`).
  * @param {Function} component A React component or function component.
  */
-window.MilliSettings.registerComponent = function ( name, component ) {
-	window.MilliSettings.customComponents[ name ] = component;
+window.MilliBase.registerComponent = function ( name, component ) {
+	window.MilliBase.customComponents[ name ] = component;
 };
 
 /**
@@ -51,13 +51,13 @@ window.MilliSettings.registerComponent = function ( name, component ) {
  * @param {string}   type      The field type string (used in schema `field.type`).
  * @param {Function} component A React component: receives { field, value, onChange, disabled }.
  */
-window.MilliSettings.registerFieldType = function ( type, component ) {
-	window.MilliSettings.customFieldTypes[ type ] = component;
+window.MilliBase.registerFieldType = function ( type, component ) {
+	window.MilliBase.customFieldTypes[ type ] = component;
 };
 
 // ─── Exposed components for custom tab authors ──────────────────────
 
-window.MilliSettings.components = {
+window.MilliBase.components = {
 	LabelWithTooltip,
 };
 
@@ -74,7 +74,7 @@ domReady( () => {
 
 	containers.forEach( ( container ) => {
 		const slug = container.getAttribute( 'data-slug' );
-		const config = window.MilliSettings.configs[ slug ];
+		const config = window.MilliBase.configs[ slug ];
 
 		if ( ! config ) {
 			return;

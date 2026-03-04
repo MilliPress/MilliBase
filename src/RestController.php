@@ -2,20 +2,24 @@
 /**
  * REST API controller for settings actions (reset, restore, custom).
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings;
+namespace MilliBase;
 
 /**
  * Registers REST endpoints for built-in actions (reset, restore)
  * and custom plugin-defined actions.
+ *
+ * @since 1.0.0
  */
 final class RestController {
 
 	/**
 	 * The settings configuration.
 	 *
+	 * @since 1.0.0
 	 * @var array<string, mixed>
 	 */
 	private array $config;
@@ -23,12 +27,15 @@ final class RestController {
 	/**
 	 * The Store instance.
 	 *
+	 * @since 1.0.0
 	 * @var Store
 	 */
 	private Store $store;
 
 	/**
 	 * Create a new RestController instance.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $config The settings configuration.
 	 * @param Store                $store  The store instance.
@@ -39,7 +46,22 @@ final class RestController {
 	}
 
 	/**
+	 * Get a string value from the config array.
+	 *
+	 * @param string $key     The config key.
+	 * @param string $default The default value.
+	 *
+	 * @return string
+	 */
+	private function config_string( string $key, string $default = '' ): string {
+		$value = $this->config[ $key ] ?? $default;
+		return is_string( $value ) ? $value : $default;
+	}
+
+	/**
 	 * Register WordPress hooks.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
@@ -50,11 +72,17 @@ final class RestController {
 	/**
 	 * Register REST API routes.
 	 *
+	 * Registers the built-in settings endpoint, an optional status endpoint
+	 * (when a status_callback is configured), and any custom action routes
+	 * defined in the config's `actions` array.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @return void
 	 */
 	public function register_routes(): void {
-		$namespace  = $this->config['rest_namespace'] ?? 'millisettings/v1';
-		$capability = $this->config['capability'] ?? 'manage_options';
+		$namespace  = $this->config_string( 'rest_namespace', 'millibase/v1' );
+		$capability = $this->config_string( 'capability', 'manage_options' );
 
 		// Built-in settings actions (reset, restore).
 		register_rest_route(
@@ -85,17 +113,19 @@ final class RestController {
 		}
 
 		// Custom plugin-defined action routes.
-		foreach ( ( $this->config['actions'] ?? array() ) as $action ) {
+		/** @var array<int, array<string, mixed>> $actions */
+		$actions = $this->config['actions'] ?? array();
+		foreach ( $actions as $action ) {
 			if ( empty( $action['endpoint'] ) || ! is_callable( $action['callback'] ?? null ) ) {
 				continue;
 			}
 
-			$action_capability = $action['capability'] ?? $capability;
+			$action_capability = is_string( $action['capability'] ?? null ) ? $action['capability'] : $capability;
 			$callback          = $action['callback'];
 
 			register_rest_route(
 				$namespace,
-				'/' . ltrim( $action['endpoint'], '/' ),
+				'/' . ltrim( is_string( $action['endpoint'] ) ? $action['endpoint'] : '', '/' ),
 				array(
 					'methods'             => $action['method'] ?? \WP_REST_Server::CREATABLE,
 					'callback'            => $callback,
@@ -110,6 +140,12 @@ final class RestController {
 	/**
 	 * Handle built-in settings actions (reset, restore).
 	 *
+	 * Validates the requested action against a filterable allow-list, executes
+	 * it, and returns a standardised JSON response. A backup is created
+	 * automatically before a reset.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
 	 *
@@ -117,8 +153,8 @@ final class RestController {
 	 */
 	public function perform_settings_action( \WP_REST_Request $request ) {
 		$action      = $request->get_param( 'action' );
-		$slug        = $this->config['slug'] ?? 'millisettings';
-		$option_name = $this->config['option_name'] ?? 'millisettings';
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$option_name = $this->config_string( 'option_name', 'millibase' );
 
 		/**
 		 * Filters the allowed settings actions.
@@ -126,14 +162,14 @@ final class RestController {
 		 * @param string[] $allowed Array of allowed action slugs.
 		 */
 		$allowed = apply_filters(
-			"millisettings_{$slug}_allowed_actions",
+			"{$slug}_allowed_actions",
 			array( 'reset', 'restore' )
 		);
 
 		if ( ! is_string( $action ) || ! in_array( $action, $allowed, true ) ) {
 			return new \WP_Error(
 				'invalid_settings_action',
-				__( 'Invalid settings action.', 'millisettings' ),
+				__( 'Invalid settings action.', 'millibase' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -145,7 +181,7 @@ final class RestController {
 				case 'reset':
 					$this->store->backup();
 					delete_option( $option_name );
-					$message = __( 'Settings reset successfully.', 'millisettings' );
+					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
 				case 'restore':
@@ -154,18 +190,18 @@ final class RestController {
 						return new \WP_REST_Response(
 							array(
 								'success' => false,
-								'message' => __( 'No backup of settings found or backup has expired.', 'millisettings' ),
+								'message' => __( 'No backup of settings found or backup has expired.', 'millibase' ),
 							),
 							400
 						);
 					}
-					$message = __( 'Settings successfully restored from backup.', 'millisettings' );
+					$message = __( 'Settings successfully restored from backup.', 'millibase' );
 					break;
 			}
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'settings_action_failed',
-				__( 'Failed to perform settings action: ', 'millisettings' ) . $e->getMessage(),
+				__( 'Failed to perform settings action: ', 'millibase' ) . $e->getMessage(),
 				array( 'status' => 500 )
 			);
 		}
@@ -177,7 +213,7 @@ final class RestController {
 		 * @param array            $params  The request parameters.
 		 * @param \WP_REST_Request $request The REST request.
 		 */
-		do_action( "millisettings_{$slug}_action_performed", $action, $request->get_params(), $request );
+		do_action( "{$slug}_action_performed", $action, $request->get_params(), $request );
 
 		return rest_ensure_response(
 			array(
@@ -190,7 +226,13 @@ final class RestController {
 	}
 
 	/**
-	 * Get status information.
+	 * Return status information via the configured status callback.
+	 *
+	 * Merges the callback's output with internal settings metadata
+	 * (defaults, backup availability, resolved values) and passes
+	 * the result through the `{$slug}_status_response` filter.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
@@ -198,16 +240,19 @@ final class RestController {
 	 * @return \WP_REST_Response
 	 */
 	public function get_status( \WP_REST_Request $request ): \WP_REST_Response {
-		$slug     = $this->config['slug'] ?? 'millisettings';
+		$slug     = $this->config_string( 'slug', 'millibase' );
+		/** @var callable $callback */
 		$callback = $this->config['status_callback'];
 
 		try {
+			/** @var array<string, mixed> $status_data */
 			$status_data = call_user_func( $callback, $request );
 
-			// Always include settings meta.
+			// (constants > config file > database > defaults).
 			$status_data['settings'] = array(
 				'has_defaults' => $this->store->has_default_settings(),
 				'has_backup'   => $this->store->has_backup(),
+				'resolved'     => $this->store->get_all(),
 			);
 
 			/**
@@ -216,7 +261,7 @@ final class RestController {
 			 * @param array            $status  The status data.
 			 * @param \WP_REST_Request $request The REST request.
 			 */
-			$status_data = apply_filters( "millisettings_{$slug}_status_response", $status_data, $request );
+			$status_data = apply_filters( "{$slug}_status_response", $status_data, $request );
 
 			return new \WP_REST_Response( $status_data );
 		} catch ( \Exception $e ) {

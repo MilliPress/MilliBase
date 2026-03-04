@@ -1,21 +1,52 @@
 <?php
+/**
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
+ */
 
-namespace MilliSettings\FieldTypes;
+namespace MilliBase\FieldTypes;
 
+/**
+ * Color field type — validates hex color strings (#RGB, #RRGGBB, #RRGGBBAA).
+ *
+ * @since 1.0.0
+ */
 final class ColorField implements FieldTypeInterface {
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 1.0.0
+	 */
 	public function get_type(): string {
 		return 'color';
 	}
 
-	public function sanitize( $value, array $field ) {
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Uses `sanitize_hex_color()` when available, otherwise falls back
+	 * to a regex check.
+	 *
+	 * @since 1.0.0
+	 */
+	public function sanitize( $value, array $field ): string {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
 		if ( function_exists( 'sanitize_hex_color' ) ) {
 			return sanitize_hex_color( $value ) ?? '';
 		}
 
-		return is_string( $value ) && preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ? $value : '';
+		return preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ? $value : '';
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 1.0.0
+	 */
 	public function get_schema( array $field ): array {
 		return array( 'type' => 'string' );
 	}

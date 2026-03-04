@@ -37,7 +37,7 @@ export const SnackbarProvider = ( { slug, children } ) => {
 		<SnackbarContext.Provider value={ { showSnackbar } }>
 			{ children }
 			<SnackbarList
-				className="millisettings-snacks"
+				className="millibase-snacks"
 				notices={ snackMessages }
 				onRemove={ ( id ) => hideSnackbar( id ) }
 			/>

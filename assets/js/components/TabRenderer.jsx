@@ -14,7 +14,7 @@ const TabRenderer = ( { tab } ) => {
 	// Custom component tab.
 	if ( tab.type === 'custom' && tab.component ) {
 		const CustomComponent =
-			window.MilliSettings?.customComponents?.[ tab.component ];
+			window.MilliBase?.customComponents?.[ tab.component ];
 		if ( CustomComponent ) {
 			return createElement( CustomComponent, {
 				status: context.status,

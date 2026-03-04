@@ -2,19 +2,23 @@
 /**
  * Config file read/write/sync for pre-WordPress settings access.
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings;
+namespace MilliBase;
 
 /**
  * Manages the PHP config file that syncs settings for pre-WordPress access.
+ *
+ * @since 1.0.0
  */
 final class ConfigFile {
 
 	/**
 	 * The directory where config files are stored.
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $directory;
@@ -22,19 +26,23 @@ final class ConfigFile {
 	/**
 	 * The sanitized domain identifier.
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $domain;
 
 	/**
-	 * The option name (used in file header comment).
+	 * The option name (used in the file header comment).
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $option_name;
 
 	/**
 	 * Create a new ConfigFile instance.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $directory   The directory for config files.
 	 * @param string $domain      The sanitized domain identifier.
@@ -48,6 +56,8 @@ final class ConfigFile {
 
 	/**
 	 * Read settings from the config file.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string|null $module Specific module to retrieve.
 	 *
@@ -75,6 +85,11 @@ final class ConfigFile {
 
 	/**
 	 * Write settings to the config file.
+	 *
+	 * Creates the target directory if it does not exist and invalidates
+	 * OPcache for the written file.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $settings The settings to write.
 	 *
@@ -109,6 +124,8 @@ final class ConfigFile {
 	/**
 	 * Delete the config file.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return bool True if deleted successfully.
 	 */
 	public function delete(): bool {
@@ -123,6 +140,8 @@ final class ConfigFile {
 
 	/**
 	 * Get the full file path for the config file.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return string
 	 */

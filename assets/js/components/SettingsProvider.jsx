@@ -33,23 +33,23 @@ export const SettingsProvider = ( { config, children } ) => {
 		new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 
 	const handleApiError = useCallback( ( apiError ) => {
-		let message = __( 'An unexpected error occurred.', 'millisettings' );
+		let message = __( 'An unexpected error occurred.', 'millibase' );
 
 		if ( apiError?.message ) {
 			message = apiError.message;
 		} else if ( apiError?.code ) {
 			switch ( apiError.code ) {
 				case 'rest_no_route':
-					message = __( 'API endpoint not found.', 'millisettings' );
+					message = __( 'API endpoint not found.', 'millibase' );
 					break;
 				case 'rest_forbidden':
-					message = __( 'Access denied.', 'millisettings' );
+					message = __( 'Access denied.', 'millibase' );
 					break;
 				case 'rest_cookie_invalid_nonce':
-					message = __( 'Security check failed. Please refresh.', 'millisettings' );
+					message = __( 'Security check failed. Please refresh.', 'millibase' );
 					break;
 				default:
-					message = apiError.message || __( 'API request failed.', 'millisettings' );
+					message = apiError.message || __( 'API request failed.', 'millibase' );
 			}
 		}
 
@@ -95,12 +95,12 @@ export const SettingsProvider = ( { config, children } ) => {
 				fetchStatus();
 			} else {
 				throw new Error(
-					response.message || __( 'Action failed', 'millisettings' )
+					response.message || __( 'Action failed', 'millibase' )
 				);
 			}
 		} catch ( actionError ) {
 			const errorText =
-				actionError.message || __( 'Action failed', 'millisettings' );
+				actionError.message || __( 'Action failed', 'millibase' );
 			showSnackbar( errorText, [], 6000, true );
 			throw actionError;
 		} finally {
@@ -207,14 +207,14 @@ export const SettingsProvider = ( { config, children } ) => {
 			} );
 
 			setInitialSettings( settings );
-			showSnackbar( __( 'Settings saved successfully.', 'millisettings' ) );
+			showSnackbar( __( 'Settings saved successfully.', 'millibase' ) );
 			setHasChanges( false );
 
 			if ( hasStorageChanges ) {
 				const previousStatus = { ...status };
 				await delay( 500 );
 				showSnackbar(
-					__( 'Storage settings updated. Testing connection…', 'millisettings' )
+					__( 'Storage settings updated. Testing connection…', 'millibase' )
 				);
 
 				await delay( 3000 );
@@ -227,14 +227,14 @@ export const SettingsProvider = ( { config, children } ) => {
 					) {
 						await delay( 50 );
 						showSnackbar(
-							__( 'Storage connection lost.', 'millisettings' )
+							__( 'Storage connection lost.', 'millibase' )
 						);
 					} else if (
 						! previousStatus.storage?.connected &&
 						newStatus.storage?.connected
 					) {
 						showSnackbar(
-							__( 'Storage connection established.', 'millisettings' )
+							__( 'Storage connection established.', 'millibase' )
 						);
 					}
 					if ( newStatus.storage?.error ) {
@@ -246,7 +246,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			}
 		} catch ( saveError ) {
 			const errorMessage =
-				saveError.message || __( 'Failed to save settings.', 'millisettings' );
+				saveError.message || __( 'Failed to save settings.', 'millibase' );
 			showSnackbar( errorMessage, [], 6000, true );
 		} finally {
 			setTimeout( () => setIsSaving( false ), 1200 );

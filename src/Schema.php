@@ -2,20 +2,24 @@
 /**
  * Parses a declarative PHP settings array into defaults, JSON schema, and client config.
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings;
+namespace MilliBase;
 
 /**
  * Handles the declarative schema: extracts defaults from field definitions,
  * generates JSON schema for show_in_rest, and generates client-safe config.
+ *
+ * @since 1.0.0
  */
 final class Schema {
 
 	/**
 	 * The full configuration array.
 	 *
+	 * @since 1.0.0
 	 * @var array<string, mixed>
 	 */
 	private array $config;
@@ -23,12 +27,15 @@ final class Schema {
 	/**
 	 * Cached defaults extracted from field definitions.
 	 *
+	 * @since 1.0.0
 	 * @var array<string, array<string, mixed>>|null
 	 */
 	private ?array $defaults = null;
 
 	/**
 	 * Create a new Schema instance.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $config The full settings configuration array.
 	 */
@@ -40,6 +47,9 @@ final class Schema {
 	 * Extract default settings from all field definitions in the schema.
 	 *
 	 * Returns a nested array keyed by module (from dot-notation field keys).
+	 * Results are cached after the first call.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -51,7 +61,7 @@ final class Schema {
 		$defaults = array();
 
 		foreach ( $this->get_all_fields() as $field ) {
-			if ( ! isset( $field['key'] ) ) {
+			if ( ! isset( $field['key'] ) || ! is_string( $field['key'] ) ) {
 				continue;
 			}
 
@@ -77,10 +87,19 @@ final class Schema {
 	/**
 	 * Generate a JSON schema for WordPress register_setting() show_in_rest.
 	 *
+	 * When $defaults is null, uses schema-extracted defaults (UI fields only).
+	 * Pass full defaults (including non-UI fields) to generate a complete schema.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array<string, array<string, mixed>>|null $defaults Optional defaults to generate schema from.
+	 *
 	 * @return array<string, mixed>
 	 */
-	public function get_rest_schema(): array {
-		$defaults = $this->get_defaults();
+	public function get_rest_schema( ?array $defaults = null ): array {
+		if ( null === $defaults ) {
+			$defaults = $this->get_defaults();
+		}
 		$schema   = array(
 			'type'       => 'object',
 			'properties' => array(),
@@ -107,12 +126,16 @@ final class Schema {
 	 *
 	 * Strips PHP callbacks and server-only properties.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function to_client_array(): array {
 		$tabs = array();
 
-		foreach ( ( $this->config['tabs'] ?? array() ) as $tab ) {
+		/** @var array<int, array<string, mixed>> $config_tabs */
+		$config_tabs = $this->config['tabs'] ?? array();
+		foreach ( $config_tabs as $tab ) {
 			$client_tab = array(
 				'name'  => $tab['name'] ?? '',
 				'title' => $tab['title'] ?? '',
@@ -126,9 +149,10 @@ final class Schema {
 				$client_tab['component'] = $tab['component'];
 			}
 
-			if ( isset( $tab['sections'] ) ) {
+			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
 				$client_tab['sections'] = array();
 
+				/** @var array<string, mixed> $section */
 				foreach ( $tab['sections'] as $section ) {
 					$client_section = array(
 						'id'           => $section['id'] ?? '',
@@ -140,9 +164,10 @@ final class Schema {
 						$client_section['icon'] = $section['icon'];
 					}
 
-					if ( isset( $section['fields'] ) ) {
+					if ( isset( $section['fields'] ) && is_array( $section['fields'] ) ) {
 						$client_section['fields'] = array();
 
+						/** @var array<string, mixed> $field */
 						foreach ( $section['fields'] as $field ) {
 							$client_field = $this->field_to_client( $field );
 							if ( $client_field ) {
@@ -167,14 +192,26 @@ final class Schema {
 	/**
 	 * Get all fields from all tabs and sections (flattened).
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function get_all_fields(): array {
 		$fields = array();
 
-		foreach ( ( $this->config['tabs'] ?? array() ) as $tab ) {
-			foreach ( ( $tab['sections'] ?? array() ) as $section ) {
-				foreach ( ( $section['fields'] ?? array() ) as $field ) {
+		/** @var array<int, array<string, mixed>> $config_tabs */
+		$config_tabs = $this->config['tabs'] ?? array();
+		foreach ( $config_tabs as $tab ) {
+			if ( ! isset( $tab['sections'] ) || ! is_array( $tab['sections'] ) ) {
+				continue;
+			}
+			/** @var array<string, mixed> $section */
+			foreach ( $tab['sections'] as $section ) {
+				if ( ! isset( $section['fields'] ) || ! is_array( $section['fields'] ) ) {
+					continue;
+				}
+				/** @var array<string, mixed> $field */
+				foreach ( $section['fields'] as $field ) {
 					$fields[] = $field;
 				}
 			}
@@ -185,6 +222,11 @@ final class Schema {
 
 	/**
 	 * Convert a field definition to a client-safe array.
+	 *
+	 * Copies only whitelisted properties to prevent leaking server-side
+	 * configuration (e.g. callbacks, validation rules) to the client.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $field The field definition.
 	 *
@@ -215,6 +257,8 @@ final class Schema {
 			'disabled',
 			'rows',
 			'language',
+			'inline',
+			'width',
 		);
 
 		foreach ( $safe_keys as $safe_key ) {
@@ -228,6 +272,8 @@ final class Schema {
 
 	/**
 	 * Map a PHP value to a JSON schema type string.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param mixed $value The PHP value.
 	 *

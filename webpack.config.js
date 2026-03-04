@@ -4,6 +4,6 @@ const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 module.exports = {
 	...defaultConfig,
 	entry: {
-		millisettings: path.resolve( __dirname, 'assets/js/millisettings.js' ),
+		millibase: path.resolve( __dirname, 'assets/js/millibase.js' ),
 	},
 };

@@ -14,7 +14,7 @@ const CodeField = ( { field, value, onChange, disabled } ) => (
 		disabled={ disabled }
 		onChange={ onChange }
 		rows={ field.rows || 6 }
-		className="millisettings-code-field"
+		className="millibase-code-field"
 	/>
 );
 

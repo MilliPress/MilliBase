@@ -3,20 +3,24 @@
  * Settings storage layer with dot-notation access, encryption, backup/restore,
  * and a standalone mode for reading config before WordPress loads.
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings;
+namespace MilliBase;
 
 /**
  * Handles settings storage: option CRUD, dot-notation get/set, encryption,
  * constants override, config file sync, backup/restore, and import/export.
+ *
+ * @since 1.0.0
  */
 final class Store {
 
 	/**
 	 * The option name in the database.
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $option_name;
@@ -24,6 +28,7 @@ final class Store {
 	/**
 	 * Constant prefix for wp-config.php overrides (e.g. 'MC' → MC_STORAGE_HOST).
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $constant_prefix;
@@ -31,6 +36,7 @@ final class Store {
 	/**
 	 * Whether sodium encryption is enabled for enc_* fields.
 	 *
+	 * @since 1.0.0
 	 * @var bool
 	 */
 	private bool $encryption;
@@ -38,6 +44,7 @@ final class Store {
 	/**
 	 * Default settings extracted from the schema.
 	 *
+	 * @since 1.0.0
 	 * @var array<string, array<string, mixed>>
 	 */
 	private array $defaults;
@@ -45,6 +52,7 @@ final class Store {
 	/**
 	 * The ConfigFile instance, or null if config files are disabled.
 	 *
+	 * @since 1.0.0
 	 * @var ConfigFile|null
 	 */
 	private ?ConfigFile $config_file;
@@ -52,6 +60,7 @@ final class Store {
 	/**
 	 * Whether this store operates in standalone mode (no WordPress DB).
 	 *
+	 * @since 1.0.0
 	 * @var bool
 	 */
 	private bool $standalone;
@@ -59,6 +68,7 @@ final class Store {
 	/**
 	 * The sanitized domain identifier for config file naming.
 	 *
+	 * @since 1.0.0
 	 * @var string
 	 */
 	private string $domain;
@@ -66,20 +76,27 @@ final class Store {
 	/**
 	 * Create a new Store instance.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array<string, mixed> $config Configuration array.
 	 */
 	public function __construct( array $config ) {
-		$this->option_name     = $config['option_name'] ?? 'millisettings';
-		$this->constant_prefix = strtoupper( $config['constant_prefix'] ?? '' );
+		$option_name           = $config['option_name'] ?? 'millibase';
+		$this->option_name     = is_string( $option_name ) ? $option_name : 'millibase';
+		$constant_prefix       = $config['constant_prefix'] ?? '';
+		$this->constant_prefix = strtoupper( is_string( $constant_prefix ) ? $constant_prefix : '' );
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
-		$this->defaults        = $config['defaults'] ?? array();
+		/** @var array<string, array<string, mixed>> $defaults */
+		$defaults              = $config['defaults'] ?? array();
+		$this->defaults        = $defaults;
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
 		$this->domain          = $this->resolve_domain();
 
-		// Initialize config file handler if configured.
+		// Initialize the config file handler if configured.
 		if ( ! empty( $config['config_file'] ) && is_array( $config['config_file'] ) ) {
+			$directory = $config['config_file']['directory'] ?? '';
 			$this->config_file = new ConfigFile(
-				$config['config_file']['directory'] ?? '',
+				is_string( $directory ) ? $directory : '',
 				$this->domain,
 				$this->option_name
 			);
@@ -93,6 +110,8 @@ final class Store {
 	 *
 	 * Reads from config files and constants only — no database access.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array<string, mixed> $config Configuration array.
 	 *
 	 * @return self
@@ -104,6 +123,8 @@ final class Store {
 
 	/**
 	 * Register WordPress hooks for option filtering, encryption, and config file sync.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
@@ -135,6 +156,8 @@ final class Store {
 	/**
 	 * Get a value using dot notation.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $key     Dot notation key (e.g., 'cache.ttl').
 	 * @param mixed  $default Default value if key not found.
 	 *
@@ -157,6 +180,8 @@ final class Store {
 
 	/**
 	 * Set a value using dot notation.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $key   Dot notation key (e.g., 'cache.ttl'). Minimum 2 levels (module.key).
 	 * @param mixed  $value The value to set.
@@ -198,6 +223,8 @@ final class Store {
 	 * Get merged settings from all sources with priority hierarchy.
 	 *
 	 * Priority: Constants > Config File > Database > Defaults.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string|null $module         Specific module to retrieve.
 	 * @param bool        $skip_constants Whether to skip constants.
@@ -241,6 +268,8 @@ final class Store {
 	/**
 	 * Get the default settings.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param string|null $module Specific module to retrieve.
 	 *
 	 * @return array<string, array<string, mixed>>
@@ -254,7 +283,7 @@ final class Store {
 			 *
 			 * @param array $defaults Default settings.
 			 */
-			$defaults = apply_filters( "millisettings_{$this->option_name}_defaults", $defaults );
+			$defaults = apply_filters( "{$this->option_name}_defaults", $defaults );
 		}
 
 		if ( $module ) {
@@ -266,6 +295,11 @@ final class Store {
 
 	/**
 	 * Get settings from wp-config.php constants.
+	 *
+	 * Builds constant names from the prefix, module key, and setting key
+	 * (e.g. prefix `MC` + module `storage` + key `host` → `MC_STORAGE_HOST`).
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string|null $module Specific module to retrieve.
 	 *
@@ -306,6 +340,11 @@ final class Store {
 	/**
 	 * Get settings from the database.
 	 *
+	 * Returns an empty array in standalone mode or when WordPress is
+	 * not loaded.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param string|null $module Specific module to retrieve.
 	 *
 	 * @return array<string, array<string, mixed>>
@@ -318,19 +357,29 @@ final class Store {
 		$db_settings = (array) get_option( $this->option_name, array() );
 
 		if ( $module ) {
-			return isset( $db_settings[ $module ] ) ? array( $module => (array) $db_settings[ $module ] ) : array();
+			/** @var array<string, mixed> $module_settings */
+			$module_settings = isset( $db_settings[ $module ] ) ? (array) $db_settings[ $module ] : array();
+			return isset( $db_settings[ $module ] ) ? array( $module => $module_settings ) : array();
 		}
 
-		return array_map(
-			function ( $setting ) {
+		/** @var array<string, array<string, mixed>> $result */
+		$result = array_map(
+			/** @return array<string, mixed> */
+			function ( $setting ): array {
 				return (array) $setting;
 			},
 			$db_settings
 		);
+
+		return $result;
 	}
 
 	/**
 	 * Get the source of a setting value.
+	 *
+	 * Checks sources in priority order and returns the first match.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $module The settings module.
 	 * @param string $key    The setting key.
@@ -363,6 +412,11 @@ final class Store {
 	/**
 	 * Filter settings: strip constant-defined keys and merge with defaults.
 	 *
+	 * Hooked into `option_{$name}` and `default_option_{$name}` to ensure
+	 * the returned value is always a clean, schema-conformant array.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param false|array<string, array<string, mixed>> $settings The option value.
 	 *
 	 * @return array<string, array<string, mixed>>
@@ -372,7 +426,7 @@ final class Store {
 			return array();
 		}
 
-		// Remove constant-defined settings from the stored value.
+		// Remove constant-defined keys from the stored value.
 		$constant_settings = $this->get_settings_from_constants();
 		foreach ( $constant_settings as $mod => $mod_settings ) {
 			foreach ( $mod_settings as $key => $value ) {
@@ -421,12 +475,14 @@ final class Store {
 	/**
 	 * Encrypt sensitive settings data (fields prefixed with 'enc_').
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array<string, array<string, mixed>> $settings The settings before saving.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 *
-	 * @throws \Exception If random bytes cannot be generated.
-	 * @throws \SodiumException If encryption fails.
+	 * @throws \Exception        If random bytes cannot be generated.
+	 * @throws \SodiumException  If encryption fails.
 	 */
 	public function encrypt_sensitive_settings_data( array $settings ): array {
 		foreach ( $settings as $module => $module_settings ) {
@@ -445,6 +501,8 @@ final class Store {
 
 	/**
 	 * Decrypt sensitive settings data (fields prefixed with 'enc_').
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, array<string, mixed>> $settings The stored settings.
 	 *
@@ -470,11 +528,16 @@ final class Store {
 	/**
 	 * Encrypt a value using sodium.
 	 *
+	 * Uses `AUTH_KEY` and `SECURE_AUTH_KEY` as the key material. Values
+	 * already prefixed with `ENC:` are returned as-is.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $value The value to encrypt.
 	 *
 	 * @return string The encrypted value prefixed with 'ENC:'.
 	 *
-	 * @throws \Exception If random bytes cannot be generated.
+	 * @throws \Exception       If random bytes cannot be generated.
 	 * @throws \SodiumException If encryption fails.
 	 */
 	public static function encrypt_value( string $value ): string {
@@ -491,6 +554,11 @@ final class Store {
 
 	/**
 	 * Decrypt a value using sodium.
+	 *
+	 * Loads WordPress's bundled sodium_compat if the native extension
+	 * is not available.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $encrypted_value The encrypted value.
 	 *
@@ -526,10 +594,16 @@ final class Store {
 	/**
 	 * Back up current settings to a transient.
 	 *
+	 * The backup expires after 12 hours.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string|null $module Specific module to back up, or null for all.
+	 *
 	 * @return void
 	 */
-	public function backup(): void {
-		$current = $this->get_all();
+	public function backup( ?string $module = null ): void {
+		$current = $this->get_all( $module );
 
 		if ( $current ) {
 			set_transient( $this->option_name . '_backup', $current, 12 * HOUR_IN_SECONDS );
@@ -539,6 +613,8 @@ final class Store {
 	/**
 	 * Check if a backup exists.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return bool
 	 */
 	public function has_backup(): bool {
@@ -547,6 +623,10 @@ final class Store {
 
 	/**
 	 * Restore settings from a backup transient.
+	 *
+	 * Deletes the transient after a successful restore.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return bool True if restored successfully.
 	 */
@@ -566,6 +646,8 @@ final class Store {
 	/**
 	 * Check if settings are at their defaults (ignoring constants).
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return bool
 	 */
 	public function has_default_settings(): bool {
@@ -576,6 +658,8 @@ final class Store {
 
 	/**
 	 * Reset settings to defaults.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string|null $module The module to reset, or null for all.
 	 *
@@ -599,6 +683,11 @@ final class Store {
 
 	/**
 	 * Export settings.
+	 *
+	 * Encrypted fields are either decrypted or stripped depending on
+	 * the `$include_encrypted` flag. The `host` module is always excluded.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string|null $module            Module to export, or null for all.
 	 * @param bool        $include_encrypted Whether to include decrypted values.
@@ -632,6 +721,11 @@ final class Store {
 
 	/**
 	 * Import settings from an array.
+	 *
+	 * Only modules present in the defaults are accepted; unknown modules
+	 * are silently discarded.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $settings The settings to import.
 	 * @param bool                 $merge    Whether to merge with existing.
@@ -671,6 +765,11 @@ final class Store {
 	/**
 	 * Coerce a string value to its appropriate PHP type.
 	 *
+	 * Converts `'true'`/`'false'`/`'null'` to their native types, and
+	 * numeric strings to int or float.
+	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $value The string value.
 	 *
 	 * @return mixed The coerced value.
@@ -700,6 +799,8 @@ final class Store {
 	/**
 	 * Get the option name.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return string
 	 */
 	public function get_option_name(): string {
@@ -709,7 +810,9 @@ final class Store {
 	// ─── Config file hook callbacks ─────────────────────────────────────
 
 	/**
-	 * Handle add_option hook.
+	 * Handle add_option hook — sync newly created options to the config file.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string       $option   The option name.
 	 * @param array<mixed> $settings The settings value.
@@ -723,7 +826,9 @@ final class Store {
 	}
 
 	/**
-	 * Handle update_option hook.
+	 * Handle update_option hook — sync updated options to the config file.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<mixed> $old_settings The old value.
 	 * @param array<mixed> $settings     The new value.
@@ -737,7 +842,9 @@ final class Store {
 	}
 
 	/**
-	 * Handle delete_option hook.
+	 * Handle the delete_option hook — remove the config file when the option is deleted.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $option The option name.
 	 *
@@ -755,6 +862,11 @@ final class Store {
 
 	/**
 	 * Resolve the domain identifier for config file naming.
+	 *
+	 * Falls back to `site_url()` when `$_SERVER['HTTP_HOST']` is unavailable
+	 * (e.g. WP-CLI context).
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return string
 	 */

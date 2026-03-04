@@ -45,7 +45,7 @@ const Header = () => {
 		// If button has a registered component, render it.
 		if ( btn.component ) {
 			const CustomBtn =
-				window.MilliSettings?.customComponents?.[ btn.component ];
+				window.MilliBase?.customComponents?.[ btn.component ];
 			if ( CustomBtn ) {
 				return createElement( CustomBtn, {
 					key: idx,
@@ -109,8 +109,8 @@ const Header = () => {
 							disabled={ ! hasChanges || isSaving }
 						>
 							{ isSaving
-								? __( 'Saving…', 'millisettings' )
-								: __( 'Save Settings', 'millisettings' ) }
+								? __( 'Saving…', 'millibase' )
+								: __( 'Save Settings', 'millibase' ) }
 						</Button>
 
 						{ /* Custom buttons from header config */ }
@@ -120,14 +120,14 @@ const Header = () => {
 
 						{ /* Actions dropdown */ }
 						<Dropdown
-							className="millisettings-actions-dropdown"
-							contentClassName="millisettings-actions-dropdown-content"
+							className="millibase-actions-dropdown"
+							contentClassName="millibase-actions-dropdown-content"
 							popoverProps={ { placement: 'bottom-end' } }
 							renderToggle={ ( { isOpen, onToggle } ) => (
 								<Button
 									__next40pxDefaultSize
 									icon={ moreVertical }
-									label={ __( 'More Actions', 'millisettings' ) }
+									label={ __( 'More Actions', 'millibase' ) }
 									disabled={ isSaving || isLoading }
 									onClick={ onToggle }
 									aria-expanded={ isOpen }
@@ -135,7 +135,7 @@ const Header = () => {
 							) }
 							renderContent={ ( { onClose } ) => (
 								<MenuGroup
-									label={ __( 'More Actions', 'millisettings' ) }
+									label={ __( 'More Actions', 'millibase' ) }
 								>
 									{ /* Custom menu items */ }
 									{ menuItems.map( ( item, idx ) => (
@@ -179,7 +179,7 @@ const Header = () => {
 									>
 										{ __(
 											'Reset all Settings',
-											'millisettings'
+											'millibase'
 										) }
 									</MenuItem>
 
@@ -197,7 +197,7 @@ const Header = () => {
 											>
 												{ __(
 													'Restore previous Settings',
-													'millisettings'
+													'millibase'
 												) }
 											</MenuItem>
 										) }
@@ -212,7 +212,7 @@ const Header = () => {
 				<Animate type="slide-in" options={ { origin: 'top center' } }>
 					{ ( { className } ) => (
 						<ProgressBar
-							className={ `millisettings-progress ${ className }` }
+							className={ `millibase-progress ${ className }` }
 						/>
 					) }
 				</Animate>

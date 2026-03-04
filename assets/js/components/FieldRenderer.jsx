@@ -27,7 +27,7 @@ const builtinTypes = {
 
 const FieldRenderer = ( { field, value, onChange, disabled } ) => {
 	// Check for custom field types first.
-	const customTypes = window.MilliSettings?.customFieldTypes || {};
+	const customTypes = window.MilliBase?.customFieldTypes || {};
 	const Component = customTypes[ field.type ] || builtinTypes[ field.type ];
 
 	if ( ! Component ) {

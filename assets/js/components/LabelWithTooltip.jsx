@@ -32,7 +32,7 @@ export const LabelWithTooltip = ( {
 			{ ...tooltipProps }
 		>
 			<span
-				className="millisettings-tooltip-icon"
+				className="millibase-tooltip-icon"
 				style={ { display: 'flex', alignItems: 'center' } }
 			>
 				<Icon icon={ help } size={ iconSize } { ...iconProps } />

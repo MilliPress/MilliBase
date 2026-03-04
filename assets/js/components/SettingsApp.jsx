@@ -1,6 +1,6 @@
 /**
  * Top-level SettingsApp: loading, error, tabs.
- * Reads config from props (injected by the auto-mount in millisettings.js).
+ * Reads config from props (injected by the auto-mount in millibase.js).
  */
 
 import { __ } from '@wordpress/i18n';
@@ -19,7 +19,7 @@ import TabRenderer from './TabRenderer.jsx';
 
 const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 	<div
-		className="millisettings-error-container"
+		className="millibase-error-container"
 		style={ {
 			padding: '60px 20px',
 			textAlign: 'center',
@@ -42,7 +42,7 @@ const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 				color: '#1e1e1e',
 			} }
 		>
-			{ __( 'Connection Error', 'millisettings' ) }
+			{ __( 'Connection Error', 'millibase' ) }
 		</h2>
 		<p
 			style={ {
@@ -71,8 +71,8 @@ const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 				disabled={ isRetrying }
 			>
 				{ isRetrying
-					? __( 'Retrying...', 'millisettings' )
-					: __( 'Try Again', 'millisettings' ) }
+					? __( 'Retrying...', 'millibase' )
+					: __( 'Try Again', 'millibase' ) }
 			</Button>
 		</div>
 	</div>
@@ -110,9 +110,9 @@ const SettingsApp = ( { config } ) => {
 								options={ { origin: 'top center' } }
 							>
 								{ ( { className } ) => (
-									<div className="millisettings-loading-container">
+									<div className="millibase-loading-container">
 										<ProgressBar
-											className={ `millisettings-progress ${ className }` }
+											className={ `millibase-progress ${ className }` }
 										/>
 										<p
 											style={ {
@@ -122,7 +122,7 @@ const SettingsApp = ( { config } ) => {
 										>
 											{ __(
 												'Loading settings...',
-												'millisettings'
+												'millibase'
 											) }
 										</p>
 									</div>
@@ -152,7 +152,7 @@ const SettingsApp = ( { config } ) => {
 						>
 							{ ( { className } ) => (
 								<TabPanel
-									className={ `millisettings-tabs ${ className }` }
+									className={ `millibase-tabs ${ className }` }
 									style={ {
 										border: '1px solid #ddd',
 										marginLeft: '-1px',
@@ -166,7 +166,7 @@ const SettingsApp = ( { config } ) => {
 								>
 									{ ( tab ) => (
 										<div
-											className="millisettings-tab-content"
+											className="millibase-tab-content"
 											style={ { margin: '-1px' } }
 										>
 											<TabRenderer tab={ tab } />

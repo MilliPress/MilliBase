@@ -2,18 +2,23 @@
 /**
  * Interface for field type sanitization and schema generation.
  *
- * @package MilliSettings
+ * @package MilliBase
+ * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliSettings\FieldTypes;
+namespace MilliBase\FieldTypes;
 
 /**
  * Each field type provides sanitization logic and a JSON schema fragment.
+ *
+ * @since 1.0.0
  */
 interface FieldTypeInterface {
 
 	/**
 	 * Get the field type identifier.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return string
 	 */
@@ -21,6 +26,8 @@ interface FieldTypeInterface {
 
 	/**
 	 * Sanitize a value for this field type.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param mixed                $value The raw value.
 	 * @param array<string, mixed> $field The field definition.
@@ -31,6 +38,8 @@ interface FieldTypeInterface {
 
 	/**
 	 * Get the JSON schema fragment for this field type.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $field The field definition.
 	 *
