@@ -1,0 +1,42 @@
+name: Release Build
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compile Build Assets
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    env:
+      PR_BRANCH: ${{ github.head_ref }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.PR_BRANCH }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Commit build assets if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f build/
+          if git diff --cached --quiet; then
+            echo "No build changes to commit."
+          else
+            git commit -m "chore: compile build assets"
+            git push
+          fi
