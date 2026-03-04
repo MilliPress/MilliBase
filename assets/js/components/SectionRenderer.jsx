@@ -5,6 +5,7 @@
 import { PanelBody, Flex, FlexItem } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
+import evaluateCondition from '../utils/evaluateCondition.js';
 
 /**
  * Group fields into rows based on the `inline` flag.
@@ -59,7 +60,20 @@ const SectionRenderer = ( { section } ) => {
 		);
 	};
 
-	const rows = groupFieldsIntoRows( section.fields || [] );
+	const isFieldVisible = ( field ) => {
+		// Evaluate against resolved settings so constant-defined values
+		// (absent from editable `settings`) are taken into account.
+		if ( field.hide && evaluateCondition( field.hide, resolvedSettings ) ) {
+			return false;
+		}
+		if ( field.show && ! evaluateCondition( field.show, resolvedSettings ) ) {
+			return false;
+		}
+		return true;
+	};
+
+	const visibleFields = ( section.fields || [] ).filter( isFieldVisible );
+	const rows = groupFieldsIntoRows( visibleFields );
 
 	return (
 		<PanelBody

@@ -259,6 +259,8 @@ final class Schema {
 			'language',
 			'inline',
 			'width',
+			'show',
+			'hide',
 		);
 
 		foreach ( $safe_keys as $safe_key ) {
