@@ -21,7 +21,7 @@ jobs:
           ref: ${{ env.PR_BRANCH }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
