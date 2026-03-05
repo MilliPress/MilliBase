@@ -69,27 +69,30 @@ add_filter('my_plugin_schema', function (array $config): array {
 > [!NOTE]
 > When sections share the same `id`, they are merged — the last section's properties overwrite earlier ones, and fields are combined. To fully replace a tab instead of merging, add `'replace' => true` to the tab definition.
 
+> [!TIP]
+> The schema filter is the recommended way for add-ons to register new settings. Defaults are extracted automatically from the `default` property on each field — no need to also use the defaults filter.
+
 ## Defaults Filter
 
-The `{option_name}_defaults` filter lets you modify default values at runtime:
+The `{option_name}_defaults` filter lets you modify default values at runtime. This is primarily useful for non-UI settings that need to exist in the stored option but don't have a corresponding field in the schema:
 
 ```php
 add_filter('my_plugin_settings_defaults', function (array $defaults): array {
     // Override a default.
     $defaults['cache']['ttl'] = 7200;
 
-    // Add defaults for a new module (from an add-on).
-    $defaults['addon'] = [
-        'enabled' => false,
-        'level'   => 'basic',
+    // Add defaults for non-UI settings (no corresponding schema field).
+    $defaults['internal'] = [
+        'migration_version' => 0,
+        'install_date'      => '',
     ];
 
     return $defaults;
 });
 ```
 
-> [!IMPORTANT]
-> When adding new modules via the defaults filter, you also need to add corresponding fields via the schema filter for them to appear in the UI.
+> [!NOTE]
+> Settings added only via the defaults filter will not appear in the UI. To add settings with both UI fields and defaults, use the schema filter instead — defaults are extracted automatically from field definitions.
 
 ## Allowed Actions Filter
 
