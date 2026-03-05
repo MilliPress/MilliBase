@@ -76,7 +76,7 @@ const Header = () => {
 
 	return (
 		<>
-			<PanelBody>
+			<PanelBody className="millibase-header">
 				<Flex align="center">
 					<FlexItem>
 						<h1 style={ { padding: '0' } }>

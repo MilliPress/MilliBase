@@ -8,7 +8,6 @@ import {
 	Animate,
 	ProgressBar,
 	TabPanel,
-	Panel,
 	Button,
 	Icon,
 } from '@wordpress/components';
@@ -98,11 +97,10 @@ const SettingsApp = ( { config } ) => {
 	const initialTab = activeTab || ( tabs[ 0 ]?.name ?? 'settings' );
 
 	return (
-		<div style={ { maxWidth: '900px' } }>
-			<Panel>
-				<Header />
+		<div className="millibase-settings-wrapper">
+			<Header />
 
-				{ ( () => {
+			{ ( () => {
 					if ( isLoading ) {
 						return (
 							<Animate
@@ -111,13 +109,13 @@ const SettingsApp = ( { config } ) => {
 							>
 								{ ( { className } ) => (
 									<div className="millibase-loading-container">
-										<ProgressBar
-											className={ `millibase-progress ${ className }` }
-										/>
 										<p
 											style={ {
 												textAlign: 'center',
-												margin: '10px 0',
+												margin: '0',
+												padding: '15px 20px',
+												borderBottom: '1px solid #e0e0e0',
+												fontWeight: '500',
 											} }
 										>
 											{ __(
@@ -177,7 +175,6 @@ const SettingsApp = ( { config } ) => {
 						</Animate>
 					);
 				} )() }
-			</Panel>
 		</div>
 	);
 };
