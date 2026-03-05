@@ -376,6 +376,94 @@ it('overrides a single section within a tab when ids match', function () {
     expect($client['tabs'][0]['sections'][0]['title'])->toBe('Cache Replaced');
 });
 
+it('adds new sections to an existing tab without removing others', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'cache',
+                        'title' => 'Cache',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'general',
+                'title' => 'General Pro',
+                'sections' => [
+                    [
+                        'id' => 'preload',
+                        'title' => 'Preload',
+                        'fields' => [
+                            ['key' => 'preload.enabled', 'type' => 'toggle', 'default' => false],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+
+    // One tab, but both sections are present.
+    expect($client['tabs'])->toHaveCount(1);
+    expect($client['tabs'][0]['title'])->toBe('General Pro');
+    expect($client['tabs'][0]['sections'])->toHaveCount(2);
+    expect($client['tabs'][0]['sections'][0]['id'])->toBe('cache');
+    expect($client['tabs'][0]['sections'][1]['id'])->toBe('preload');
+
+    // Defaults include fields from both sections.
+    expect($schema->get_defaults())->toBe([
+        'cache'   => ['ttl' => 3600],
+        'preload' => ['enabled' => false],
+    ]);
+});
+
+it('replaces a tab entirely when replace flag is set', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'status',
+                'title' => 'Status',
+                'type' => 'custom',
+                'component' => 'StatusTab',
+                'sections' => [
+                    [
+                        'id' => 'overview',
+                        'title' => 'Overview',
+                        'fields' => [
+                            ['key' => 'status.hits', 'type' => 'number', 'default' => 0],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'status',
+                'title' => 'Status Pro',
+                'type' => 'custom',
+                'component' => 'ProStatusTab',
+                'replace' => true,
+                'sections' => [],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+
+    expect($client['tabs'])->toHaveCount(1);
+    expect($client['tabs'][0]['title'])->toBe('Status Pro');
+    expect($client['tabs'][0]['component'])->toBe('ProStatusTab');
+    expect($client['tabs'][0]['sections'])->toHaveCount(0);
+
+    // The replace flag itself should not leak to the client.
+    expect($client['tabs'][0])->not->toHaveKey('replace');
+});
+
 it('preserves order of distinct tabs and sections', function () {
     $schema = new Schema([
         'tabs' => [

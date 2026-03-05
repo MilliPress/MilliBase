@@ -328,19 +328,30 @@ final class Schema {
 				continue;
 			}
 
-			// Normalize sections within this tab to be keyed by id.
+			$name = $tab['name'];
+
+			// Normalize incoming sections to be keyed by id.
+			$incoming_sections = array();
 			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
-				$keyed_sections = array();
 				foreach ( $tab['sections'] as $section ) {
 					if ( ! is_array( $section ) || empty( $section['id'] ) ) {
 						continue;
 					}
-					$keyed_sections[ $section['id'] ] = $section;
+					$incoming_sections[ $section['id'] ] = $section;
 				}
-				$tab['sections'] = $keyed_sections;
 			}
 
-			$keyed[ $tab['name'] ] = $tab;
+			if ( isset( $keyed[ $name ] ) && empty( $tab['replace'] ) ) {
+				// Merge into existing tab: incoming properties overwrite,
+				// sections are merged by id (last wins per section).
+				$existing_sections   = $keyed[ $name ]['sections'] ?? array();
+				$tab['sections']     = array_replace( $existing_sections, $incoming_sections );
+				$keyed[ $name ]      = array_replace( $keyed[ $name ], $tab );
+			} else {
+				unset( $tab['replace'] );
+				$tab['sections'] = $incoming_sections;
+				$keyed[ $name ]  = $tab;
+			}
 		}
 
 		return $keyed;
