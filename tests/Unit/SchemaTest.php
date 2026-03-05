@@ -294,3 +294,115 @@ it('handles tabs without sections gracefully', function () {
 
     expect($schema->get_all_fields())->toBe([]);
 });
+
+// ─── Tab / section override (keyed-by-name) ─────────────────────────
+
+it('overrides a tab when a later entry uses the same name', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'cache',
+                        'title' => 'Cache',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'general',
+                'title' => 'General Pro',
+                'sections' => [
+                    [
+                        'id' => 'cache',
+                        'title' => 'Cache Pro',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 7200],
+                            ['key' => 'cache.strategy', 'type' => 'text', 'default' => 'lru'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+
+    // Only one tab should remain.
+    expect($client['tabs'])->toHaveCount(1);
+    expect($client['tabs'][0]['title'])->toBe('General Pro');
+    expect($client['tabs'][0]['sections'][0]['title'])->toBe('Cache Pro');
+
+    // Defaults reflect the overridden tab.
+    expect($schema->get_defaults())->toBe([
+        'cache' => ['ttl' => 7200, 'strategy' => 'lru'],
+    ]);
+});
+
+it('overrides a single section within a tab when ids match', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'cache',
+                        'title' => 'Cache',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+                        ],
+                    ],
+                    [
+                        'id' => 'cache',
+                        'title' => 'Cache Replaced',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 900],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+
+    // Only one section remains — the last one wins.
+    expect($client['tabs'][0]['sections'])->toHaveCount(1);
+    expect($client['tabs'][0]['sections'][0]['title'])->toBe('Cache Replaced');
+});
+
+it('preserves order of distinct tabs and sections', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    ['id' => 'a', 'title' => 'A', 'fields' => []],
+                    ['id' => 'b', 'title' => 'B', 'fields' => []],
+                ],
+            ],
+            [
+                'name' => 'advanced',
+                'title' => 'Advanced',
+                'sections' => [
+                    ['id' => 'c', 'title' => 'C', 'fields' => []],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+
+    expect($client['tabs'])->toHaveCount(2);
+    expect($client['tabs'][0]['name'])->toBe('general');
+    expect($client['tabs'][1]['name'])->toBe('advanced');
+    expect($client['tabs'][0]['sections'])->toHaveCount(2);
+    expect($client['tabs'][0]['sections'][0]['id'])->toBe('a');
+    expect($client['tabs'][0]['sections'][1]['id'])->toBe('b');
+});

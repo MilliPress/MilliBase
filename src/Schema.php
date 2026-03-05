@@ -40,7 +40,8 @@ final class Schema {
 	 * @param array<string, mixed> $config The full settings configuration array.
 	 */
 	public function __construct( array $config ) {
-		$this->config = $config;
+		$config['tabs'] = $this->normalize_tabs( $config['tabs'] ?? array() );
+		$this->config   = $config;
 	}
 
 	/**
@@ -133,7 +134,7 @@ final class Schema {
 	public function to_client_array(): array {
 		$tabs = array();
 
-		/** @var array<int, array<string, mixed>> $config_tabs */
+		/** @var array<string, array<string, mixed>> $config_tabs */
 		$config_tabs = $this->config['tabs'] ?? array();
 		foreach ( $config_tabs as $tab ) {
 			$client_tab = array(
@@ -207,7 +208,7 @@ final class Schema {
 	public function get_all_fields(): array {
 		$fields = array();
 
-		/** @var array<int, array<string, mixed>> $config_tabs */
+		/** @var array<string, array<string, mixed>> $config_tabs */
 		$config_tabs = $this->config['tabs'] ?? array();
 		foreach ( $config_tabs as $tab ) {
 			if ( ! isset( $tab['sections'] ) || ! is_array( $tab['sections'] ) ) {
@@ -303,5 +304,45 @@ final class Schema {
 			return 'array';
 		}
 		return 'string';
+	}
+
+	/**
+	 * Normalize tabs into an associative array keyed by tab name, and
+	 * sections within each tab keyed by section id.
+	 *
+	 * When multiple tabs share the same name, the last one wins. This
+	 * allows add-on plugins to override tabs or individual sections via
+	 * the `{$slug}_schema` filter.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array<int|string, array<string, mixed>> $tabs The tabs array (numeric or associative).
+	 *
+	 * @return array<string, array<string, mixed>> Tabs keyed by name.
+	 */
+	private function normalize_tabs( array $tabs ): array {
+		$keyed = array();
+
+		foreach ( $tabs as $tab ) {
+			if ( ! is_array( $tab ) || empty( $tab['name'] ) ) {
+				continue;
+			}
+
+			// Normalize sections within this tab to be keyed by id.
+			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
+				$keyed_sections = array();
+				foreach ( $tab['sections'] as $section ) {
+					if ( ! is_array( $section ) || empty( $section['id'] ) ) {
+						continue;
+					}
+					$keyed_sections[ $section['id'] ] = $section;
+				}
+				$tab['sections'] = $keyed_sections;
+			}
+
+			$keyed[ $tab['name'] ] = $tab;
+		}
+
+		return $keyed;
 	}
 }
