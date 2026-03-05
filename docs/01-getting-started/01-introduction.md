@@ -44,10 +44,10 @@ The `Settings` class is the only entry point. It creates all internal components
 
 ## Prerequisites
 
-| Requirement | Version   |
-|-------------|-----------|
-| PHP         | >= 7.4    |
-| WordPress   | >= 6.0    |
+| Requirement | Version |
+|-------------|---------|
+| PHP         | >= 7.4  |
+| WordPress   | >= 6.6  |
 
 MilliBase is a Composer library — it is not a standalone WordPress plugin. It is meant to be included as a dependency in your own plugin.
 
