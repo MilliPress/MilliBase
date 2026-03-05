@@ -6,7 +6,6 @@
 import { __ } from '@wordpress/i18n';
 import {
 	Animate,
-	ProgressBar,
 	TabPanel,
 	Button,
 	Icon,
@@ -107,7 +106,7 @@ const SettingsApp = ( { config } ) => {
 								type="slide-in"
 								options={ { origin: 'top center' } }
 							>
-								{ ( { className } ) => (
+								{ ( { } ) => (
 									<div className="millibase-loading-container">
 										<p
 											style={ {
