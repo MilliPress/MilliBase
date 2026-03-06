@@ -270,6 +270,11 @@ final class Store {
 			}
 		}
 
+		// Inject the host module for full retrievals.
+		if ( null === $module ) {
+			$settings['host'] = array( 'domain' => $this->domain );
+		}
+
 		return $settings;
 	}
 
@@ -293,6 +298,9 @@ final class Store {
 		if ( $module ) {
 			return isset( $defaults[ $module ] ) ? array( $module => $defaults[ $module ] ) : array();
 		}
+
+		// Inject the host module for full retrievals.
+		$defaults['host'] = array( 'domain' => $this->domain );
 
 		return $defaults;
 	}

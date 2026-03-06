@@ -60,7 +60,9 @@ it('returns all defaults when no module specified', function () {
 
     $store = new Store(['defaults' => $defaults]);
 
-    expect($store->get_default_settings())->toBe($defaults);
+    expect($store->get_default_settings())->toBe(
+        $defaults + ['host' => ['domain' => '']]
+    );
 });
 
 it('returns defaults filtered by module', function () {
