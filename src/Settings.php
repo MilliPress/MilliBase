@@ -102,7 +102,11 @@ final class Settings {
 			$this->store->register_hooks();
 		}
 
-		add_action( 'init', array( $this, 'register_settings' ) );
+		if ( did_action( 'init' ) ) {
+			$this->register_settings();
+		} else {
+			add_action( 'init', array( $this, 'register_settings' ) );
+		}
 
 		$this->admin_page = new AdminPage( $this->config, $this->schema );
 		$this->admin_page->register_hooks();
