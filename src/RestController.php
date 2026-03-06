@@ -73,9 +73,8 @@ final class RestController {
 	/**
 	 * Register REST API routes.
 	 *
-	 * Registers the built-in settings endpoint, an optional status endpoint
-	 * (when a status_callback is configured), and any custom action routes
-	 * defined in the config's `actions` array.
+	 * Registers the built-in settings endpoint, the status endpoint,
+	 * and any custom action routes defined in the config's `actions` array.
 	 *
 	 * @since 1.0.0
 	 *
@@ -99,7 +98,7 @@ final class RestController {
 		);
 
 		// Status endpoint — always registered for constants/metadata;
-		// optionally enriched by a plugin-provided status_callback.
+		// optionally enriched by status.callback and/or status.data.
 		register_rest_route(
 			$namespace,
 			'/status',
@@ -263,7 +262,8 @@ final class RestController {
 	 * Return status information.
 	 *
 	 * Always includes settings metadata (defaults, backup, constants).
-	 * When a status_callback is configured, its output is merged in.
+	 * When `status.data` is configured, it is merged as a static base.
+	 * When `status.callback` is configured, its output is merged on top.
 	 * The result is passed through the `{$slug}_status_response` filter.
 	 *
 	 * @since 1.0.0
@@ -275,10 +275,15 @@ final class RestController {
 	 */
 	public function get_status( \WP_REST_Request $request ): \WP_REST_Response {
 		$slug     = $this->config_string( 'slug', 'millibase' );
-		$callback = $this->config['status_callback'] ?? null;
+		$status   = is_array( $this->config['status'] ?? null ) ? $this->config['status'] : array();
+		$data     = is_array( $status['data'] ?? null ) ? $status['data'] : array();
+		$callback = $status['callback'] ?? null;
 
 		try {
-			$status_data = is_callable( $callback ) ? (array) call_user_func( $callback, $request ) : array();
+			$status_data = array_merge(
+				$data,
+				is_callable( $callback ) ? (array) call_user_func( $callback, $request ) : array()
+			);
 
 			$status_data['settings'] = array(
 				'has_defaults' => $this->store->has_default_settings(),

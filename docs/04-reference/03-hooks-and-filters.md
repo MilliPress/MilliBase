@@ -136,7 +136,7 @@ MilliBase registers these REST routes:
 |--------|-------|-------------|
 | `POST` | `/wp/v2/settings` | Save settings (WordPress native) |
 | `POST` | `/{rest_namespace}/settings` | Built-in actions (reset, restore) |
-| `GET` | `/{rest_namespace}/status` | Status endpoint (always registered; enriched by `status_callback`) |
+| `GET` | `/{rest_namespace}/status` | Status endpoint (always registered; enriched by `status.data` and `status.callback`) |
 | varies | `/{rest_namespace}/{endpoint}` | Custom action endpoints |
 
 All endpoints require the configured `capability` (default: `manage_options`). Non-GET requests require a valid `X-WP-Nonce` header.

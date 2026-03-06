@@ -50,9 +50,12 @@ $settings = new \MilliBase\Settings([
 
     // ─── Actions ───────────────────────────────────────────
     'actions'         => [ /* ... */ ],        // Custom REST action endpoints
-    'status_callback' => function ($request) { // Optional status endpoint callback
-        return ['healthy' => true];
-    },
+    'status' => [                            // Optional status endpoint data
+        'data'     => ['version' => '1.0'],  // Static data (merged first)
+        'callback' => function ($request) {  // Dynamic data (merged on top)
+            return ['healthy' => true];
+        },
+    ],
 
     // ─── Advanced ──────────────────────────────────────────
     'store'     => $external_store,            // Optional: inject a pre-built Store instance
@@ -153,21 +156,29 @@ Define custom REST endpoints that the UI can trigger:
 
 The `name` field can be a string or an array of strings. Each name registers a separate trigger in the React UI that calls the same endpoint.
 
-### `status_callback`
+### `status`
 
-MilliBase always registers a `GET /{rest_namespace}/status` endpoint that returns settings metadata (defaults, backup availability, constant overrides). The React UI polls this endpoint every 15 seconds. When a `status_callback` is provided, its output is merged into the response:
+MilliBase always registers a `GET /{rest_namespace}/status` endpoint that returns settings metadata (defaults, backup availability, constant overrides). The React UI polls this endpoint every 15 seconds.
+
+The `status` config accepts `data` (static array, merged first) and/or `callback` (called on each request, merged on top):
 
 ```php
-'status_callback' => function (\WP_REST_Request $request) {
-    return [
-        'healthy'    => true,
-        'version'    => '1.2.3',
-        'last_check' => time(),
-    ];
-},
+'status' => [
+    // Static data — merged as a base layer.
+    'data' => [
+        'version' => '1.2.3',
+    ],
+    // Dynamic data — called on each request, overwrites static keys.
+    'callback' => function (\WP_REST_Request $request) {
+        return [
+            'healthy'    => true,
+            'last_check' => time(),
+        ];
+    },
+],
 ```
 
-The response automatically includes `settings.has_defaults`, `settings.has_backup`, and `settings.constants` (values defined via PHP constants).
+Both keys are optional. The response automatically includes `settings.has_defaults`, `settings.has_backup`, and `settings.constants` (values defined via PHP constants).
 
 ## Next Steps
 
