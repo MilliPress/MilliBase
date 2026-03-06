@@ -7,7 +7,7 @@
  *       'slug' => 'milliplugin',
  *       'tabs' => [ ... ],
  *       // ... full config array
- *       // option_name defaults to {slug}_settings ('milliplugin_settings')
+ *       // option_name defaults to {slug} ('milliplugin')
  *   ]);
  *
  *   // Programmatic access:
@@ -81,7 +81,7 @@ final class Settings {
 
 		// Auto-derive defaults from slug.
 		if ( ! isset( $config['option_name'] ) ) {
-			$config['option_name'] = $slug . '_settings';
+			$config['option_name'] = $slug;
 		}
 		if ( ! isset( $config['rest_namespace'] ) ) {
 			$config['rest_namespace'] = $slug . '/v1';
