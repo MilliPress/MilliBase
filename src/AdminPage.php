@@ -146,17 +146,7 @@ final class AdminPage {
 			return;
 		}
 
-		$asset      = include $asset_file;
-		$basename   = $this->config_string( 'basename' );
-		$plugin_dir = $basename ? plugin_dir_path( WP_PLUGIN_DIR . '/' . $basename ) : $package_dir;
-
-		// Use plugin_dir_url if the basename is available, otherwise construct from the package dir.
-		if ( $basename ) {
-			$base_url = plugins_url( '', WP_PLUGIN_DIR . '/' . $basename );
-		} else {
-			$base_url = plugins_url( '', $package_dir . '/millibase.php' );
-		}
-
+		$asset     = include $asset_file;
 		$build_url = $this->resolve_build_url();
 
 		wp_enqueue_style(
@@ -243,23 +233,26 @@ final class AdminPage {
 	/**
 	 * Resolve the URL to the package's build/ directory.
 	 *
-	 * Supports explicit `build_url` override, plugin-relative paths,
-	 * and a wp-content fallback for non-standard installations.
+	 * Resolution order:
+	 * 1. Explicit `build_url` config override.
+	 * 2. Plugin basename from `{SLUG}_BASENAME` constant (handles symlinks).
+	 * 3. Direct `plugins_url()` from the package directory.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @return string
 	 */
 	private function resolve_build_url(): string {
-		// Allow explicit override (useful for symlinked packages).
 		if ( ! empty( $this->config['build_url'] ) ) {
 			return $this->config_string( 'build_url' );
 		}
 
 		$package_dir = $this->resolve_package_dir();
-		$basename    = $this->config_string( 'basename' );
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$constant    = strtoupper( str_replace( '-', '_', $slug ) ) . '_BASENAME';
 
-		if ( $basename ) {
+		if ( defined( $constant ) ) {
+			$basename   = constant( $constant );
 			$plugin_dir = plugin_dir_path( WP_PLUGIN_DIR . '/' . $basename );
 			$relative   = str_replace( $plugin_dir, '', $package_dir . '/' );
 
@@ -274,26 +267,7 @@ final class AdminPage {
 			}
 		}
 
-		// Fallback: assume the package is inside wp-content somewhere.
-		if ( defined( 'WP_CONTENT_DIR' ) && defined( 'WP_CONTENT_URL' ) ) {
-			$relative = str_replace( WP_CONTENT_DIR, '', $package_dir );
-			return WP_CONTENT_URL . $relative . '/build';
-		}
-
-		return '';
-	}
-
-	/**
-	 * Get a string value from the config array.
-	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
-	 *
-	 * @return string
-	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
+		return plugins_url( 'build', $package_dir . '/millibase' );
 	}
 
 	/**
@@ -324,4 +298,18 @@ final class AdminPage {
 
 		return '';
 	}
+
+	/**
+	 * Get a string value from the config array.
+	 *
+	 * @param string $key      The config key.
+	 * @param string $fallback The fallback value.
+	 *
+	 * @return string
+	 */
+	private function config_string( string $key, string $fallback = '' ): string {
+		$value = $this->config[ $key ] ?? $fallback;
+		return is_string( $value ) ? $value : $fallback;
+	}
+
 }

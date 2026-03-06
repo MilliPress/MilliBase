@@ -35,7 +35,6 @@ $settings = new Settings([
     'slug'       => 'my-plugin',
     'page_title' => 'My Plugin',
     'menu_title' => 'My Plugin',
-    'basename'   => plugin_basename(__FILE__),
 
     'header' => [
         'title' => 'My Plugin Settings',

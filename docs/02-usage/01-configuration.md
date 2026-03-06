@@ -22,7 +22,6 @@ $settings = new \MilliBase\Settings([
     'capability'     => 'manage_options',       // Required capability
     'menu_parent'    => 'options-general.php',  // Parent menu slug, or '' for top-level
     'menu_icon'      => 'dashicons-admin-generic', // Dashicon (top-level only)
-    'basename'       => plugin_basename(__FILE__),  // Plugin basename for URL resolution
 
     // ─── Storage ───────────────────────────────────────────
     'constant_prefix' => 'MP',                 // Prefix for wp-config.php constant overrides
@@ -121,6 +120,20 @@ Constants take the highest priority and make the corresponding field read-only i
 When configured, settings are automatically synced to a PHP file on every save. This enables reading settings before WordPress loads (e.g. in `advanced-cache.php` or a `mu-plugin`).
 
 The file is named by the current domain: `{directory}/{sanitized_domain}.php`.
+
+### Build URL Resolution
+
+MilliBase automatically resolves the URL to its `build/` directory via `plugins_url()`. This works for standard Composer installs where the package is physically inside the plugin directory.
+
+For **symlinked packages** (e.g. Composer path repositories during development), define a `{SLUG}_BASENAME` constant in your main plugin file:
+
+```php
+define('MY_PLUGIN_BASENAME', plugin_basename(__FILE__));
+```
+
+MilliBase checks for this constant (derived from the `slug` config) and uses it to resolve the correct build URL even when `__DIR__` points outside the plugin directory.
+
+The `build_url` config key can be used as an explicit override when neither automatic resolution nor the basename constant produce the correct URL.
 
 ### `store`
 
