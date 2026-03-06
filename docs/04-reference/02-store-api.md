@@ -16,6 +16,7 @@ new Store(array $config)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
+| `slug` | `string` | Plugin slug for hook naming (default: `''`) |
 | `option_name` | `string` | WordPress option name (default: `{slug}_settings`) |
 | `constant_prefix` | `string` | Prefix for PHP constant overrides (default: `''`) |
 | `encryption` | `bool` | Enable sodium encryption for `enc_*` fields (default: `false`) |
@@ -53,7 +54,7 @@ $store->get_all(null, true);           // All settings, skip constants
 
 ### `get_default_settings(?string $module = null): array`
 
-Get default settings. Applies the `{option_name}_defaults` filter.
+Get default settings. Applies the `{slug}_settings_defaults` filter.
 
 ### `get_settings_from_constants(?string $module = null): array`
 

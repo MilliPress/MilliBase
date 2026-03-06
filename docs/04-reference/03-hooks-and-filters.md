@@ -25,7 +25,7 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 
 ---
 
-### `{option_name}_defaults`
+### `{slug}_settings_defaults`
 
 Modify default settings at runtime.
 

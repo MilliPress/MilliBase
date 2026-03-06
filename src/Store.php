@@ -58,6 +58,14 @@ final class Store {
 	private ?ConfigFile $config_file;
 
 	/**
+	 * Plugin slug for filter hook naming ({slug}_settings_defaults).
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	private string $slug;
+
+	/**
 	 * Whether this store operates in standalone mode (no WordPress DB).
 	 *
 	 * @since 1.0.0
@@ -83,6 +91,8 @@ final class Store {
 	public function __construct( array $config ) {
 		$option_name           = $config['option_name'] ?? 'millibase';
 		$this->option_name     = is_string( $option_name ) ? $option_name : 'millibase';
+		$slug                  = $config['slug'] ?? '';
+		$this->slug            = is_string( $slug ) ? $slug : '';
 		$constant_prefix       = $config['constant_prefix'] ?? '';
 		$this->constant_prefix = strtoupper( is_string( $constant_prefix ) ? $constant_prefix : '' );
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
@@ -276,12 +286,8 @@ final class Store {
 		$defaults = $this->defaults;
 
 		if ( function_exists( 'apply_filters' ) ) {
-			/**
-			 * Filters the default settings.
-			 *
-			 * @param array $defaults Default settings.
-			 */
-			$defaults = apply_filters( "{$this->option_name}_defaults", $defaults );
+			/** @param array $defaults Default settings. */
+			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults );
 		}
 
 		if ( $module ) {

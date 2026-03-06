@@ -79,7 +79,6 @@ Unique identifier for this settings page. Used for:
 The WordPress option name in `wp_options`. Defaults to `{slug}_settings`. All settings are stored as a single serialized array under this key. Also used for:
 
 - `register_setting()` registration
-- Filter hooks (`{option_name}_defaults`)
 - Backup transient key (`{option_name}_backup`)
 
 Override only when migrating from a plugin that already stores settings under a different key.

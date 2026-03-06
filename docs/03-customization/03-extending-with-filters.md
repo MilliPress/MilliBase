@@ -74,7 +74,7 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 
 ## Defaults Filter
 
-The `{option_name}_defaults` filter lets you modify default values at runtime. This is primarily useful for non-UI settings that need to exist in the stored option but don't have a corresponding field in the schema:
+The `{slug}_settings_defaults` filter lets you modify default values at runtime. This is primarily useful for non-UI settings that need to exist in the stored option but don't have a corresponding field in the schema:
 
 ```php
 add_filter('my_plugin_settings_defaults', function (array $defaults): array {
@@ -139,7 +139,7 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 | Filter / Action | Parameters | Description |
 |----------------|------------|-------------|
 | `{slug}_settings_schema` | `(array $config)` | Modify the full config before Schema init |
-| `{option_name}_defaults` | `(array $defaults)` | Modify default settings |
+| `{slug}_settings_defaults` | `(array $defaults)` | Modify default settings |
 | `{slug}_rest_settings_allowed_actions` | `(array $allowed)` | Filter allowed REST action names |
 | `{slug}_rest_status_response` | `(array $status, WP_REST_Request $request)` | Modify status response |
 | `{slug}_rest_settings_action_performed` | `(string $action, array $params, WP_REST_Request $request)` | Fires after an action |

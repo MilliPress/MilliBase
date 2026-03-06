@@ -239,6 +239,7 @@ final class Settings {
 
 		return new Store(
 			array(
+				'slug'            => $this->config['slug'] ?? '',
 				'option_name'     => $this->config['option_name'],
 				'constant_prefix' => $this->config['constant_prefix'] ?? '',
 				'encryption'      => $this->config['encryption'] ?? false,
