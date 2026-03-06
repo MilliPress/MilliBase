@@ -59,7 +59,7 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 		{ value: 'd', label: 'Days' },
 	];
 
-	const storeAsSeconds = field.store === 'seconds';
+	const storeAsSeconds = field.save === 'seconds';
 	const display = storeAsSeconds
 		? secondsToDisplay( value || 0, units )
 		: { number: value || 0, unit: units[ 0 ]?.value || 's' };

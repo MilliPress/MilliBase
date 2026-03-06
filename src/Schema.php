@@ -271,7 +271,7 @@ final class Schema {
 			'min',
 			'max',
 			'units',
-			'store',
+			'save',
 			'options',
 			'encrypted',
 			'disabled',

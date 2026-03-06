@@ -137,7 +137,7 @@ Numeric input with a CSS unit selector. Supports automatic conversion to/from se
     'type'     => 'unit',
     'label'    => 'Cache TTL',
     'default'  => 3600,
-    'store' => 'seconds',
+    'save' => 'seconds',
     'min'      => 0,
     'units'    => [
         ['label' => 'Seconds', 'value' => 's'],
@@ -151,12 +151,12 @@ Numeric input with a CSS unit selector. Supports automatic conversion to/from se
 | Property | Type | Description |
 |----------|------|-------------|
 | `units` | `array` | Array of `{label, value}` unit options |
-| `store` | `string` | Set to `'seconds'` for automatic time unit conversion |
+| `save` | `string` | Set to `'seconds'` for automatic time unit conversion |
 | `min` | `int\|float` | Minimum allowed value |
 
-**Time unit conversion:** When `store` is `'seconds'`, the value is stored in seconds but displayed in the most appropriate unit. For example, `3600` seconds displays as `1 h`.
+**Time unit conversion:** When `save` is `'seconds'`, the value is saved in seconds but displayed in the most appropriate unit. For example, `3600` seconds displays as `1 h`.
 
-Unit multipliers (for `store: 'seconds'`):
+Unit multipliers (for `save: 'seconds'`):
 
 | Unit | Multiplier |
 |------|------------|

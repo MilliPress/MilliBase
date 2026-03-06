@@ -178,7 +178,7 @@ When `status` is configured, `open` defaults to `'error'` (auto-open when there'
 | `max` | `number`, `unit` | Maximum value |
 | `options` | `select` | Array of `{label, value}` objects |
 | `units` | `unit` | Array of `{label, value}` unit options |
-| `store` | `unit` | Set to `'seconds'` for automatic time unit conversion |
+| `save` | `unit` | Set to `'seconds'` for automatic time unit conversion |
 | `rows` | `code` | Number of textarea rows (default: 6) |
 | `language` | `code` | Syntax language hint |
 
