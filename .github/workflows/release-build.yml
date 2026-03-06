@@ -4,14 +4,16 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Compile Build Assets
-    if: startsWith(github.head_ref, 'release-please--')
+  build-pr:
+    name: Compile Build Assets (PR)
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     env:
       PR_BRANCH: ${{ github.head_ref }}
@@ -20,6 +22,35 @@ jobs:
         with:
           ref: ${{ env.PR_BRANCH }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Commit build assets if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f build/
+          if git diff --cached --quiet; then
+            echo "No build changes to commit."
+          else
+            git commit -m "chore: compile build assets"
+            git push
+          fi
+
+  build-main:
+    name: Compile Build Assets (main)
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - uses: actions/setup-node@v6
         with:
