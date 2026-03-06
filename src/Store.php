@@ -117,6 +117,8 @@ final class Store {
 		} else {
 			$this->config_file = null;
 		}
+
+		$this->register_hooks();
 	}
 
 	/**

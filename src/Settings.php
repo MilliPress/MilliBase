@@ -108,12 +108,6 @@ final class Settings {
 			return;
 		}
 
-		// Only register Store hooks when the facade created the Store itself.
-		// When a Store is provided externally, the caller manages its hooks.
-		if ( ! isset( $this->config['store'] ) ) {
-			$this->store->register_hooks();
-		}
-
 		if ( did_action( 'init' ) ) {
 			$this->register_settings();
 		} else {
