@@ -187,7 +187,7 @@ final class RestController {
 	public function perform_settings_action( \WP_REST_Request $request ) {
 		$action      = $request->get_param( 'action' );
 		$slug        = $this->config_string( 'slug', 'millibase' );
-		$option_name = $this->config_string( 'option_name', 'millibase' );
+		$option_name = $this->store->get_option_name();
 
 		/**
 		 * Filters the allowed settings actions.
