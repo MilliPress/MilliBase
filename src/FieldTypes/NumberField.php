@@ -1,5 +1,7 @@
 <?php
 /**
+ * Sanitization and schema for the number field type.
+ *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
@@ -29,9 +31,11 @@ final class NumberField implements FieldTypeInterface {
 	 * field definition, if present.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param mixed                $value The raw value.
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ) {
-		/** @var int|float $value */
 		$value = is_numeric( $value ) ? $value + 0 : 0;
 
 		$min = isset( $field['min'] ) && is_numeric( $field['min'] ) ? $field['min'] + 0 : null;
@@ -53,6 +57,8 @@ final class NumberField implements FieldTypeInterface {
 	 * Includes `minimum` and `maximum` constraints when defined.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
 		$schema = array( 'type' => 'number' );

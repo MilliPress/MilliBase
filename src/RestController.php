@@ -48,14 +48,14 @@ final class RestController {
 	/**
 	 * Get a string value from the config array.
 	 *
-	 * @param string $key     The config key.
-	 * @param string $default The default value.
+	 * @param string $key      The config key.
+	 * @param string $fallback The fallback value.
 	 *
 	 * @return string
 	 */
-	private function config_string( string $key, string $default = '' ): string {
-		$value = $this->config[ $key ] ?? $default;
-		return is_string( $value ) ? $value : $default;
+	private function config_string( string $key, string $fallback = '' ): string {
+		$value = $this->config[ $key ] ?? $fallback;
+		return is_string( $value ) ? $value : $fallback;
 	}
 
 	/**
@@ -114,8 +114,7 @@ final class RestController {
 		}
 
 		// Custom plugin-defined action routes.
-		/** @var array<int, array<string, mixed>> $actions */
-		$actions = $this->config['actions'] ?? array();
+		$actions = is_array( $this->config['actions'] ?? null ) ? $this->config['actions'] : array();
 		foreach ( $actions as $action ) {
 			if ( empty( $action['endpoint'] ) || ! is_callable( $action['callback'] ?? null ) ) {
 				continue;
@@ -152,15 +151,15 @@ final class RestController {
 		}
 
 		$namespace   = $this->config_string( 'rest_namespace', 'millibase/v1' );
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+		$request_uri = ServerVars::get( 'REQUEST_URI' );
 
-		if ( ! empty( $request_uri ) && str_contains( $request_uri, "/$namespace/" ) ) {
-			$method = $_SERVER['REQUEST_METHOD'] ?? '';
+		if ( ! empty( $request_uri ) && strpos( $request_uri, "/$namespace/" ) !== false ) {
+			$method = ServerVars::get( 'REQUEST_METHOD' );
 			if ( in_array( $method, array( 'GET', 'HEAD', 'OPTIONS' ), true ) ) {
 				return $result;
 			}
 
-			$nonce = $_SERVER['HTTP_X_WP_NONCE'] ?? '';
+			$nonce = ServerVars::get( 'HTTP_X_WP_NONCE' );
 			if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new \WP_Error(
 					'invalid_nonce',
@@ -277,12 +276,10 @@ final class RestController {
 	 */
 	public function get_status( \WP_REST_Request $request ): \WP_REST_Response {
 		$slug     = $this->config_string( 'slug', 'millibase' );
-		/** @var callable $callback */
 		$callback = $this->config['status_callback'];
 
 		try {
-			/** @var array<string, mixed> $status_data */
-			$status_data = call_user_func( $callback, $request );
+			$status_data = is_callable( $callback ) ? (array) call_user_func( $callback, $request ) : array();
 
 			// (constants > config file > database > defaults).
 			$status_data['settings'] = array(

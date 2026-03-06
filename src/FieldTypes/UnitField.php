@@ -1,5 +1,7 @@
 <?php
 /**
+ * Sanitization and schema for the unit field type.
+ *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
@@ -26,6 +28,9 @@ final class UnitField implements FieldTypeInterface {
 	 * {@inheritDoc}
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param mixed                $value The raw value.
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ) {
 		return is_numeric( $value ) ? $value + 0 : 0;
@@ -35,6 +40,8 @@ final class UnitField implements FieldTypeInterface {
 	 * {@inheritDoc}
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
 		return array( 'type' => 'number' );

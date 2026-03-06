@@ -167,14 +167,14 @@ final class Settings {
 	/**
 	 * Get a string value from the config array.
 	 *
-	 * @param string $key     The config key.
-	 * @param string $default The default value.
+	 * @param string $key      The config key.
+	 * @param string $fallback The fallback value.
 	 *
 	 * @return string
 	 */
-	private function config_string( string $key, string $default = '' ): string {
-		$value = $this->config[ $key ] ?? $default;
-		return is_string( $value ) ? $value : $default;
+	private function config_string( string $key, string $fallback = '' ): string {
+		$value = $this->config[ $key ] ?? $fallback;
+		return is_string( $value ) ? $value : $fallback;
 	}
 
 	// ─── Private resolvers ──────────────────────────────────────────────

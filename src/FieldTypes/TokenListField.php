@@ -1,5 +1,7 @@
 <?php
 /**
+ * Sanitization and schema for the token list field type.
+ *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
@@ -28,6 +30,9 @@ final class TokenListField implements FieldTypeInterface {
 	 * Sanitizes each token individually and removes empty entries.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param mixed                $value The raw value.
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ) {
 		if ( ! is_array( $value ) ) {
@@ -41,6 +46,8 @@ final class TokenListField implements FieldTypeInterface {
 	 * {@inheritDoc}
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
 		return array(

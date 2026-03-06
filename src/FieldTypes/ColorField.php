@@ -1,5 +1,7 @@
 <?php
 /**
+ * Sanitization and schema for the color field type.
+ *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
@@ -29,6 +31,9 @@ final class ColorField implements FieldTypeInterface {
 	 * to a regex check.
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param mixed                $value The raw value.
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ): string {
 		if ( ! is_string( $value ) ) {
@@ -46,6 +51,8 @@ final class ColorField implements FieldTypeInterface {
 	 * {@inheritDoc}
 	 *
 	 * @since 1.0.0
+	 *
+	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
 		return array( 'type' => 'string' );

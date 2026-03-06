@@ -192,8 +192,7 @@ final class AdminPage {
 
 		// Build the client-safe actions list.
 		$client_actions = array();
-		/** @var array<int, array<string, mixed>> $actions */
-		$actions = $this->config['actions'] ?? array();
+		$actions        = is_array( $this->config['actions'] ?? null ) ? $this->config['actions'] : array();
 		foreach ( $actions as $action ) {
 			$names    = (array) ( $action['name'] ?? '' );
 			$endpoint = $action['endpoint'] ?? '';
@@ -287,14 +286,14 @@ final class AdminPage {
 	/**
 	 * Get a string value from the config array.
 	 *
-	 * @param string $key     The config key.
-	 * @param string $default The default value.
+	 * @param string $key      The config key.
+	 * @param string $fallback The fallback value.
 	 *
 	 * @return string
 	 */
-	private function config_string( string $key, string $default = '' ): string {
-		$value = $this->config[ $key ] ?? $default;
-		return is_string( $value ) ? $value : $default;
+	private function config_string( string $key, string $fallback = '' ): string {
+		$value = $this->config[ $key ] ?? $fallback;
+		return is_string( $value ) ? $value : $fallback;
 	}
 
 	/**

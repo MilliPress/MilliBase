@@ -40,7 +40,7 @@ final class Schema {
 	 * @param array<string, mixed> $config The full settings configuration array.
 	 */
 	public function __construct( array $config ) {
-		$config['tabs'] = $this->normalize_tabs( $config['tabs'] ?? array() );
+		$config['tabs'] = $this->normalize_tabs( is_array( $config['tabs'] ?? null ) ? $config['tabs'] : array() );
 		$this->config   = $config;
 	}
 
@@ -101,7 +101,7 @@ final class Schema {
 		if ( null === $defaults ) {
 			$defaults = $this->get_defaults();
 		}
-		$schema   = array(
+		$schema = array(
 			'type'       => 'object',
 			'properties' => array(),
 		);
@@ -134,9 +134,12 @@ final class Schema {
 	public function to_client_array(): array {
 		$tabs = array();
 
-		/** @var array<string, array<string, mixed>> $config_tabs */
-		$config_tabs = $this->config['tabs'] ?? array();
+		$config_tabs = is_array( $this->config['tabs'] ?? null ) ? $this->config['tabs'] : array();
 		foreach ( $config_tabs as $tab ) {
+			if ( ! is_array( $tab ) ) {
+				continue;
+			}
+
 			$client_tab = array(
 				'name'  => $tab['name'] ?? '',
 				'title' => $tab['title'] ?? '',
@@ -157,8 +160,11 @@ final class Schema {
 			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
 				$client_tab['sections'] = array();
 
-				/** @var array<string, mixed> $section */
 				foreach ( $tab['sections'] as $section ) {
+					if ( ! is_array( $section ) ) {
+						continue;
+					}
+
 					$client_section = array(
 						'id'           => $section['id'] ?? '',
 						'title'        => $section['title'] ?? '',
@@ -176,8 +182,11 @@ final class Schema {
 					if ( isset( $section['fields'] ) && is_array( $section['fields'] ) ) {
 						$client_section['fields'] = array();
 
-						/** @var array<string, mixed> $field */
 						foreach ( $section['fields'] as $field ) {
+							if ( ! is_array( $field ) ) {
+								continue;
+							}
+
 							$client_field = $this->field_to_client( $field );
 							if ( $client_field ) {
 								$client_section['fields'][] = $client_field;
@@ -208,18 +217,15 @@ final class Schema {
 	public function get_all_fields(): array {
 		$fields = array();
 
-		/** @var array<string, array<string, mixed>> $config_tabs */
-		$config_tabs = $this->config['tabs'] ?? array();
+		$config_tabs = is_array( $this->config['tabs'] ?? null ) ? $this->config['tabs'] : array();
 		foreach ( $config_tabs as $tab ) {
-			if ( ! isset( $tab['sections'] ) || ! is_array( $tab['sections'] ) ) {
+			if ( ! is_array( $tab ) || ! isset( $tab['sections'] ) || ! is_array( $tab['sections'] ) ) {
 				continue;
 			}
-			/** @var array<string, mixed> $section */
 			foreach ( $tab['sections'] as $section ) {
-				if ( ! isset( $section['fields'] ) || ! is_array( $section['fields'] ) ) {
+				if ( ! is_array( $section ) || ! isset( $section['fields'] ) || ! is_array( $section['fields'] ) ) {
 					continue;
 				}
-				/** @var array<string, mixed> $field */
 				foreach ( $section['fields'] as $field ) {
 					$fields[] = $field;
 				}
@@ -342,11 +348,9 @@ final class Schema {
 			}
 
 			if ( isset( $keyed[ $name ] ) && empty( $tab['replace'] ) ) {
-				// Merge into existing tab: incoming properties overwrite,
-				// sections are merged by id (last wins per section).
-				$existing_sections   = $keyed[ $name ]['sections'] ?? array();
-				$tab['sections']     = array_replace( $existing_sections, $incoming_sections );
-				$keyed[ $name ]      = array_replace( $keyed[ $name ], $tab );
+				$existing_sections = $keyed[ $name ]['sections'];
+				$tab['sections']   = array_replace( $existing_sections, $incoming_sections );
+				$keyed[ $name ]    = array_replace( $keyed[ $name ], $tab );
 			} else {
 				unset( $tab['replace'] );
 				$tab['sections'] = $incoming_sections;

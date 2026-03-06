@@ -86,15 +86,13 @@ final class Store {
 		$constant_prefix       = $config['constant_prefix'] ?? '';
 		$this->constant_prefix = strtoupper( is_string( $constant_prefix ) ? $constant_prefix : '' );
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
-		/** @var array<string, array<string, mixed>> $defaults */
-		$defaults              = $config['defaults'] ?? array();
-		$this->defaults        = $defaults;
+		$this->defaults        = is_array( $config['defaults'] ?? null ) ? $config['defaults'] : array();
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
 		$this->domain          = $this->resolve_domain();
 
 		// Initialize the config file handler if configured.
 		if ( ! empty( $config['config_file'] ) && is_array( $config['config_file'] ) ) {
-			$directory = $config['config_file']['directory'] ?? '';
+			$directory         = $config['config_file']['directory'] ?? '';
 			$this->config_file = new ConfigFile(
 				is_string( $directory ) ? $directory : '',
 				$this->domain,
@@ -158,19 +156,19 @@ final class Store {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $key     Dot notation key (e.g., 'cache.ttl').
-	 * @param mixed  $default Default value if key not found.
+	 * @param string $key      Dot notation key (e.g., 'cache.ttl').
+	 * @param mixed  $fallback Fallback value if key not found.
 	 *
 	 * @return mixed
 	 */
-	public function get( string $key, $default = null ) {
+	public function get( string $key, $fallback = null ) {
 		$keys     = explode( '.', $key );
 		$settings = $this->get_all();
 		$value    = $settings;
 
 		foreach ( $keys as $k ) {
 			if ( ! is_array( $value ) || ! array_key_exists( $k, $value ) ) {
-				return $default;
+				return $fallback;
 			}
 			$value = $value[ $k ];
 		}
@@ -357,14 +355,11 @@ final class Store {
 		$db_settings = (array) get_option( $this->option_name, array() );
 
 		if ( $module ) {
-			/** @var array<string, mixed> $module_settings */
 			$module_settings = isset( $db_settings[ $module ] ) ? (array) $db_settings[ $module ] : array();
 			return isset( $db_settings[ $module ] ) ? array( $module => $module_settings ) : array();
 		}
 
-		/** @var array<string, array<string, mixed>> $result */
 		$result = array_map(
-			/** @return array<string, mixed> */
 			function ( $setting ): array {
 				return (array) $setting;
 			},
@@ -873,8 +868,8 @@ final class Store {
 	private function resolve_domain(): string {
 		$host = '';
 
-		if ( isset( $_SERVER['HTTP_HOST'] ) ) {
-			$host = $_SERVER['HTTP_HOST'];
+		if ( ServerVars::has( 'HTTP_HOST' ) ) {
+			$host = ServerVars::get( 'HTTP_HOST' );
 		} elseif ( function_exists( 'site_url' ) ) {
 			$parsed = wp_parse_url( site_url() );
 			$host   = $parsed['host'] ?? '';
