@@ -51,6 +51,11 @@ $settings = new \MilliBase\Settings([
             return ['healthy' => true];
         },
     ],
+    'troubleshooting' => [                   // Optional link shown on connection errors
+        'url'   => 'https://example.com/docs/troubleshooting',
+        'label' => 'View Troubleshooting Guide',  // Optional (has default)
+        'text'  => 'Need help fixing this issue?', // Optional (has default)
+    ],
 
     // ─── Advanced ──────────────────────────────────────────
     'store'     => $external_store,            // Optional: inject a pre-built Store instance

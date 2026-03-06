@@ -203,9 +203,10 @@ final class AdminPage {
 				'optionName'    => $option_name,
 				'restNamespace' => $rest_namespace,
 				'containerId'   => $slug . '-settings',
-				'schema'        => $this->schema->to_client_array(),
-				'header'        => $this->config['header'] ?? array(),
-				'actions'       => $client_actions,
+				'schema'          => $this->schema->to_client_array(),
+				'header'          => $this->config['header'] ?? array(),
+				'troubleshooting' => $this->config['troubleshooting'] ?? null,
+				'actions'         => $client_actions,
 			)
 		);
 

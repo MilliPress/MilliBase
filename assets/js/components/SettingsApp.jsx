@@ -156,7 +156,7 @@ const SettingsApp = ( { config } ) => {
 								onRetry={ retryConnection }
 								isRetrying={ isRetrying }
 								troubleshooting={
-									config.header?.troubleshooting
+									config.troubleshooting
 								}
 							/>
 						);
