@@ -91,9 +91,7 @@ final class Settings {
 		$this->schema = $this->resolve_schema();
 		$this->store  = $this->resolve_store();
 
-		if ( function_exists( 'add_action' ) ) {
-			$this->boot();
-		}
+		$this->boot();
 	}
 
 	// ─── Boot ───────────────────────────────────────────────────────────
@@ -106,6 +104,10 @@ final class Settings {
 	 * @return void
 	 */
 	private function boot(): void {
+		if ( ! function_exists( 'add_action' ) ) {
+			return;
+		}
+
 		// Only register Store hooks when the facade created the Store itself.
 		// When a Store is provided externally, the caller manages its hooks.
 		if ( ! isset( $this->config['store'] ) ) {

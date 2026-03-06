@@ -143,7 +143,7 @@ final class Store {
 	 * @return void
 	 */
 	public function register_hooks(): void {
-		if ( $this->standalone ) {
+		if ( $this->standalone || ! function_exists( 'add_filter' ) ) {
 			return;
 		}
 
