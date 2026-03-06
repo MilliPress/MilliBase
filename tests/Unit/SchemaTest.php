@@ -209,6 +209,62 @@ it('handles custom tab types, intro text, and icons', function () {
     expect($tab['sections'][0]['intro'])->toBe('Section intro');
 });
 
+it('passes status config through to the client and defaults open to error', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'connection',
+                        'title' => 'Connection',
+                        'status' => [
+                            'key'       => 'storage.connected',
+                            'ok'        => true,
+                            'indicator' => true,
+                            'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+                        ],
+                        'fields' => [],
+                    ],
+                    [
+                        'id' => 'advanced',
+                        'title' => 'Advanced',
+                        'status' => [
+                            'key'       => 'storage.connected',
+                            'ok'        => true,
+                            'indicator' => false,
+                        ],
+                        'open' => 'ok',
+                        'fields' => [],
+                    ],
+                    [
+                        'id' => 'plain',
+                        'title' => 'Plain Section',
+                        'fields' => [],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+    $sections = $client['tabs'][0]['sections'];
+
+    // Section with status and no explicit open defaults to 'error'.
+    expect($sections[0]['status']['key'])->toBe('storage.connected');
+    expect($sections[0]['status']['badge']['error'])->toBe('Disconnected');
+    expect($sections[0]['open'])->toBe('error');
+
+    // Section with status and explicit open preserves the value.
+    expect($sections[1]['open'])->toBe('ok');
+    expect($sections[1]['status']['indicator'])->toBeFalse();
+
+    // Section without status defaults open to true.
+    expect($sections[2])->not->toHaveKey('status');
+    expect($sections[2]['open'])->toBeTrue();
+});
+
 it('skips fields without key or type', function () {
     $schema = new Schema([
         'tabs' => [

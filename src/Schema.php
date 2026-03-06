@@ -168,7 +168,7 @@ final class Schema {
 					$client_section = array(
 						'id'           => $section['id'] ?? '',
 						'title'        => $section['title'] ?? '',
-						'initial_open' => $section['initial_open']
+						'open' => $section['open']
 						?? ( isset( $section['status'] ) ? 'error' : true ),
 					);
 
@@ -271,7 +271,7 @@ final class Schema {
 			'min',
 			'max',
 			'units',
-			'store_as',
+			'store',
 			'options',
 			'encrypted',
 			'disabled',

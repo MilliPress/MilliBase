@@ -57,7 +57,7 @@ Every custom field component receives these props:
 | `onChange` | `function` | Call with the new value to update state |
 | `disabled` | `bool` | `true` when the field is overridden by a constant |
 
-The `field` object contains all [client-safe properties](../02-usage/02-schema-definition.md#common-properties): `key`, `type`, `label`, `default`, `tooltip`, `placeholder`, `min`, `max`, `options`, `units`, `store_as`, etc.
+The `field` object contains all [client-safe properties](../02-usage/02-schema-definition.md#common-properties): `key`, `type`, `label`, `default`, `tooltip`, `placeholder`, `min`, `max`, `options`, `units`, `store`, etc.
 
 ## Using in the Schema
 

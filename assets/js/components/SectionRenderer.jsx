@@ -120,7 +120,7 @@ const SectionRenderer = ( { section } ) => {
 		</span>
 	) : section.title;
 
-	const openPref = section.initial_open;
+	const openPref = section.open;
 	let initialOpen;
 	if ( openPref === 'error' ) {
 		initialOpen = ! isOk;
