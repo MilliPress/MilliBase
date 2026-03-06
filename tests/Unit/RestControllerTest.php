@@ -61,6 +61,7 @@ if (! function_exists('get_option')) {
 function make_controller(array $config = [], ?Store $store = null): RestController
 {
     $store = $store ?? new Store([
+        'slug' => 'test',
         'defaults' => [
             'cache'   => ['enabled' => true, 'ttl' => 3600],
             'storage' => ['host' => 'localhost'],
@@ -174,6 +175,7 @@ it('includes constant overrides in settings', function () {
     define('RCTEST_CACHE_TTL', 9999);
 
     $store = new Store([
+        'slug'            => 'test',
         'constant_prefix' => 'RCTEST',
         'defaults'        => [
             'cache' => ['ttl' => 3600],

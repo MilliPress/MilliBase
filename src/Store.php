@@ -89,10 +89,16 @@ final class Store {
 	 * @param array<string, mixed> $config Configuration array.
 	 */
 	public function __construct( array $config ) {
-		$option_name           = $config['option_name'] ?? 'millibase';
-		$this->option_name     = is_string( $option_name ) ? $option_name : 'millibase';
 		$slug                  = $config['slug'] ?? '';
 		$this->slug            = is_string( $slug ) ? $slug : '';
+
+		if ( '' === $this->slug ) {
+			throw new \InvalidArgumentException( 'Store requires a non-empty "slug" config value.' );
+		}
+
+		$default_option        = $this->slug;
+		$option_name           = $config['option_name'] ?? $default_option;
+		$this->option_name     = is_string( $option_name ) ? $option_name : $default_option;
 		$constant_prefix       = $config['constant_prefix'] ?? '';
 		$this->constant_prefix = strtoupper( is_string( $constant_prefix ) ? $constant_prefix : '' );
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );

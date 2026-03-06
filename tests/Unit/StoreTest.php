@@ -38,14 +38,18 @@ it('returns non-numeric strings as-is', function () {
 
 // ─── Constructor ────────────────────────────────────────────────────
 
-it('defaults option_name to "millibase"', function () {
-    $store = new Store([]);
+it('throws when slug is empty', function () {
+    new Store([]);
+})->throws(\InvalidArgumentException::class);
 
-    expect($store->get_option_name())->toBe('millibase');
+it('derives option_name from slug', function () {
+    $store = new Store(['slug' => 'test']);
+
+    expect($store->get_option_name())->toBe('test');
 });
 
 it('uses provided option_name', function () {
-    $store = new Store(['option_name' => 'my_settings']);
+    $store = new Store(['slug' => 'test', 'option_name' => 'my_settings']);
 
     expect($store->get_option_name())->toBe('my_settings');
 });
@@ -58,7 +62,7 @@ it('returns all defaults when no module specified', function () {
         'debug' => ['verbose' => false],
     ];
 
-    $store = new Store(['defaults' => $defaults]);
+    $store = new Store(['slug' => 'test', 'defaults' => $defaults]);
 
     expect($store->get_default_settings())->toBe(
         $defaults + ['host' => ['domain' => '']]
@@ -71,7 +75,7 @@ it('returns defaults filtered by module', function () {
         'debug' => ['verbose' => false],
     ];
 
-    $store = new Store(['defaults' => $defaults]);
+    $store = new Store(['slug' => 'test', 'defaults' => $defaults]);
 
     expect($store->get_default_settings('cache'))->toBe([
         'cache' => ['enabled' => true, 'ttl' => 3600],
@@ -79,7 +83,7 @@ it('returns defaults filtered by module', function () {
 });
 
 it('returns empty array for non-existent module', function () {
-    $store = new Store(['defaults' => ['cache' => ['enabled' => true]]]);
+    $store = new Store(['slug' => 'test', 'defaults' => ['cache' => ['enabled' => true]]]);
 
     expect($store->get_default_settings('nonexistent'))->toBe([]);
 });
@@ -88,6 +92,7 @@ it('returns empty array for non-existent module', function () {
 
 it('returns empty when constant_prefix is empty', function () {
     $store = new Store([
+        'slug' => 'test',
         'defaults' => ['cache' => ['enabled' => true]],
         'constant_prefix' => '',
     ]);
@@ -102,6 +107,7 @@ it('reads defined constants with prefix', function () {
     }
 
     $store = new Store([
+        'slug' => 'test',
         'defaults' => ['cache' => ['ttl' => 3600, 'enabled' => true]],
         'constant_prefix' => 'test',
     ]);
@@ -121,6 +127,7 @@ it('resolves enc_ prefix stripping for encrypted fields', function () {
     }
 
     $store = new Store([
+        'slug' => 'test',
         'defaults' => ['storage' => ['enc_host' => '']],
         'constant_prefix' => 'test2',
     ]);
@@ -139,6 +146,7 @@ it('filters constants by module', function () {
     }
 
     $store = new Store([
+        'slug' => 'test',
         'defaults' => [
             'cache' => ['ttl' => 3600],
             'debug' => ['verbose' => false],
@@ -156,6 +164,7 @@ it('filters constants by module', function () {
 
 it('merges defaults and removes obsolete keys and modules', function () {
     $store = new Store([
+        'slug' => 'test',
         'defaults' => [
             'cache' => ['enabled' => true, 'ttl' => 3600],
         ],
@@ -180,7 +189,7 @@ it('merges defaults and removes obsolete keys and modules', function () {
 });
 
 it('returns empty array for non-array input', function () {
-    $store = new Store(['defaults' => ['cache' => ['enabled' => true]]]);
+    $store = new Store(['slug' => 'test', 'defaults' => ['cache' => ['enabled' => true]]]);
 
     expect($store->filter_settings_by_constants(false))->toBe([]);
 });
