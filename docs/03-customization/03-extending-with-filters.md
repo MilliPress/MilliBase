@@ -96,10 +96,10 @@ add_filter('my_plugin_settings_defaults', function (array $defaults): array {
 
 ## Allowed Actions Filter
 
-The `{slug}_allowed_actions` filter controls which built-in actions are permitted via the REST endpoint:
+The `{slug}_rest_settings_allowed_actions` filter controls which built-in actions are permitted via the REST endpoint:
 
 ```php
-add_filter('my_plugin_allowed_actions', function (array $allowed): array {
+add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed): array {
     // Add a custom action name.
     $allowed[] = 'purge-cache';
 
@@ -111,10 +111,10 @@ By default, only `['reset', 'restore']` are allowed.
 
 ## Status Response Filter
 
-The `{slug}_status_response` filter modifies the status endpoint response before it is returned:
+The `{slug}_rest_status_response` filter modifies the status endpoint response before it is returned:
 
 ```php
-add_filter('my_plugin_status_response', function (array $status, \WP_REST_Request $request): array {
+add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request): array {
     $status['addon_version'] = '2.1.0';
 
     return $status;
@@ -123,10 +123,10 @@ add_filter('my_plugin_status_response', function (array $status, \WP_REST_Reques
 
 ## Action Performed Hook
 
-The `{slug}_action_performed` action fires after a built-in action completes:
+The `{slug}_rest_settings_action_performed` action fires after a built-in action completes:
 
 ```php
-add_action('my_plugin_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
+add_action('my_plugin_rest_settings_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
     if ($action === 'reset') {
         // Perform cleanup after settings reset.
         delete_transient('my_plugin_cache');
@@ -140,9 +140,9 @@ add_action('my_plugin_action_performed', function (string $action, array $params
 |----------------|------------|-------------|
 | `{slug}_schema` | `(array $config)` | Modify the full config before Schema init |
 | `{option_name}_defaults` | `(array $defaults)` | Modify default settings |
-| `{slug}_allowed_actions` | `(array $allowed)` | Filter allowed REST action names |
-| `{slug}_status_response` | `(array $status, WP_REST_Request $request)` | Modify status response |
-| `{slug}_action_performed` | `(string $action, array $params, WP_REST_Request $request)` | Fires after an action |
+| `{slug}_rest_settings_allowed_actions` | `(array $allowed)` | Filter allowed REST action names |
+| `{slug}_rest_status_response` | `(array $status, WP_REST_Request $request)` | Modify status response |
+| `{slug}_rest_settings_action_performed` | `(string $action, array $params, WP_REST_Request $request)` | Fires after an action |
 
 ## Next Steps
 

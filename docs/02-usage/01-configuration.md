@@ -69,7 +69,7 @@ $settings = new \MilliBase\Settings([
 
 Unique identifier for this settings page. Used for:
 
-- WordPress hook names (`{slug}_schema`, `{slug}_action_performed`, `{slug}_status_response`)
+- WordPress hook names (`{slug}_schema`, `{slug}_rest_settings_action_performed`, `{slug}_rest_status_response`)
 - Admin page hook suffix (`settings_page_{slug}` or `toplevel_page_{slug}`)
 - DOM container ID (`{slug}-settings`)
 - The `data-slug` attribute used by the React auto-mount

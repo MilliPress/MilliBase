@@ -195,7 +195,7 @@ final class RestController {
 		 * @param string[] $allowed Array of allowed action slugs.
 		 */
 		$allowed = apply_filters(
-			"{$slug}_allowed_actions",
+			"{$slug}_rest_settings_allowed_actions",
 			array( 'reset', 'restore' )
 		);
 
@@ -246,7 +246,7 @@ final class RestController {
 		 * @param array            $params  The request parameters.
 		 * @param \WP_REST_Request $request The REST request.
 		 */
-		do_action( "{$slug}_action_performed", $action, $request->get_params(), $request );
+		do_action( "{$slug}_rest_settings_action_performed", $action, $request->get_params(), $request );
 
 		return rest_ensure_response(
 			array(
@@ -264,7 +264,7 @@ final class RestController {
 	 * Always includes settings metadata (defaults, backup, constants).
 	 * When `status.data` is configured, it is merged as a static base.
 	 * When `status.callback` is configured, its output is merged on top.
-	 * The result is passed through the `{$slug}_status_response` filter.
+	 * The result is passed through the `{$slug}_rest_status_response` filter.
 	 *
 	 * @since 1.0.0
 	 *
@@ -297,7 +297,7 @@ final class RestController {
 			 * @param array            $status  The status data.
 			 * @param \WP_REST_Request $request The REST request.
 			 */
-			$status_data = apply_filters( "{$slug}_status_response", $status_data, $request );
+			$status_data = apply_filters( "{$slug}_rest_status_response", $status_data, $request );
 
 			return new \WP_REST_Response( $status_data );
 		} catch ( \Exception $e ) {

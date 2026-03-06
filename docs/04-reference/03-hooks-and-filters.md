@@ -40,12 +40,12 @@ add_filter('my_plugin_settings_defaults', function (array $defaults): array {
 
 ---
 
-### `{slug}_allowed_actions`
+### `{slug}_rest_settings_allowed_actions`
 
 Filter the list of allowed action names for the built-in settings action endpoint.
 
 ```php
-add_filter('my_plugin_allowed_actions', function (array $allowed): array {
+add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed): array {
     $allowed[] = 'purge-cache';
     return $allowed;
 });
@@ -55,12 +55,12 @@ add_filter('my_plugin_allowed_actions', function (array $allowed): array {
 
 ---
 
-### `{slug}_status_response`
+### `{slug}_rest_status_response`
 
 Modify the status endpoint response before it is returned.
 
 ```php
-add_filter('my_plugin_status_response', function (array $status, \WP_REST_Request $request): array {
+add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request): array {
     $status['extra_info'] = 'value';
     return $status;
 }, 10, 2);
@@ -93,12 +93,12 @@ WordPress core filter. When encryption is enabled, MilliBase hooks into this to 
 
 ## Actions
 
-### `{slug}_action_performed`
+### `{slug}_rest_settings_action_performed`
 
 Fires after a built-in settings action (reset, restore) has been successfully performed.
 
 ```php
-add_action('my_plugin_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
+add_action('my_plugin_rest_settings_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
     if ($action === 'reset') {
         // Clean up after reset.
     }
