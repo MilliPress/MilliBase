@@ -168,11 +168,16 @@ final class Schema {
 					$client_section = array(
 						'id'           => $section['id'] ?? '',
 						'title'        => $section['title'] ?? '',
-						'initial_open' => $section['initial_open'] ?? true,
+						'initial_open' => $section['initial_open']
+						?? ( isset( $section['status'] ) ? 'error' : true ),
 					);
 
 					if ( isset( $section['icon'] ) ) {
 						$client_section['icon'] = $section['icon'];
+					}
+
+					if ( isset( $section['status'] ) ) {
+						$client_section['status'] = $section['status'];
 					}
 
 					if ( isset( $section['intro'] ) ) {

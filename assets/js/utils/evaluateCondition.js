@@ -108,4 +108,5 @@ const evaluateCondition = ( rule, settings ) => {
 	}
 };
 
+export { resolveDotPath };
 export default evaluateCondition;

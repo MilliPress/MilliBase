@@ -6,7 +6,7 @@ import { createElement } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
-import evaluateCondition from '../utils/evaluateCondition.js';
+import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
 
 /**
  * Group fields into rows based on the `inline` flag.
@@ -77,10 +77,63 @@ const SectionRenderer = ( { section } ) => {
 	const visibleFields = ( section.fields || [] ).filter( isFieldVisible );
 	const rows = groupFieldsIntoRows( visibleFields );
 
+	// Status indicator evaluation.
+	const statusConfig = section.status;
+	const hasStatus = statusConfig?.key != null;
+	const isOk = hasStatus
+		? resolveDotPath( status, statusConfig.key ) === statusConfig.ok
+		: true;
+
+	const indicatorColor = isOk ? '#00a32a' : '#d63638';
+
+	// Build a custom title element when status is configured.
+	const title = hasStatus ? (
+		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px' } }>
+			{ statusConfig.indicator === true && (
+				<span
+					style={ {
+						display: 'inline-block',
+						width: '8px',
+						height: '8px',
+						borderRadius: '50%',
+						backgroundColor: indicatorColor,
+						flexShrink: 0,
+					} }
+				/>
+			) }
+			<span>{ section.title }</span>
+			{ statusConfig.badge && (
+				<span
+					style={ {
+						fontSize: '11px',
+						lineHeight: '1',
+						padding: '4px 8px',
+						borderRadius: '9999px',
+						backgroundColor: isOk ? '#e3f5e1' : '#fcecec',
+						color: indicatorColor,
+						fontWeight: 500,
+					} }
+				>
+					{ isOk ? statusConfig.badge.ok : statusConfig.badge.error }
+				</span>
+			) }
+		</span>
+	) : section.title;
+
+	const openPref = section.initial_open;
+	let initialOpen;
+	if ( openPref === 'error' ) {
+		initialOpen = ! isOk;
+	} else if ( openPref === 'ok' ) {
+		initialOpen = isOk;
+	} else {
+		initialOpen = openPref !== false;
+	}
+
 	return (
 		<PanelBody
-			title={ section.title }
-			initialOpen={ section.initial_open !== false }
+			title={ title }
+			initialOpen={ initialOpen }
 		>
 			{ section.intro && ( () => {
 				const CustomDesc =
