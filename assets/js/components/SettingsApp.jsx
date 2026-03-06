@@ -8,7 +8,6 @@ import {
 	Animate,
 	TabPanel,
 	Button,
-	ExternalLink,
 	Icon,
 } from '@wordpress/components';
 import { caution } from '@wordpress/icons';
@@ -87,11 +86,17 @@ const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 					{ troubleshooting.text ||
 						__( 'Need help fixing this issue?', 'millibase' ) }
 				</p>
-				<ExternalLink href={ troubleshooting.url }>
+				<Button
+					href={ troubleshooting.url }
+					target="_blank"
+					variant="tertiary"
+					size="compact"
+					style={ { margin: '0' } }
+				>
 					{ troubleshooting.label ||
 						__( 'View Troubleshooting Guide', 'millibase' ) }
 					{ ' →' }
-				</ExternalLink>
+				</Button>
 			</div>
 		) }
 	</div>
