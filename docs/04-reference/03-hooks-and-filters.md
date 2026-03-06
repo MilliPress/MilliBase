@@ -67,7 +67,7 @@ add_filter('my_plugin_status_response', function (array $status, \WP_REST_Reques
 ```
 
 **Parameters:**
-- `array $status` — the status data (includes `settings.has_defaults`, `settings.has_backup`, `settings.resolved`)
+- `array $status` — the status data (includes `settings.has_defaults`, `settings.has_backup`, `settings.constants`)
 - `\WP_REST_Request $request` — the REST request object
 
 ---
@@ -136,7 +136,7 @@ MilliBase registers these REST routes:
 |--------|-------|-------------|
 | `POST` | `/wp/v2/settings` | Save settings (WordPress native) |
 | `POST` | `/{rest_namespace}/settings` | Built-in actions (reset, restore) |
-| `GET` | `/{rest_namespace}/status` | Status endpoint (requires `status_callback`) |
+| `GET` | `/{rest_namespace}/status` | Status endpoint (always registered; enriched by `status_callback`) |
 | varies | `/{rest_namespace}/{endpoint}` | Custom action endpoints |
 
 All endpoints require the configured `capability` (default: `manage_options`). Non-GET requests require a valid `X-WP-Nonce` header.

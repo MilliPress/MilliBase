@@ -33,7 +33,7 @@ const groupFieldsIntoRows = ( fields ) => {
 const SectionRenderer = ( { section } ) => {
 	const context = useSettings();
 	const { status, settings, updateSetting } = context;
-	const resolvedSettings = status?.settings?.resolved || {};
+	const constants = status?.settings?.constants || {};
 
 	const renderField = ( field ) => {
 		const parts = field.key.split( '.' );
@@ -43,10 +43,10 @@ const SectionRenderer = ( { section } ) => {
 			? ! ( key in settings[ module ] )
 			: false;
 
-		// For disabled fields (e.g. constant-defined), show the resolved
-		// runtime value from the status API instead of the schema default.
+		// For constant-defined fields, show the constant value
+		// from the status API instead of the schema default.
 		const value = disabled
-			? ( resolvedSettings?.[ module ]?.[ key ] ?? field.default )
+			? ( constants?.[ module ]?.[ key ] ?? field.default )
 			: ( settings?.[ module ]?.[ key ] ?? field.default );
 
 		return (
@@ -63,12 +63,16 @@ const SectionRenderer = ( { section } ) => {
 	};
 
 	const isFieldVisible = ( field ) => {
-		// Evaluate against resolved settings so constant-defined values
-		// (absent from editable `settings`) are taken into account.
-		if ( field.hide && evaluateCondition( field.hide, resolvedSettings ) ) {
+		// Merge editable settings with constant overrides so that
+		// hide/show conditions reflect the effective runtime values.
+		const effective = { ...settings };
+		for ( const [ mod, vals ] of Object.entries( constants ) ) {
+			effective[ mod ] = { ...effective[ mod ], ...vals };
+		}
+		if ( field.hide && evaluateCondition( field.hide, effective ) ) {
 			return false;
 		}
-		if ( field.show && ! evaluateCondition( field.show, resolvedSettings ) ) {
+		if ( field.show && ! evaluateCondition( field.show, effective ) ) {
 			return false;
 		}
 		return true;

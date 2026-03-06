@@ -155,7 +155,7 @@ The `name` field can be a string or an array of strings. Each name registers a s
 
 ### `status_callback`
 
-When provided, MilliBase registers a `GET /{rest_namespace}/status` endpoint. The React UI polls this endpoint every 15 seconds. The response is merged with internal metadata:
+MilliBase always registers a `GET /{rest_namespace}/status` endpoint that returns settings metadata (defaults, backup availability, constant overrides). The React UI polls this endpoint every 15 seconds. When a `status_callback` is provided, its output is merged into the response:
 
 ```php
 'status_callback' => function (\WP_REST_Request $request) {
@@ -167,7 +167,7 @@ When provided, MilliBase registers a `GET /{rest_namespace}/status` endpoint. Th
 },
 ```
 
-The response automatically includes `settings.has_defaults`, `settings.has_backup`, and `settings.resolved` (the fully resolved values from all sources).
+The response automatically includes `settings.has_defaults`, `settings.has_backup`, and `settings.constants` (values defined via PHP constants).
 
 ## Next Steps
 

@@ -233,7 +233,7 @@ When the expected value is a string containing `*`, MilliBase uses glob matching
 
 ### Evaluation Rules
 
-- `show` and `hide` are evaluated against the **resolved** settings (including constant overrides)
+- `show` and `hide` are evaluated against the **effective** settings (stored values merged with constant overrides)
 - When `show` is defined and evaluates to `false`, the field is hidden
 - When `hide` is defined and evaluates to `true`, the field is hidden
 - Both can be used on the same field — `hide` takes precedence

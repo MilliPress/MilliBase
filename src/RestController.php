@@ -98,20 +98,19 @@ final class RestController {
 			)
 		);
 
-		// Status endpoint (if callback provided).
-		if ( isset( $this->config['status_callback'] ) && is_callable( $this->config['status_callback'] ) ) {
-			register_rest_route(
-				$namespace,
-				'/status',
-				array(
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_status' ),
-					'permission_callback' => function () use ( $capability ) {
-						return current_user_can( $capability );
-					},
-				)
-			);
-		}
+		// Status endpoint — always registered for constants/metadata;
+		// optionally enriched by a plugin-provided status_callback.
+		register_rest_route(
+			$namespace,
+			'/status',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_status' ),
+				'permission_callback' => function () use ( $capability ) {
+					return current_user_can( $capability );
+				},
+			)
+		);
 
 		// Custom plugin-defined action routes.
 		$actions = is_array( $this->config['actions'] ?? null ) ? $this->config['actions'] : array();
@@ -261,11 +260,11 @@ final class RestController {
 	}
 
 	/**
-	 * Return status information via the configured status callback.
+	 * Return status information.
 	 *
-	 * Merges the callback's output with internal settings metadata
-	 * (defaults, backup availability, resolved values) and passes
-	 * the result through the `{$slug}_status_response` filter.
+	 * Always includes settings metadata (defaults, backup, constants).
+	 * When a status_callback is configured, its output is merged in.
+	 * The result is passed through the `{$slug}_status_response` filter.
 	 *
 	 * @since 1.0.0
 	 *
@@ -276,16 +275,15 @@ final class RestController {
 	 */
 	public function get_status( \WP_REST_Request $request ): \WP_REST_Response {
 		$slug     = $this->config_string( 'slug', 'millibase' );
-		$callback = $this->config['status_callback'];
+		$callback = $this->config['status_callback'] ?? null;
 
 		try {
 			$status_data = is_callable( $callback ) ? (array) call_user_func( $callback, $request ) : array();
 
-			// (constants > config file > database > defaults).
 			$status_data['settings'] = array(
 				'has_defaults' => $this->store->has_default_settings(),
 				'has_backup'   => $this->store->has_backup(),
-				'resolved'     => $this->store->get_all(),
+				'constants'    => $this->store->get_settings_from_constants(),
 			);
 
 			/**
