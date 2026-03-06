@@ -8,14 +8,15 @@ import {
 	Animate,
 	TabPanel,
 	Button,
+	ExternalLink,
 	Icon,
 } from '@wordpress/components';
-import { cautionFilled } from '@wordpress/icons';
+import { caution } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Header from './Header.jsx';
 import TabRenderer from './TabRenderer.jsx';
 
-const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
+const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 	<div
 		className="millibase-error-container"
 		style={ {
@@ -27,7 +28,7 @@ const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 	>
 		<div style={ { marginBottom: '24px' } }>
 			<Icon
-				icon={ cautionFilled }
+				icon={ caution }
 				size={ 48 }
 				style={ { color: '#dc3232', opacity: 0.8 } }
 			/>
@@ -73,6 +74,26 @@ const ErrorDisplay = ( { error, onRetry, isRetrying } ) => (
 					: __( 'Try Again', 'millibase' ) }
 			</Button>
 		</div>
+		{ troubleshooting?.url && (
+			<div
+				style={ {
+					borderTop: '1px solid #e0e0e0',
+					paddingTop: '24px',
+					color: '#646970',
+					fontSize: '14px',
+				} }
+			>
+				<p style={ { margin: '0 0 12px 0' } }>
+					{ troubleshooting.text ||
+						__( 'Need help fixing this issue?', 'millibase' ) }
+				</p>
+				<ExternalLink href={ troubleshooting.url }>
+					{ troubleshooting.label ||
+						__( 'View Troubleshooting Guide', 'millibase' ) }
+					{ ' →' }
+				</ExternalLink>
+			</div>
+		) }
 	</div>
 );
 
@@ -134,6 +155,9 @@ const SettingsApp = ( { config } ) => {
 								error={ error }
 								onRetry={ retryConnection }
 								isRetrying={ isRetrying }
+								troubleshooting={
+									config.header?.troubleshooting
+								}
 							/>
 						);
 					}
