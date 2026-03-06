@@ -24,9 +24,6 @@ $settings = new \MilliBase\Settings([
     'menu_icon'      => 'dashicons-admin-generic', // Dashicon (top-level only)
     'basename'       => plugin_basename(__FILE__),  // Plugin basename for URL resolution
 
-    // ─── REST API ──────────────────────────────────────────
-    'rest_namespace' => 'my-plugin/v1',        // REST namespace for action endpoints
-
     // ─── Storage ───────────────────────────────────────────
     'constant_prefix' => 'MP',                 // Prefix for wp-config.php constant overrides
     'encryption'      => true,                 // Enable sodium encryption for enc_* fields
@@ -82,6 +79,10 @@ The WordPress option name in `wp_options`. Defaults to `{slug}_settings`. All se
 - Backup transient key (`{option_name}_backup`)
 
 Override only when migrating from a plugin that already stores settings under a different key.
+
+### `rest_namespace`
+
+The REST API namespace for action and status endpoints. Defaults to `{slug}/v1`.
 
 ### `menu_parent`
 

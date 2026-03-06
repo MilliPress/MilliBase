@@ -32,13 +32,10 @@ Create a settings page by passing a configuration array to `\MilliBase\Settings`
 use MilliBase\Settings;
 
 $settings = new Settings([
-    'slug'           => 'my-plugin',
-    'page_title'     => 'My Plugin',
-    'menu_title'     => 'My Plugin',
-    'capability'     => 'manage_options',
-    'menu_parent'    => 'options-general.php',
-    'rest_namespace' => 'my-plugin/v1',
-    'basename'       => plugin_basename(__FILE__),
+    'slug'       => 'my-plugin',
+    'page_title' => 'My Plugin',
+    'menu_title' => 'My Plugin',
+    'basename'   => plugin_basename(__FILE__),
 
     'header' => [
         'title' => 'My Plugin Settings',

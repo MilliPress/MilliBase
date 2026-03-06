@@ -77,10 +77,14 @@ final class Settings {
 	 * @param array<string, mixed> $config The full settings configuration array.
 	 */
 	public function __construct( array $config ) {
-		// Default option_name to {slug}_settings.
+		$slug = is_string( $config['slug'] ?? null ) ? $config['slug'] : 'millibase';
+
+		// Auto-derive defaults from slug.
 		if ( ! isset( $config['option_name'] ) ) {
-			$slug = is_string( $config['slug'] ?? null ) ? $config['slug'] : 'millibase';
 			$config['option_name'] = $slug . '_settings';
+		}
+		if ( ! isset( $config['rest_namespace'] ) ) {
+			$config['rest_namespace'] = $slug . '/v1';
 		}
 
 		$this->config = $config;
