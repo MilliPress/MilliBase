@@ -33,7 +33,6 @@ use MilliBase\Settings;
 
 $settings = new Settings([
     'slug'           => 'my-plugin',
-    'option_name'    => 'my_plugin_settings',
     'page_title'     => 'My Plugin',
     'menu_title'     => 'My Plugin',
     'capability'     => 'manage_options',

@@ -16,7 +16,7 @@ new Store(array $config)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `option_name` | `string` | WordPress option name (default: `'millibase'`) |
+| `option_name` | `string` | WordPress option name (default: `{slug}_settings`) |
 | `constant_prefix` | `string` | Prefix for PHP constant overrides (default: `''`) |
 | `encryption` | `bool` | Enable sodium encryption for `enc_*` fields (default: `false`) |
 | `defaults` | `array` | Default settings keyed by module |

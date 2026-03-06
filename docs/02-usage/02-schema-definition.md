@@ -240,10 +240,10 @@ When the expected value is a string containing `*`, MilliBase uses glob matching
 
 ## Tab and Section Overrides
 
-Tabs are keyed by `name` and sections by `id`. When multiple tabs or sections share the same identifier, they are merged (last wins). This allows add-on plugins to extend settings pages via the `{slug}_schema` filter:
+Tabs are keyed by `name` and sections by `id`. When multiple tabs or sections share the same identifier, they are merged (last wins). This allows add-on plugins to extend settings pages via the `{slug}_settings_schema` filter:
 
 ```php
-add_filter('my_plugin_schema', function ($config) {
+add_filter('my_plugin_settings_schema', function ($config) {
     // Add a new section to the existing 'general' tab.
     $config['tabs'][] = [
         'name'     => 'general',

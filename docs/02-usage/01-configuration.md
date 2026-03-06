@@ -14,7 +14,6 @@ The `Settings` constructor accepts a single configuration array. This page docum
 $settings = new \MilliBase\Settings([
     // ─── Required ──────────────────────────────────────────
     'slug'           => 'my-plugin',           // Unique identifier, used for hooks and DOM IDs
-    'option_name'    => 'my_plugin_settings',  // WordPress option name in wp_options
     'tabs'           => [ /* ... */ ],         // Tab definitions (see Schema Definition)
 
     // ─── Admin Menu ────────────────────────────────────────
@@ -69,18 +68,20 @@ $settings = new \MilliBase\Settings([
 
 Unique identifier for this settings page. Used for:
 
-- WordPress hook names (`{slug}_schema`, `{slug}_rest_settings_action_performed`, `{slug}_rest_status_response`)
+- WordPress hook names (`{slug}_settings_schema`, `{slug}_rest_settings_action_performed`, `{slug}_rest_status_response`)
 - Admin page hook suffix (`settings_page_{slug}` or `toplevel_page_{slug}`)
 - DOM container ID (`{slug}-settings`)
 - The `data-slug` attribute used by the React auto-mount
 
 ### `option_name`
 
-The WordPress option name in `wp_options`. All settings are stored as a single serialized array under this key. Also used for:
+The WordPress option name in `wp_options`. Defaults to `{slug}_settings`. All settings are stored as a single serialized array under this key. Also used for:
 
 - `register_setting()` registration
 - Filter hooks (`{option_name}_defaults`)
 - Backup transient key (`{option_name}_backup`)
+
+Override only when migrating from a plugin that already stores settings under a different key.
 
 ### `menu_parent`
 

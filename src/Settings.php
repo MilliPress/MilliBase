@@ -4,10 +4,10 @@
  *
  * Usage:
  *   $settings = new \MilliBase\Settings([
- *       'option_name' => 'milliplugin',
- *       'slug'        => 'milliplugin',
- *       'tabs'        => [ ... ],
+ *       'slug' => 'milliplugin',
+ *       'tabs' => [ ... ],
  *       // ... full config array
+ *       // option_name defaults to {slug}_settings ('milliplugin_settings')
  *   ]);
  *
  *   // Programmatic access:
@@ -77,6 +77,12 @@ final class Settings {
 	 * @param array<string, mixed> $config The full settings configuration array.
 	 */
 	public function __construct( array $config ) {
+		// Default option_name to {slug}_settings.
+		if ( ! isset( $config['option_name'] ) ) {
+			$slug = is_string( $config['slug'] ?? null ) ? $config['slug'] : 'millibase';
+			$config['option_name'] = $slug . '_settings';
+		}
+
 		$this->config = $config;
 		$this->schema = $this->resolve_schema();
 		$this->store  = $this->resolve_store();
@@ -126,7 +132,7 @@ final class Settings {
 	 * @return void
 	 */
 	public function register_settings(): void {
-		$option_name = $this->config_string( 'option_name', 'millibase' );
+		$option_name = $this->config_string( 'option_name' );
 		$defaults    = $this->store->get_default_settings();
 
 		register_setting(
@@ -199,7 +205,7 @@ final class Settings {
 			 *
 			 * @param array<string, mixed> $config The full settings configuration array.
 			 */
-			$this->config = apply_filters( "{$slug}_schema", $this->config );
+			$this->config = apply_filters( "{$slug}_settings_schema", $this->config );
 		}
 
 		return new Schema( $this->config );
@@ -229,7 +235,7 @@ final class Settings {
 
 		return new Store(
 			array(
-				'option_name'     => $this->config['option_name'] ?? 'millibase',
+				'option_name'     => $this->config['option_name'],
 				'constant_prefix' => $this->config['constant_prefix'] ?? '',
 				'encryption'      => $this->config['encryption'] ?? false,
 				'defaults'        => $defaults,

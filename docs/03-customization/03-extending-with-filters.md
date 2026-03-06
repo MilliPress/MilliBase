@@ -10,10 +10,10 @@ MilliBase fires several WordPress filters that allow add-on plugins to modify be
 
 ## Schema Filter
 
-The `{slug}_schema` filter fires before the Schema is initialized. Use it to add tabs, sections, or fields from an add-on plugin:
+The `{slug}_settings_schema` filter fires before the Schema is initialized. Use it to add tabs, sections, or fields from an add-on plugin:
 
 ```php
-add_filter('my_plugin_schema', function (array $config): array {
+add_filter('my_plugin_settings_schema', function (array $config): array {
     // Add a new tab.
     $config['tabs'][] = [
         'name'     => 'addon',
@@ -43,7 +43,7 @@ add_filter('my_plugin_schema', function (array $config): array {
 Because tabs are keyed by `name` and sections by `id`, you can override existing sections by using the same identifiers:
 
 ```php
-add_filter('my_plugin_schema', function (array $config): array {
+add_filter('my_plugin_settings_schema', function (array $config): array {
     // Add a field to the existing 'general' tab, 'main' section.
     $config['tabs'][] = [
         'name'     => 'general',
@@ -138,7 +138,7 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 
 | Filter / Action | Parameters | Description |
 |----------------|------------|-------------|
-| `{slug}_schema` | `(array $config)` | Modify the full config before Schema init |
+| `{slug}_settings_schema` | `(array $config)` | Modify the full config before Schema init |
 | `{option_name}_defaults` | `(array $defaults)` | Modify default settings |
 | `{slug}_rest_settings_allowed_actions` | `(array $allowed)` | Filter allowed REST action names |
 | `{slug}_rest_status_response` | `(array $status, WP_REST_Request $request)` | Modify status response |

@@ -10,12 +10,12 @@ MilliBase uses WordPress hooks for extensibility. The `{slug}` placeholder refer
 
 ## Filters
 
-### `{slug}_schema`
+### `{slug}_settings_schema`
 
 Fires before Schema initialization. Modify the full configuration array to add tabs, sections, or fields.
 
 ```php
-add_filter('my_plugin_schema', function (array $config): array {
+add_filter('my_plugin_settings_schema', function (array $config): array {
     // Add or modify tabs/sections/fields.
     return $config;
 });
