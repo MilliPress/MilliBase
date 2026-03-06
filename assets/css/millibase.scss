@@ -8,25 +8,27 @@
 		background-color: white;
 	}
 
-	.millibase-tabs .components-tab-panel__tabs {
-		justify-content: center;
-		background: #fff;
-		box-shadow: inset 0 -1px 0 #e0e0e0;
-		margin: 0 0 20px;
+	.millibase-settings-wrapper {
+		margin: -1px 0 0 0;
 	}
 
-	.millibase-tabs .components-tab-panel__tabs-item {
-		margin: 0 4px;
+	.millibase-tabs {
+		.components-tab-panel__tabs {
+			justify-content: center;
+			background: #fff;
+			box-shadow: inset 0 -1px 0 #e0e0e0;
+			margin: 0 0 20px;
+
+			&-item {
+				margin: 0 4px;
+			}
+		}
 	}
 
 	.components-tab-panel__tab-content {
 		max-width: 800px;
 		margin-left: auto;
 		margin-right: auto;
-	}
-
-	table.widefat {
-		margin-bottom: 20px;
 	}
 
 	.millibase-actions-dropdown {
@@ -48,6 +50,21 @@
 		z-index: 9999;
 	}
 
+	.millibase-section-intro {
+		margin: 0 0 16px;
+	}
+
+	.millibase-code-field {
+		font-family: monospace;
+		font-size: 13px;
+	}
+
+	// WordPress component overrides.
+
+	table.widefat {
+		margin-bottom: 20px;
+	}
+
 	.components-external-link {
 		color: #949494;
 
@@ -57,36 +74,20 @@
 	}
 
 	.components-form-token-field {
+		.components-form-token-field__input-container.is-disabled {
+			background-color: var(--wp-components-color-gray-100, #f0f0f0);
 
-		.components-form-token-field__input-container {
+			.components-form-token-field__token-text {
+				padding: 0 8px;
+			}
 
-			&.is-disabled {
-				background-color: var(--wp-components-color-gray-100, #f0f0f0);
-
-				.components-form-token-field__token-text {
-					padding: 0 8px;
-				}
-
-				.components-button.components-form-token-field__remove-token {
-					display: none;
-				}
+			.components-button.components-form-token-field__remove-token {
+				display: none;
 			}
 		}
 	}
 
-	.components-input-control {
-
-		.components-unit-control__select {
-			max-width: unset;
-		}
-	}
-
-	.millibase-section-intro {
-		margin: 0 0 16px;
-	}
-
-	.millibase-code-field {
-		font-family: monospace;
-		font-size: 13px;
+	.components-input-control .components-unit-control__select {
+		max-width: unset;
 	}
 }
