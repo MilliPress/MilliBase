@@ -24,14 +24,14 @@ npm run build
 
 ## Your First Settings Page
 
-Create a settings page by passing a configuration array to `\MilliBase\Settings`:
+Create a settings page by passing a configuration array to `\MilliBase\Manager`:
 
 ```php
 <?php
 
-use MilliBase\Settings;
+use MilliBase\Manager;
 
-$settings = new Settings([
+$manager = new Manager([
     'slug'       => 'my-plugin',
     'page_title' => 'My Plugin',
     'menu_title' => 'My Plugin',
@@ -86,18 +86,18 @@ This registers:
 Access stored settings anywhere in your plugin:
 
 ```php
-// Get the Store instance.
-$store = $settings->store();
+// Get the Settings instance.
+$settings = $manager->settings();
 
 // Read a value using dot notation.
-$enabled = $store->get('general.enabled');
-$api_key = $store->get('general.api_key', 'fallback');
+$enabled = $settings->get('general.enabled');
+$api_key = $settings->get('general.api_key', 'fallback');
 
 // Set a value.
-$store->set('general.api_key', 'sk-abc123');
+$settings->set('general.api_key', 'sk-abc123');
 
 // Get all settings.
-$all = $store->get_all();
+$all = $settings->get_all();
 ```
 
 ## Next Steps

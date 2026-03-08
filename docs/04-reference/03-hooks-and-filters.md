@@ -144,4 +144,4 @@ All endpoints require the configured `capability` (default: `manage_options`). N
 ## Next Steps
 
 - **[Extending with Filters](../03-customization/03-extending-with-filters.md)** — practical examples
-- **[Store API](./02-store-api.md)** — full Store method reference
+- **[Settings API](./02-settings-api.md)** — full Settings method reference

@@ -1,7 +1,7 @@
 <?php
 
 use MilliBase\RestController;
-use MilliBase\Store;
+use MilliBase\Settings;
 
 // ─── Stubs ──────────────────────────────────────────────────────────
 
@@ -58,9 +58,9 @@ if (! function_exists('get_option')) {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
-function make_controller(array $config = [], ?Store $store = null): RestController
+function make_controller(array $config = [], ?Settings $settings = null): RestController
 {
-    $store = $store ?? new Store([
+    $settings = $settings ?? new Settings([
         'slug' => 'test',
         'defaults' => [
             'cache'   => ['enabled' => true, 'ttl' => 3600],
@@ -70,7 +70,7 @@ function make_controller(array $config = [], ?Store $store = null): RestControll
 
     return new RestController(
         array_merge(['slug' => 'test'], $config),
-        $store,
+        $settings,
     );
 }
 
@@ -174,7 +174,7 @@ it('merges data and callback with callback winning on conflicts', function () {
 it('includes constant overrides in settings', function () {
     define('RCTEST_CACHE_TTL', 9999);
 
-    $store = new Store([
+    $settings = new Settings([
         'slug'            => 'test',
         'constant_prefix' => 'RCTEST',
         'defaults'        => [
@@ -182,7 +182,7 @@ it('includes constant overrides in settings', function () {
         ],
     ]);
 
-    $controller = make_controller([], $store);
+    $controller = make_controller([], $settings);
     $data       = call_get_status($controller);
 
     expect($data['settings']['constants']['cache']['ttl'])->toBe(9999);

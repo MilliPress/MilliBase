@@ -146,5 +146,5 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 
 ## Next Steps
 
-- **[Hooks and Filters](../04-reference/03-hooks-and-filters.md)** — complete hooks reference including Store hooks
+- **[Hooks and Filters](../04-reference/03-hooks-and-filters.md)** — complete hooks reference including Settings hooks
 - **[Configuration](../02-usage/01-configuration.md)** — full configuration options

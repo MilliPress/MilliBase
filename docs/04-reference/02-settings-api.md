@@ -1,17 +1,17 @@
 ---
-title: 'Store API'
-post_excerpt: 'Complete API reference for the Store class: methods, parameters, and return types.'
+title: 'Settings API'
+post_excerpt: 'Complete API reference for the Settings class: methods, parameters, and return types.'
 menu_order: 20
 ---
 
-# Store API
+# Settings API
 
-The `Store` class handles all settings persistence. Access it via `$settings->store()`.
+The `Settings` class handles all settings persistence. Access it via `$manager->settings()`.
 
 ## Constructor
 
 ```php
-new Store(array $config)
+new Settings(array $config)
 ```
 
 | Parameter | Type | Description |
@@ -26,9 +26,9 @@ new Store(array $config)
 
 ## Static Factory
 
-### `Store::standalone(array $config): Store`
+### `Settings::standalone(array $config): Settings`
 
-Creates a Store that reads from config files and constants only — no database access. Useful for pre-WordPress scenarios like `advanced-cache.php`.
+Creates a Settings instance that reads from config files and constants only — no database access. Useful for pre-WordPress scenarios like `advanced-cache.php`.
 
 ## Reading
 
@@ -37,9 +37,9 @@ Creates a Store that reads from config files and constants only — no database 
 Get a value using dot notation.
 
 ```php
-$store->get('cache.ttl');              // 3600
-$store->get('cache.ttl', 7200);        // 7200 if not set
-$store->get('cache');                   // ['ttl' => 3600, ...]
+$settings->get('cache.ttl');              // 3600
+$settings->get('cache.ttl', 7200);        // 7200 if not set
+$settings->get('cache');                   // ['ttl' => 3600, ...]
 ```
 
 ### `get_all(?string $module = null, bool $skip_constants = false): array`
@@ -47,9 +47,9 @@ $store->get('cache');                   // ['ttl' => 3600, ...]
 Get merged settings from all sources. Priority: Constants > Config File > Database > Defaults.
 
 ```php
-$store->get_all();                     // All settings
-$store->get_all('cache');              // ['cache' => [...]]
-$store->get_all(null, true);           // All settings, skip constants
+$settings->get_all();                     // All settings
+$settings->get_all('cache');              // ['cache' => [...]]
+$settings->get_all(null, true);           // All settings, skip constants
 ```
 
 ### `get_default_settings(?string $module = null): array`
@@ -83,8 +83,8 @@ Get the WordPress option name.
 Set a value using dot notation. The key must have at least 2 levels (`module.key`).
 
 ```php
-$store->set('cache.ttl', 7200);        // true
-$store->set('ttl', 7200);              // false (no module)
+$settings->set('cache.ttl', 7200);        // true
+$settings->set('ttl', 7200);              // false (no module)
 ```
 
 ### `reset(?string $module = null): bool`
@@ -123,15 +123,15 @@ Encrypt all fields with keys starting with `enc_`. Uses sodium with `AUTH_KEY` +
 
 Decrypt all `enc_*` fields.
 
-### `Store::encrypt_value(string $value): string` (static)
+### `Settings::encrypt_value(string $value): string` (static)
 
 Encrypt a single value. Returns the value prefixed with `ENC:`. Already-encrypted values (prefixed with `ENC:`) are returned as-is.
 
-### `Store::decrypt_value(string $encrypted_value): string|false` (static)
+### `Settings::decrypt_value(string $encrypted_value): string|false` (static)
 
 Decrypt a single value. Non-encrypted values are returned as-is.
 
-### `Store::coerce_value(string $value): mixed` (static)
+### `Settings::coerce_value(string $value): mixed` (static)
 
 Convert a string to its appropriate PHP type (`'true'` → `true`, `'42'` → `42`, etc.).
 

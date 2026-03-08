@@ -16,9 +16,9 @@ composer require millipress/millibase
 ```
 
 ```php
-use MilliBase\Settings;
+use MilliBase\Manager;
 
-$settings = new Settings([
+$manager = new Manager([
     'slug'           => 'my-plugin',
     'option_name'    => 'my_plugin_settings',
     'page_title'     => 'My Plugin',
@@ -49,7 +49,7 @@ $settings = new Settings([
 ]);
 
 // Programmatic access:
-$settings->store()->get('general.enabled'); // true
+$manager->settings()->get('general.enabled'); // true
 ```
 
 ## Features
@@ -79,7 +79,7 @@ Full documentation is in the [`docs/`](docs/) directory:
 - [Custom Field Types](docs/03-customization/01-custom-field-types.md)
 - [Custom Tab Components](docs/03-customization/02-custom-tab-components.md)
 - [Extending with Filters](docs/03-customization/03-extending-with-filters.md)
-- [Reference: Field Types](docs/04-reference/01-field-types.md) · [Store API](docs/04-reference/02-store-api.md) · [Hooks & Filters](docs/04-reference/03-hooks-and-filters.md)
+- [Reference: Field Types](docs/04-reference/01-field-types.md) · [Settings API](docs/04-reference/02-settings-api.md) · [Hooks & Filters](docs/04-reference/03-hooks-and-filters.md)
 
 ## License
 

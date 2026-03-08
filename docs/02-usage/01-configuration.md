@@ -1,17 +1,17 @@
 ---
 title: 'Configuration'
-post_excerpt: 'Full reference of the configuration array passed to the Settings constructor.'
+post_excerpt: 'Full reference of the configuration array passed to the Manager constructor.'
 menu_order: 10
 ---
 
 # Configuration
 
-The `Settings` constructor accepts a single configuration array. This page documents every top-level key.
+The `Manager` constructor accepts a single configuration array. This page documents every top-level key.
 
 ## Configuration Reference
 
 ```php
-$settings = new \MilliBase\Settings([
+$manager = new \MilliBase\Manager([
     // ─── Required ──────────────────────────────────────────
     'slug'           => 'my-plugin',           // Unique identifier, used for hooks and DOM IDs
     'tabs'           => [ /* ... */ ],         // Tab definitions (see Schema Definition)
@@ -58,7 +58,7 @@ $settings = new \MilliBase\Settings([
     ],
 
     // ─── Advanced ──────────────────────────────────────────
-    'store'     => $external_store,            // Optional: inject a pre-built Store instance
+    'settings'  => $external_settings,          // Optional: inject a pre-built Settings instance
     'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
 ]);
 ```
@@ -139,9 +139,9 @@ MilliBase checks for this constant (derived from the `slug` config) and uses it 
 
 The `build_url` config key can be used as an explicit override when neither automatic resolution nor the basename constant produce the correct URL.
 
-### `store`
+### `settings`
 
-Pass an externally created `Store` instance to share storage across multiple settings pages or to use custom configuration. When a `Store` is provided, MilliBase does not call `register_hooks()` on it — the caller manages its lifecycle.
+Pass an externally created `Settings` instance to share storage across multiple settings pages or to use custom configuration. When a `Settings` instance is provided, MilliBase does not call `register_hooks()` on it — the caller manages its lifecycle.
 
 ### `header`
 
@@ -202,4 +202,4 @@ Both keys are optional. The response automatically includes `settings.has_defaul
 ## Next Steps
 
 - **[Schema Definition](./02-schema-definition.md)** — define tabs, sections, and fields
-- **[Programmatic Access](./03-programmatic-access.md)** — use the Store API to read/write settings
+- **[Programmatic Access](./03-programmatic-access.md)** — use the Settings API to read/write settings

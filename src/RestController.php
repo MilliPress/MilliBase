@@ -25,24 +25,24 @@ final class RestController {
 	private array $config;
 
 	/**
-	 * The Store instance.
+	 * The Settings instance.
 	 *
 	 * @since 1.0.0
-	 * @var Store
+	 * @var Settings
 	 */
-	private Store $store;
+	private Settings $settings;
 
 	/**
 	 * Create a new RestController instance.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, mixed> $config The settings configuration.
-	 * @param Store                $store  The store instance.
+	 * @param array<string, mixed> $config   The settings configuration.
+	 * @param Settings             $settings The settings instance.
 	 */
-	public function __construct( array $config, Store $store ) {
-		$this->config = $config;
-		$this->store  = $store;
+	public function __construct( array $config, Settings $settings ) {
+		$this->config   = $config;
+		$this->settings = $settings;
 	}
 
 	/**
@@ -187,7 +187,7 @@ final class RestController {
 	public function perform_settings_action( \WP_REST_Request $request ) {
 		$action      = $request->get_param( 'action' );
 		$slug        = $this->config_string( 'slug', 'millibase' );
-		$option_name = $this->store->get_option_name();
+		$option_name = $this->settings->get_option_name();
 
 		/**
 		 * Filters the allowed settings actions.
@@ -212,13 +212,13 @@ final class RestController {
 		try {
 			switch ( $action ) {
 				case 'reset':
-					$this->store->backup();
+					$this->settings->backup();
 					delete_option( $option_name );
 					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
 				case 'restore':
-					$restored = $this->store->restore_backup();
+					$restored = $this->settings->restore_backup();
 					if ( ! $restored ) {
 						return new \WP_REST_Response(
 							array(
@@ -286,9 +286,9 @@ final class RestController {
 			);
 
 			$status_data['settings'] = array(
-				'has_defaults' => $this->store->has_default_settings(),
-				'has_backup'   => $this->store->has_backup(),
-				'constants'    => $this->store->get_settings_from_constants(),
+				'has_defaults' => $this->settings->has_default_settings(),
+				'has_backup'   => $this->settings->has_backup(),
+				'constants'    => $this->settings->get_settings_from_constants(),
 			);
 
 			/**

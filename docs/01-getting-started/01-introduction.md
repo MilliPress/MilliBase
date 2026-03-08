@@ -25,20 +25,20 @@ MilliBase is a declarative WordPress settings framework. Define your settings pa
 MilliBase consists of five core classes wired together by a single facade:
 
 ```
-Settings (facade)
+Manager (orchestrator)
 ├── Schema        — parses the config array into defaults, JSON schema, client config
-├── Store         — CRUD, dot-notation access, encryption, constants, config file sync
+├── Settings      — CRUD, dot-notation access, encryption, constants, config file sync
 ├── AdminPage     — admin menu registration, JS/CSS enqueuing
 └── RestController — REST endpoints for actions and status
 ```
 
-The `Settings` class is the only entry point. It creates all internal components, registers WordPress hooks, and exposes the `Store` and `Schema` for programmatic access.
+The `Manager` class is the only entry point. It creates all internal components, registers WordPress hooks, and exposes the `Settings` and `Schema` for programmatic access.
 
 ## How It Works
 
 1. Your plugin defines a configuration array with tabs, sections, and fields
-2. `Settings` creates a `Schema` that extracts defaults and builds a JSON schema
-3. `Settings` creates a `Store` that manages persistence (DB, constants, config files)
+2. `Manager` creates a `Schema` that extracts defaults and builds a JSON schema
+3. `Manager` creates a `Settings` instance that manages persistence (DB, constants, config files)
 4. On the admin page, the pre-built React bundle reads the schema and renders the UI
 5. The React app communicates with WordPress via `POST /wp/v2/settings` (save) and custom REST endpoints (reset, restore, status)
 
