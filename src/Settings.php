@@ -195,7 +195,7 @@ final class Settings {
 	 * @param string|null $key      Dot notation key, module name, or null for all.
 	 * @param mixed       $fallback Fallback value if key not found.
 	 *
-	 * @return mixed
+	 * @return ($key is null ? array<string, array<string, mixed>> : mixed)
 	 */
 	public function get( ?string $key = null, $fallback = null ) {
 		$settings = $this->resolve();
