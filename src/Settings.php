@@ -87,10 +87,12 @@ final class Settings {
 	 * @since 1.0.0
 	 *
 	 * @param array<string, mixed> $config Configuration array.
+	 *
+	 * @throws \InvalidArgumentException If slug is empty.
 	 */
 	public function __construct( array $config ) {
-		$slug                  = $config['slug'] ?? '';
-		$this->slug            = is_string( $slug ) ? $slug : '';
+		$slug       = $config['slug'] ?? '';
+		$this->slug = is_string( $slug ) ? $slug : '';
 
 		if ( '' === $this->slug ) {
 			throw new \InvalidArgumentException( 'Settings requires a non-empty "slug" config value.' );
@@ -299,7 +301,11 @@ final class Settings {
 		$defaults = $this->defaults;
 
 		if ( function_exists( 'apply_filters' ) ) {
-			/** @param array $defaults Default settings. */
+			/**
+			 * Filter default settings.
+			 *
+			 * @param array $defaults Default settings.
+			 */
 			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults );
 		}
 

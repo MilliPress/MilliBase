@@ -166,9 +166,9 @@ final class Schema {
 					}
 
 					$client_section = array(
-						'id'           => $section['id'] ?? '',
-						'title'        => $section['title'] ?? '',
-						'open' => $section['open']
+						'id'    => $section['id'] ?? '',
+						'title' => $section['title'] ?? '',
+						'open'  => $section['open']
 						?? ( isset( $section['status'] ) ? 'error' : true ),
 					);
 

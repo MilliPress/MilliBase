@@ -199,10 +199,10 @@ final class AdminPage {
 
 		$config_json = wp_json_encode(
 			array(
-				'slug'          => $slug,
-				'optionName'    => $option_name,
-				'restNamespace' => $rest_namespace,
-				'containerId'   => $slug . '-settings',
+				'slug'            => $slug,
+				'optionName'      => $option_name,
+				'restNamespace'   => $rest_namespace,
+				'containerId'     => $slug . '-settings',
 				'schema'          => $this->schema->to_client_array(),
 				'header'          => $this->config['header'] ?? array(),
 				'troubleshooting' => $this->config['troubleshooting'] ?? null,
@@ -312,5 +312,4 @@ final class AdminPage {
 		$value = $this->config[ $key ] ?? $fallback;
 		return is_string( $value ) ? $value : $fallback;
 	}
-
 }
