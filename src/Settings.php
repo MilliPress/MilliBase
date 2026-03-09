@@ -10,8 +10,9 @@
 namespace MilliBase;
 
 /**
- * Handles settings storage: option CRUD, dot-notation get/set, encryption,
- * constants override, config file sync, backup/restore, and import/export.
+ * Handles settings storage: option CRUD, dot-notation get/set with in-memory
+ * caching, encryption, constants override, config file sync, backup/restore,
+ * and import/export.
  *
  * @since 1.0.0
  */
@@ -72,6 +73,16 @@ final class Settings {
 	 * @var bool
 	 */
 	private bool $standalone;
+
+	/**
+	 * In-memory cache of resolved settings, keyed by cache key.
+	 *
+	 * Cleared on set(), reset(), and import().
+	 *
+	 * @since 1.0.0
+	 * @var array<string, array<string, array<string, mixed>>>
+	 */
+	private array $resolved = array();
 
 	/**
 	 * The sanitized domain identifier for config file naming.
@@ -169,22 +180,32 @@ final class Settings {
 		}
 	}
 
-	// ─── Dot-notation access ────────────────────────────────────────────
+	// ─── Settings access ────────────────────────────────────────────────
 
 	/**
-	 * Get a value using dot notation.
+	 * Get settings using optional dot notation.
+	 *
+	 * - `get()`                → all settings.
+	 * - `get('cache')`         → all settings for the cache module.
+	 * - `get('cache.ttl')`     → single value.
+	 * - `get('cache.ttl', 60)` → single value with fallback.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $key      Dot notation key (e.g., 'cache.ttl').
-	 * @param mixed  $fallback Fallback value if key not found.
+	 * @param string|null $key      Dot notation key, module name, or null for all.
+	 * @param mixed       $fallback Fallback value if key not found.
 	 *
 	 * @return mixed
 	 */
-	public function get( string $key, $fallback = null ) {
-		$keys     = explode( '.', $key );
-		$settings = $this->get_all();
-		$value    = $settings;
+	public function get( ?string $key = null, $fallback = null ) {
+		$settings = $this->resolve();
+
+		if ( null === $key ) {
+			return $settings;
+		}
+
+		$keys  = explode( '.', $key );
+		$value = $settings;
 
 		foreach ( $keys as $k ) {
 			if ( ! is_array( $value ) || ! array_key_exists( $k, $value ) ) {
@@ -214,7 +235,7 @@ final class Settings {
 		}
 
 		$module   = array_shift( $keys );
-		$settings = $this->get_all( null, true );
+		$settings = $this->resolve( null, true );
 
 		if ( ! isset( $settings[ $module ] ) ) {
 			$settings[ $module ] = array();
@@ -232,15 +253,18 @@ final class Settings {
 
 		$ref[ $last_key ] = $value;
 
+		$this->resolved = array();
+
 		return update_option( $this->option_name, $settings );
 	}
 
-	// ─── Settings retrieval ─────────────────────────────────────────────
+	// ─── Settings resolution ────────────────────────────────────────────
 
 	/**
-	 * Get merged settings from all sources with priority hierarchy.
+	 * Resolve merged settings from all sources with priority hierarchy.
 	 *
 	 * Priority: Constants > Config File > Database > Defaults.
+	 * Results are cached in memory for the current request.
 	 *
 	 * @since 1.0.0
 	 *
@@ -249,7 +273,12 @@ final class Settings {
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
-	public function get_all( ?string $module = null, bool $skip_constants = false ): array {
+	private function resolve( ?string $module = null, bool $skip_constants = false ): array {
+		$cache_key = ( $module ?? '__all__' ) . ( $skip_constants ? ':raw' : '' );
+
+		if ( isset( $this->resolved[ $cache_key ] ) ) {
+			return $this->resolved[ $cache_key ];
+		}
 		$settings = $this->get_default_settings( $module );
 
 		// Merge from config file or DB.
@@ -284,6 +313,8 @@ final class Settings {
 		if ( null === $module ) {
 			$settings['host'] = array( 'domain' => $this->domain );
 		}
+
+		$this->resolved[ $cache_key ] = $settings;
 
 		return $settings;
 	}
@@ -626,7 +657,7 @@ final class Settings {
 	 * @return void
 	 */
 	public function backup( ?string $module = null ): void {
-		$current = $this->get_all( $module );
+		$current = $this->resolve( $module );
 
 		if ( $current ) {
 			set_transient( $this->option_name . '_backup', $current, 12 * HOUR_IN_SECONDS );
@@ -674,7 +705,7 @@ final class Settings {
 	 * @return bool
 	 */
 	public function has_default_settings(): bool {
-		return $this->get_all( null, true ) === $this->get_default_settings();
+		return $this->resolve( null, true ) === $this->get_default_settings();
 	}
 
 	// ─── Reset ──────────────────────────────────────────────────────────
@@ -689,11 +720,13 @@ final class Settings {
 	 * @return bool True if reset successfully.
 	 */
 	public function reset( ?string $module = null ): bool {
+		$this->resolved = array();
+
 		if ( null === $module ) {
 			return update_option( $this->option_name, $this->defaults );
 		}
 
-		$settings = $this->get_all( null, true );
+		$settings = $this->resolve( null, true );
 		$defaults = $this->get_default_settings( $module );
 		if ( isset( $defaults[ $module ] ) ) {
 			$settings[ $module ] = $defaults[ $module ];
@@ -718,7 +751,7 @@ final class Settings {
 	 * @return array<string, mixed>
 	 */
 	public function export( ?string $module = null, bool $include_encrypted = false ): array {
-		$settings = $this->get_all( $module, true );
+		$settings = $this->resolve( $module, true );
 
 		foreach ( $settings as $module_key => $module_settings ) {
 			if ( ! is_array( $module_settings ) ) {
@@ -770,7 +803,7 @@ final class Settings {
 		}
 
 		if ( $merge ) {
-			$current = $this->get_all( null, true );
+			$current = $this->resolve( null, true );
 			foreach ( $filtered_settings as $module => $module_settings ) {
 				if ( ! isset( $current[ $module ] ) ) {
 					$current[ $module ] = array();
@@ -779,6 +812,8 @@ final class Settings {
 			}
 			$filtered_settings = $current;
 		}
+
+		$this->resolved = array();
 
 		return update_option( $this->option_name, $filtered_settings );
 	}
