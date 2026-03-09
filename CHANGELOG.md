@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/MilliPress/MilliBase/compare/v1.0.1...v1.0.2) (2026-03-09)
+
+
+### Bug Fixes
+
+* **settings:** add conditional return type to get() ([9435d84](https://github.com/MilliPress/MilliBase/commit/9435d844216e9b8ea702c43b2f27b87e3a5c35d3))
+
 ## [1.0.1](https://github.com/MilliPress/MilliBase/compare/v1.0.0...v1.0.1) (2026-03-09)
 
 
