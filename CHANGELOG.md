@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/MilliPress/MilliBase/compare/v1.0.0...v1.0.1) (2026-03-09)
+
+
+### Refactoring
+
+* **settings:** unify get() and get_all() into single get() method ([df821bb](https://github.com/MilliPress/MilliBase/commit/df821bb85d7ed60fcc93a631cc2ce164d9e3a6d0))
+
 ## 1.0.0 (2026-03-09)
 
 
