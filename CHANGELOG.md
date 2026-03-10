@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/MilliPress/MilliBase/compare/v1.0.2...v1.1.0) (2026-03-10)
+
+
+### Features
+
+* **schema:** add active-toggle support for sections ([3b59239](https://github.com/MilliPress/MilliBase/commit/3b5923941a91cec19f1b86b32ca13dfd14e78e77))
+* **ui:** render active toggles in section headers ([cbe4d23](https://github.com/MilliPress/MilliBase/commit/cbe4d232347c1575d6b647eedf20d1814bdce46e))
+
 ## [1.0.2](https://github.com/MilliPress/MilliBase/compare/v1.0.1...v1.0.2) (2026-03-09)
 
 
