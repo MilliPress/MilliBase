@@ -520,6 +520,228 @@ it('replaces a tab entirely when replace flag is set', function () {
     expect($client['tabs'][0])->not->toHaveKey('replace');
 });
 
+// ─── Active-toggle support ───────────────────────────────────────────
+
+it('normalizes string active shorthand into array with default false', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->normalize_active('cache.enabled'))->toBe([
+        'key'     => 'cache.enabled',
+        'default' => false,
+    ]);
+});
+
+it('normalizes array active config with custom default', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->normalize_active([
+        'key'     => 'minify.enabled',
+        'default' => true,
+    ]))->toBe([
+        'key'     => 'minify.enabled',
+        'default' => true,
+    ]);
+});
+
+it('returns null for invalid active values', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->normalize_active(null))->toBeNull();
+    expect($schema->normalize_active(''))->toBeNull();
+    expect($schema->normalize_active(42))->toBeNull();
+    expect($schema->normalize_active([]))->toBeNull();
+    expect($schema->normalize_active(['default' => true]))->toBeNull(); // missing key
+});
+
+it('includes active-toggle defaults in get_defaults()', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'modules',
+                'title' => 'Modules',
+                'sections' => [
+                    [
+                        'id'     => 'cache',
+                        'title'  => 'Page Cache',
+                        'active' => 'cache.enabled',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+                        ],
+                    ],
+                    [
+                        'id'     => 'minify',
+                        'title'  => 'Minification',
+                        'active' => ['key' => 'minify.enabled', 'default' => true],
+                        'fields' => [],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $defaults = $schema->get_defaults();
+
+    // cache.enabled gets default false (string shorthand).
+    expect($defaults['cache']['enabled'])->toBeFalse();
+    // cache.ttl still comes from the field.
+    expect($defaults['cache']['ttl'])->toBe(3600);
+    // minify.enabled gets default true (array form).
+    expect($defaults['minify']['enabled'])->toBeTrue();
+});
+
+it('gives field defaults precedence over active-toggle defaults for the same key', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id'     => 'sec',
+                        'title'  => 'Section',
+                        // Active would set cache.enabled = false...
+                        'active' => 'cache.enabled',
+                        'fields' => [
+                            // ...but the field default of true takes precedence.
+                            ['key' => 'cache.enabled', 'type' => 'toggle', 'default' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    expect($schema->get_defaults()['cache']['enabled'])->toBeTrue();
+});
+
+it('passes active config to client array', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'modules',
+                'title' => 'Modules',
+                'sections' => [
+                    [
+                        'id'     => 'cache',
+                        'title'  => 'Page Cache',
+                        'active' => 'cache.enabled',
+                        'fields' => [],
+                    ],
+                    [
+                        'id'     => 'debug',
+                        'title'  => 'Debug',
+                        'fields' => [],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client   = $schema->to_client_array();
+    $sections = $client['tabs'][0]['sections'];
+
+    // Section with active: normalized config present.
+    expect($sections[0]['active'])->toBe([
+        'key'     => 'cache.enabled',
+        'default' => false,
+    ]);
+
+    // Section without active: no active key.
+    expect($sections[1])->not->toHaveKey('active');
+});
+
+it('includes active-toggle booleans in REST schema automatically', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id'     => 'cdn',
+                        'title'  => 'CDN',
+                        'active' => ['key' => 'cdn.active', 'default' => false],
+                        'fields' => [],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+
+    // The active boolean flows through get_defaults() → get_rest_schema().
+    expect($rest['properties']['cdn']['properties']['active']['type'])->toBe('boolean');
+});
+
+it('flattens all sections via get_all_sections()', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab1',
+                'title' => 'Tab 1',
+                'sections' => [
+                    ['id' => 'a', 'title' => 'A', 'fields' => []],
+                    ['id' => 'b', 'title' => 'B', 'fields' => []],
+                ],
+            ],
+            [
+                'name' => 'tab2',
+                'title' => 'Tab 2',
+                'sections' => [
+                    ['id' => 'c', 'title' => 'C', 'fields' => []],
+                ],
+            ],
+        ],
+    ]);
+
+    $sections = $schema->get_all_sections();
+
+    expect($sections)->toHaveCount(3);
+    expect(array_column($sections, 'id'))->toBe(['a', 'b', 'c']);
+});
+
+it('combines active and status config in the same section', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id'     => 'redis',
+                        'title'  => 'Redis',
+                        'active' => 'redis.enabled',
+                        'status' => [
+                            'key'       => 'redis.connected',
+                            'ok'        => true,
+                            'indicator' => true,
+                            'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+                        ],
+                        'fields' => [
+                            ['key' => 'redis.host', 'type' => 'text', 'default' => '127.0.0.1'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client  = $schema->to_client_array();
+    $section = $client['tabs'][0]['sections'][0];
+
+    // Both active and status are present.
+    expect($section['active']['key'])->toBe('redis.enabled');
+    expect($section['status']['badge']['ok'])->toBe('Connected');
+
+    // Defaults include both field and active-toggle.
+    $defaults = $schema->get_defaults();
+    expect($defaults['redis'])->toBe([
+        'host'    => '127.0.0.1',
+        'enabled' => false,
+    ]);
+});
+
 it('preserves order of distinct tabs and sections', function () {
     $schema = new Schema([
         'tabs' => [

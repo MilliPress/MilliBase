@@ -81,6 +81,31 @@ final class Schema {
 			$defaults[ $module ][ $key ] = $field['default'] ?? null;
 		}
 
+		// Extract active-toggle defaults from sections (field defaults take precedence).
+		foreach ( $this->get_all_sections() as $section ) {
+			$toggle = $this->normalize_active( $section['active'] ?? null );
+			if ( ! $toggle ) {
+				continue;
+			}
+
+			$parts = explode( '.', $toggle['key'] );
+			if ( count( $parts ) < 2 ) {
+				continue;
+			}
+
+			$module = $parts[0];
+			$key    = $parts[1];
+
+			if ( ! isset( $defaults[ $module ] ) ) {
+				$defaults[ $module ] = array();
+			}
+
+			// Field defaults take precedence over toggle defaults.
+			if ( ! array_key_exists( $key, $defaults[ $module ] ) ) {
+				$defaults[ $module ][ $key ] = $toggle['default'];
+			}
+		}
+
 		$this->defaults = $defaults;
 		return $defaults;
 	}
@@ -184,6 +209,11 @@ final class Schema {
 						$client_section['intro'] = $section['intro'];
 					}
 
+					$active = $this->normalize_active( $section['active'] ?? null );
+					if ( $active ) {
+						$client_section['active'] = $active;
+					}
+
 					if ( isset( $section['fields'] ) && is_array( $section['fields'] ) ) {
 						$client_section['fields'] = array();
 
@@ -238,6 +268,61 @@ final class Schema {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Get all sections from all tabs (flattened).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_all_sections(): array {
+		$sections = array();
+
+		$config_tabs = is_array( $this->config['tabs'] ?? null ) ? $this->config['tabs'] : array();
+		foreach ( $config_tabs as $tab ) {
+			if ( ! is_array( $tab ) || ! isset( $tab['sections'] ) || ! is_array( $tab['sections'] ) ) {
+				continue;
+			}
+			foreach ( $tab['sections'] as $section ) {
+				if ( is_array( $section ) ) {
+					$sections[] = $section;
+				}
+			}
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Normalize an active-toggle configuration into a standard array form.
+	 *
+	 * Accepts either a string shorthand ('module.key') or an array
+	 * with 'key' and optional 'default'. Returns null for invalid input.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param mixed $active The active-toggle configuration.
+	 *
+	 * @return array{key: string, default: bool}|null
+	 */
+	public function normalize_active( $active ): ?array {
+		if ( is_string( $active ) && '' !== $active ) {
+			return array(
+				'key'     => $active,
+				'default' => false,
+			);
+		}
+
+		if ( is_array( $active ) && isset( $active['key'] ) && is_string( $active['key'] ) && '' !== $active['key'] ) {
+			return array(
+				'key'     => $active['key'],
+				'default' => (bool) ( $active['default'] ?? false ),
+			);
+		}
+
+		return null;
 	}
 
 	/**

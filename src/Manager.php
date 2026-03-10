@@ -224,24 +224,30 @@ final class Manager {
 	 */
 	private function resolve_settings(): Settings {
 		if ( isset( $this->config['settings'] ) && $this->config['settings'] instanceof Settings ) {
-			return $this->config['settings'];
+			$settings = $this->config['settings'];
+		} else {
+			// Merge explicit defaults (non-UI fields) with schema-extracted defaults.
+			$defaults = array_replace_recursive(
+				(array) ( $this->config['defaults'] ?? array() ),
+				$this->schema->get_defaults()
+			);
+
+			$settings = new Settings(
+				array(
+					'slug'            => $this->config['slug'] ?? '',
+					'option_name'     => $this->config['option_name'],
+					'constant_prefix' => $this->config['constant_prefix'] ?? '',
+					'encryption'      => $this->config['encryption'] ?? false,
+					'defaults'        => $defaults,
+					'config_file'     => $this->config['config_file'] ?? false,
+				)
+			);
 		}
 
-		// Merge explicit defaults (non-UI fields) with schema-extracted defaults.
-		$defaults = array_replace_recursive(
-			(array) ( $this->config['defaults'] ?? array() ),
-			$this->schema->get_defaults()
-		);
+		// Always merge schema defaults so active-toggle keys (and any other
+		// schema-derived defaults) are recognised even by pre-built instances.
+		$settings->merge_defaults( $this->schema->get_defaults() );
 
-		return new Settings(
-			array(
-				'slug'            => $this->config['slug'] ?? '',
-				'option_name'     => $this->config['option_name'],
-				'constant_prefix' => $this->config['constant_prefix'] ?? '',
-				'encryption'      => $this->config['encryption'] ?? false,
-				'defaults'        => $defaults,
-				'config_file'     => $this->config['config_file'] ?? false,
-			)
-		);
+		return $settings;
 	}
 }

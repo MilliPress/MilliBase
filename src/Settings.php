@@ -180,6 +180,24 @@ final class Settings {
 		}
 	}
 
+	/**
+	 * Merge additional defaults into this instance.
+	 *
+	 * Used by the Manager to inject schema-extracted defaults (e.g. active-toggle
+	 * keys) into a pre-built Settings instance that was created before the Schema
+	 * was available. Existing keys are never overwritten.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param array<string, array<string, mixed>> $additional Additional defaults to merge.
+	 *
+	 * @return void
+	 */
+	public function merge_defaults( array $additional ): void {
+		$this->defaults = array_replace_recursive( $additional, $this->defaults );
+		$this->resolved = array();
+	}
+
 	// ─── Settings access ────────────────────────────────────────────────
 
 	/**
@@ -320,6 +338,39 @@ final class Settings {
 	}
 
 	/**
+	 * Return defaults with add-on filters applied (cached in $resolved).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function defaults(): array {
+		if ( isset( $this->resolved['__defaults__'] ) ) {
+			return $this->resolved['__defaults__'];
+		}
+
+		$defaults = $this->defaults;
+
+		if ( function_exists( 'apply_filters' ) ) {
+			/**
+			 * Filter default settings.
+			 *
+			 * Allows add-on plugins to register additional setting modules
+			 * and keys so they are recognised throughout the settings lifecycle.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array<string, array<string, mixed>> $defaults Default settings.
+			 */
+			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults );
+		}
+
+		$this->resolved['__defaults__'] = $defaults;
+
+		return $defaults;
+	}
+
+	/**
 	 * Get the default settings.
 	 *
 	 * @since 1.0.0
@@ -329,16 +380,7 @@ final class Settings {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function get_default_settings( ?string $module = null ): array {
-		$defaults = $this->defaults;
-
-		if ( function_exists( 'apply_filters' ) ) {
-			/**
-			 * Filter default settings.
-			 *
-			 * @param array $defaults Default settings.
-			 */
-			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults );
-		}
+		$defaults = $this->defaults();
 
 		if ( $module ) {
 			return isset( $defaults[ $module ] ) ? array( $module => $defaults[ $module ] ) : array();
@@ -367,7 +409,7 @@ final class Settings {
 			return array();
 		}
 
-		$defaults = $this->defaults;
+		$defaults = $this->defaults();
 		$result   = array();
 
 		$modules_to_check = $module ? array( $module => $defaults[ $module ] ?? array() ) : $defaults;
@@ -489,7 +531,7 @@ final class Settings {
 		}
 
 		// Merge with defaults: add missing keys, remove obsolete ones.
-		$default_settings = $this->defaults;
+		$default_settings = $this->defaults();
 		foreach ( $default_settings as $mod => $mod_settings ) {
 			if ( ! is_array( $mod_settings ) ) {
 				continue;
@@ -723,7 +765,7 @@ final class Settings {
 		$this->resolved = array();
 
 		if ( null === $module ) {
-			return update_option( $this->option_name, $this->defaults );
+			return update_option( $this->option_name, $this->defaults() );
 		}
 
 		$settings = $this->resolve( null, true );
@@ -789,7 +831,7 @@ final class Settings {
 	 * @return bool True if imported successfully.
 	 */
 	public function import( array $settings, bool $merge = true ): bool {
-		$valid_modules     = array_keys( $this->defaults );
+		$valid_modules     = array_keys( $this->defaults() );
 		$filtered_settings = array();
 
 		foreach ( $settings as $module => $module_settings ) {
