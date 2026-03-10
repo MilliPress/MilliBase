@@ -54,6 +54,13 @@
 		margin: 0 0 16px;
 	}
 
+	// Inactive section: muted title text.
+	.millibase-section-disabled {
+		.components-panel__body-title {
+			color: #949494;
+		}
+	}
+
 	.millibase-code-field {
 		font-family: monospace;
 		font-size: 13px;

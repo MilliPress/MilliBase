@@ -3,7 +3,7 @@
  */
 
 import { createElement } from '@wordpress/element';
-import { PanelBody, Flex, FlexItem } from '@wordpress/components';
+import { PanelBody, Flex, FlexItem, FormToggle } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
 import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
@@ -35,17 +35,31 @@ const SectionRenderer = ( { section } ) => {
 	const { status, settings, updateSetting } = context;
 	const constants = status?.settings?.constants || {};
 
+	// Active-toggle configuration.
+	const active = section.active || null;
+	let activeModule, activeKey, isActive;
+	if ( active ) {
+		const activeParts = active.key.split( '.' );
+		activeModule = activeParts[ 0 ];
+		activeKey = activeParts[ 1 ];
+		isActive = settings?.[ activeModule ]?.[ activeKey ] ?? active.default;
+	}
+
 	const renderField = ( field ) => {
 		const parts = field.key.split( '.' );
 		const module = parts[ 0 ];
 		const key = parts[ 1 ];
-		const disabled = settings?.[ module ]
+		const constantDisabled = settings?.[ module ]
 			? ! ( key in settings[ module ] )
 			: false;
 
+		// Fields are disabled when defined by a constant OR when
+		// the section's active toggle is off.
+		const disabled = constantDisabled || ( active && ! isActive );
+
 		// For constant-defined fields, show the constant value
 		// from the status API instead of the schema default.
-		const value = disabled
+		const value = constantDisabled
 			? ( constants?.[ module ]?.[ key ] ?? field.default )
 			: ( settings?.[ module ]?.[ key ] ?? field.default );
 
@@ -80,7 +94,6 @@ const SectionRenderer = ( { section } ) => {
 
 	const visibleFields = ( section.fields || [] ).filter( isFieldVisible );
 	const rows = groupFieldsIntoRows( visibleFields );
-
 	// Status indicator evaluation.
 	const statusConfig = section.status;
 	const hasStatus = statusConfig?.key != null;
@@ -90,10 +103,27 @@ const SectionRenderer = ( { section } ) => {
 
 	const indicatorColor = isOk ? '#00a32a' : '#d63638';
 
-	// Build a custom title element when status is configured.
-	const title = hasStatus ? (
-		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px' } }>
-			{ statusConfig.indicator === true && (
+	// Active-toggle element for section header.
+	const activeToggleElement = active ? (
+		<span
+			onClick={ ( e ) => e.stopPropagation() }
+			onKeyDown={ ( e ) => e.stopPropagation() }
+			role="presentation"
+		>
+			<FormToggle
+				checked={ isActive }
+				onChange={ () =>
+					updateSetting( activeModule, activeKey, ! isActive )
+				}
+			/>
+		</span>
+	) : null;
+
+	// Build a custom title element when status or active toggle is configured.
+	const title = ( hasStatus || active ) ? (
+		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px', width: '100%' } }>
+			{ activeToggleElement }
+			{ hasStatus && statusConfig.indicator === true && (
 				<span
 					style={ {
 						display: 'inline-block',
@@ -106,7 +136,7 @@ const SectionRenderer = ( { section } ) => {
 				/>
 			) }
 			<span>{ section.title }</span>
-			{ statusConfig.badge && (
+			{ hasStatus && statusConfig.badge && (
 				<span
 					style={ {
 						fontSize: '11px',
@@ -124,6 +154,7 @@ const SectionRenderer = ( { section } ) => {
 		</span>
 	) : section.title;
 
+	// Panel open/close logic.
 	const openPref = section.open;
 	let initialOpen;
 	if ( openPref === 'error' ) {
@@ -134,11 +165,8 @@ const SectionRenderer = ( { section } ) => {
 		initialOpen = openPref !== false;
 	}
 
-	return (
-		<PanelBody
-			title={ title }
-			initialOpen={ initialOpen }
-		>
+	const renderContent = () => (
+		<>
 			{ section.intro && ( () => {
 				const CustomDesc =
 					window.MilliBase?.customComponents?.[ section.intro ];
@@ -148,12 +176,9 @@ const SectionRenderer = ( { section } ) => {
 			} )() }
 			<Flex direction="column" gap="4">
 				{ rows.map( ( row ) => {
-					// Single field — render directly without a wrapper.
 					if ( row.length === 1 ) {
 						return renderField( row[ 0 ] );
 					}
-
-					// Multi-field row — render side-by-side.
 					return (
 						<Flex
 							key={ row.map( ( f ) => f.key ).join( '-' ) }
@@ -178,6 +203,18 @@ const SectionRenderer = ( { section } ) => {
 					);
 				} ) }
 			</Flex>
+		</>
+	);
+
+	// All sections use uncontrolled PanelBody — sections with an active
+	// toggle stay collapsible so users can preview disabled fields.
+	return (
+		<PanelBody
+			title={ title }
+			initialOpen={ initialOpen }
+			className={ active && ! isActive ? 'millibase-section-disabled' : undefined }
+		>
+			{ renderContent() }
 		</PanelBody>
 	);
 };
