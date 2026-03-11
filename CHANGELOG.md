@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/MilliPress/MilliBase/compare/v1.1.0...v1.2.0) (2026-03-11)
+
+
+### Features
+
+* **ui:** auto-open section panel when active toggle is switched on ([fee7b5a](https://github.com/MilliPress/MilliBase/commit/fee7b5a054c76bc612fce6d289b4d9a006813d27))
+
+
+### Refactoring
+
+* **ui:** remove status indicator dot, keep badge only ([601aad0](https://github.com/MilliPress/MilliBase/commit/601aad0f664d4ca74b708f5b7e07de8cc3f021a2))
+
 ## [1.1.0](https://github.com/MilliPress/MilliBase/compare/v1.0.2...v1.1.0) (2026-03-10)
 
 
