@@ -2,7 +2,7 @@
  * Renders a PanelBody with grouped fields from a section definition.
  */
 
-import { createElement } from '@wordpress/element';
+import { createElement, useState } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem, FormToggle } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
@@ -112,9 +112,13 @@ const SectionRenderer = ( { section } ) => {
 		>
 			<FormToggle
 				checked={ isActive }
-				onChange={ () =>
-					updateSetting( activeModule, activeKey, ! isActive )
-				}
+				onChange={ () => {
+					const next = ! isActive;
+					updateSetting( activeModule, activeKey, next );
+					if ( next ) {
+						setIsOpen( true );
+					}
+				} }
 			/>
 		</span>
 	) : null;
@@ -152,6 +156,10 @@ const SectionRenderer = ( { section } ) => {
 	} else {
 		initialOpen = openPref !== false;
 	}
+
+	// Controlled state for sections with active toggle — auto-opens
+	// the panel when the toggle is switched on.
+	const [ isOpen, setIsOpen ] = useState( initialOpen );
 
 	const renderContent = () => (
 		<>
@@ -194,12 +202,16 @@ const SectionRenderer = ( { section } ) => {
 		</>
 	);
 
-	// All sections use uncontrolled PanelBody — sections with an active
-	// toggle stay collapsible so users can preview disabled fields.
+	// Sections with an active toggle use controlled PanelBody so we can
+	// auto-open on activation. Others stay uncontrolled.
+	const panelProps = active
+		? { opened: isOpen, onToggle: () => setIsOpen( ! isOpen ) }
+		: { initialOpen };
+
 	return (
 		<PanelBody
 			title={ title }
-			initialOpen={ initialOpen }
+			{ ...panelProps }
 			className={ active && ! isActive ? 'millibase-section-disabled' : undefined }
 		>
 			{ renderContent() }
