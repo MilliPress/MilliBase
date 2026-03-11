@@ -46,40 +46,89 @@ The `tabs` array in the configuration defines the structure of your settings pag
         'icon'         => 'settings',       // Optional icon name
         'intro'        => 'Configure caching behavior.', // Optional intro text
         'open' => true,             // Whether panel starts open (default: true)
-        'status'       => [                 // Optional runtime status indicator
-            'key'       => 'storage.connected',
-            'ok'        => true,
-            'indicator' => true,
-            'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+        'status'       => [                 // Optional runtime status badge
+            'key'   => 'storage.connected',
+            'ok'    => true,
+            'badge' => ['ok' => 'Connected', 'error' => 'Disconnected'],
         ],
         'fields'       => [ /* ... */ ],    // Array of field definitions
     ],
 ],
 ```
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `id` | `string` | Yes | Unique identifier within the tab, used for overrides |
-| `title` | `string` | Yes | Panel heading |
-| `icon` | `string` | No | Icon name |
-| `intro` | `string` | No | Intro text or registered component name |
-| `open` | `bool\|string` | No | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
-| `status` | `array` | No | Runtime status indicator config (see below) |
-| `fields` | `array` | Yes | Field definitions |
+| Property  | Type            | Required  | Description                                                                                             |
+|-----------|-----------------|-----------|---------------------------------------------------------------------------------------------------------|
+| `id`      | `string`        | Yes       | Unique identifier within the tab, used for overrides                                                    |
+| `title`   | `string`        | Yes       | Panel heading                                                                                           |
+| `icon`    | `string`        | No        | Icon name                                                                                               |
+| `intro`   | `string`        | No        | Intro text or registered component name                                                                 |
+| `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
+| `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                          |
+| `status`  | `array`         | No        | Runtime status badge config (see below)                                                                 |
+| `fields`  | `array`         | Yes       | Field definitions                                                                                       |
 
 > [!TIP]
 > The `intro` property can reference a registered custom component name. If `window.MilliBase.customComponents` contains a matching entry, it renders the component instead of plain text. This is useful for dynamic section descriptions.
 
-### Section Status Indicator
+### Section Active Toggle
 
-The `status` property ties a section to a runtime value from the status API, enabling a colored indicator dot and/or a text badge in the panel header.
+The `active` property adds a `FormToggle` to the section header, letting users enable or disable an entire module. When toggled off, the section remains collapsible but all fields inside are disabled.
+
+The toggle value is stored as a regular setting using the same dot-notation as fields.
+
+```php
+// String shorthand — defaults to false
+'active' => 'cache.enabled',
+
+// Array form — custom default
+'active' => ['key' => 'minify.enabled', 'default' => true],
+```
+
+| Property   | Type     | Default  | Description                                 |
+|------------|----------|----------|---------------------------------------------|
+| `key`      | `string` | —        | Dot-notation setting key (`module.setting`) |
+| `default`  | `bool`   | `false`  | Default toggle state                        |
+
+The string shorthand `'cache.enabled'` is equivalent to `['key' => 'cache.enabled', 'default' => false]`.
+
+Active-toggle defaults are extracted automatically by the Schema — no need to duplicate them in a defaults filter. Field defaults take precedence if the same key is defined both as a field and as an active toggle.
+
+```php
+// Module with toggle + fields: toggle in header, fields disabled when off
+[
+    'id'     => 'page-cache',
+    'title'  => 'Page Cache',
+    'active' => 'cache.enabled',
+    'fields' => [
+        ['key' => 'cache.ttl', 'type' => 'number', 'label' => 'TTL', 'default' => 3600],
+    ],
+],
+
+// Module with toggle + status: both render in the header
+[
+    'id'     => 'redis',
+    'title'  => 'Redis Object Cache',
+    'active' => 'redis.enabled',
+    'status' => [
+        'key'   => 'redis.connected',
+        'ok'    => true,
+        'badge' => ['ok' => 'Connected', 'error' => 'Disconnected'],
+    ],
+    'fields' => [
+        ['key' => 'redis.host', 'type' => 'text', 'label' => 'Host', 'default' => '127.0.0.1'],
+    ],
+],
+```
+
+### Section Status Badge
+
+The `status` property ties a section to a runtime value from the status API, enabling a text badge in the panel header.
 
 ```php
 'status' => [
-    'key'       => 'storage.connected',   // Dot-path into the status object (required)
-    'ok'        => true,                  // Value that means "all good" (required)
-    'indicator' => true,                  // Show green/red dot (default: false)
-    'badge'     => [                      // Optional text pill
+    'key'   => 'storage.connected',   // Dot-path into the status object (required)
+    'ok'    => true,                  // Value that means "all good" (required)
+    'badge' => [                      // Text pill (ok/error labels)
         'ok'    => 'Connected',
         'error' => 'Disconnected',
     ],
@@ -90,35 +139,32 @@ The `status` property ties a section to a runtime value from the status API, ena
 |----------|------|---------|-------------|
 | `key` | `string` | — | Dot-path into the runtime status object |
 | `ok` | `mixed` | — | The value that indicates a healthy state |
-| `indicator` | `bool` | `false` | Show a colored circle (green when ok, red when not) |
 | `badge` | `array` | — | Text pill with `ok` and `error` labels |
 
 When `status` is configured, `open` defaults to `'error'` (auto-open when there's a problem). You can set `open` to `'ok'` to open only when the status is healthy — useful for sections whose fields are irrelevant while disconnected:
 
 ```php
-// Connection section: opens when disconnected, shows indicator + badge
+// Connection section: opens when disconnected, shows badge
 [
     'id'     => 'connection',
     'title'  => 'Storage Server',
     'status' => [
-        'key'       => 'storage.connected',
-        'ok'        => true,
-        'indicator' => true,
-        'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+        'key'   => 'storage.connected',
+        'ok'    => true,
+        'badge' => ['ok' => 'Connected', 'error' => 'Disconnected'],
     ],
     // open defaults to 'error' — opens when disconnected
     'fields' => [ /* ... */ ],
 ],
 
-// General section: opens only when connected, no visual indicators
+// General section: opens only when connected
 [
-    'id'           => 'general',
-    'title'        => 'General Settings',
-    'open' => 'ok',
-    'status'       => [
-        'key'       => 'storage.connected',
-        'ok'        => true,
-        'indicator' => false,
+    'id'    => 'general',
+    'title' => 'General Settings',
+    'open'  => 'ok',
+    'status' => [
+        'key' => 'storage.connected',
+        'ok'  => true,
     ],
     'fields' => [ /* ... */ ],
 ],

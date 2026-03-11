@@ -30,6 +30,19 @@ new Settings(array $config)
 
 Creates a Settings instance that reads from config files and constants only — no database access. Useful for pre-WordPress scenarios like `advanced-cache.php`.
 
+## Defaults
+
+### `merge_defaults(array $additional): void`
+
+Merge additional defaults into this instance. Existing keys are never overwritten. This is used internally by the Manager to inject schema-derived defaults (e.g. active-toggle keys) into pre-built Settings instances. It invalidates all internal caches.
+
+```php
+$settings->merge_defaults([
+    'cache'  => ['enabled' => false],
+    'minify' => ['enabled' => true],
+]);
+```
+
 ## Reading
 
 ### `get(string $key, mixed $default = null): mixed`

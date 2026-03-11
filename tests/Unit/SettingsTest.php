@@ -193,3 +193,75 @@ it('returns empty array for non-array input', function () {
 
     expect($settings->filter_settings_by_constants(false))->toBe([]);
 });
+
+// ─── merge_defaults() ──────────────────────────────────────────────
+
+it('merges additional defaults without overwriting existing keys', function () {
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => [
+            'cache' => ['ttl' => 3600],
+        ],
+    ]);
+
+    $settings->merge_defaults([
+        'cache'  => ['ttl' => 9999, 'enabled' => false],
+        'minify' => ['enabled' => true],
+    ]);
+
+    $defaults = $settings->get_default_settings();
+
+    // Existing key preserved.
+    expect($defaults['cache']['ttl'])->toBe(3600);
+    // New key added to existing module.
+    expect($defaults['cache']['enabled'])->toBeFalse();
+    // New module added.
+    expect($defaults['minify']['enabled'])->toBeTrue();
+});
+
+it('makes merged defaults visible to filter_settings_by_constants', function () {
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => [
+            'cache' => ['ttl' => 3600],
+        ],
+    ]);
+
+    // Before merge: minify module is "obsolete" and gets stripped.
+    $before = $settings->filter_settings_by_constants([
+        'cache'  => ['ttl' => 1800],
+        'minify' => ['enabled' => true],
+    ]);
+    expect($before)->not->toHaveKey('minify');
+
+    // Merge schema-derived defaults.
+    $settings->merge_defaults([
+        'minify' => ['enabled' => false],
+    ]);
+
+    // After merge: minify is recognised and preserved.
+    $after = $settings->filter_settings_by_constants([
+        'cache'  => ['ttl' => 1800],
+        'minify' => ['enabled' => true],
+    ]);
+    expect($after)->toHaveKey('minify');
+    expect($after['minify']['enabled'])->toBeTrue();
+});
+
+it('invalidates resolved cache after merge_defaults', function () {
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => [
+            'cache' => ['ttl' => 3600],
+        ],
+    ]);
+
+    // Prime the cache.
+    $before = $settings->get_default_settings();
+    expect($before)->not->toHaveKey('minify');
+
+    // Merge and verify cache was invalidated.
+    $settings->merge_defaults(['minify' => ['enabled' => true]]);
+    $after = $settings->get_default_settings();
+    expect($after['minify']['enabled'])->toBeTrue();
+});

@@ -69,8 +69,41 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 > [!NOTE]
 > When sections share the same `id`, they are merged — the last section's properties overwrite earlier ones, and fields are combined. To fully replace a tab instead of merging, add `'replace' => true` to the tab definition.
 
+### Adding Module Toggles
+
+Use the `active` property on sections to add an on/off toggle in the section header. Active-toggle defaults are extracted automatically — no need to register them via the defaults filter:
+
+```php
+add_filter('my_plugin_settings_schema', function (array $config): array {
+    $config['tabs'][] = [
+        'name'     => 'modules',
+        'title'    => 'Modules',
+        'sections' => [
+            [
+                'id'     => 'cdn',
+                'title'  => 'CDN',
+                'active' => 'cdn.enabled',     // Toggle stored as cdn.enabled (default: false)
+                'fields' => [
+                    ['key' => 'cdn.url', 'type' => 'text', 'label' => 'CDN URL', 'default' => ''],
+                ],
+            ],
+            [
+                'id'     => 'minify',
+                'title'  => 'Minification',
+                'active' => ['key' => 'minify.enabled', 'default' => true],  // On by default
+                'fields' => [
+                    ['key' => 'minify.html', 'type' => 'toggle', 'label' => 'HTML', 'default' => true],
+                    ['key' => 'minify.css',  'type' => 'toggle', 'label' => 'CSS',  'default' => true],
+                ],
+            ],
+        ],
+    ];
+    return $config;
+});
+```
+
 > [!TIP]
-> The schema filter is the recommended way for add-ons to register new settings. Defaults are extracted automatically from the `default` property on each field — no need to also use the defaults filter.
+> The schema filter is the recommended way for add-ons to register new settings. Defaults are extracted automatically from the `default` property on each field and the `active` property on each section — no need to also use the defaults filter.
 
 ## Defaults Filter
 
