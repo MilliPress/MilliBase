@@ -220,10 +220,9 @@ it('passes status config through to the client and defaults open to error', func
                         'id' => 'connection',
                         'title' => 'Connection',
                         'status' => [
-                            'key'       => 'storage.connected',
-                            'ok'        => true,
-                            'indicator' => true,
-                            'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+                            'key'   => 'storage.connected',
+                            'ok'    => true,
+                            'badge' => ['ok' => 'Connected', 'error' => 'Disconnected'],
                         ],
                         'fields' => [],
                     ],
@@ -231,9 +230,8 @@ it('passes status config through to the client and defaults open to error', func
                         'id' => 'advanced',
                         'title' => 'Advanced',
                         'status' => [
-                            'key'       => 'storage.connected',
-                            'ok'        => true,
-                            'indicator' => false,
+                            'key' => 'storage.connected',
+                            'ok'  => true,
                         ],
                         'open' => 'ok',
                         'fields' => [],
@@ -258,7 +256,6 @@ it('passes status config through to the client and defaults open to error', func
 
     // Section with status and explicit open preserves the value.
     expect($sections[1]['open'])->toBe('ok');
-    expect($sections[1]['status']['indicator'])->toBeFalse();
 
     // Section without status defaults open to true.
     expect($sections[2])->not->toHaveKey('status');
@@ -713,10 +710,9 @@ it('combines active and status config in the same section', function () {
                         'title'  => 'Redis',
                         'active' => 'redis.enabled',
                         'status' => [
-                            'key'       => 'redis.connected',
-                            'ok'        => true,
-                            'indicator' => true,
-                            'badge'     => ['ok' => 'Connected', 'error' => 'Disconnected'],
+                            'key'   => 'redis.connected',
+                            'ok'    => true,
+                            'badge' => ['ok' => 'Connected', 'error' => 'Disconnected'],
                         ],
                         'fields' => [
                             ['key' => 'redis.host', 'type' => 'text', 'default' => '127.0.0.1'],

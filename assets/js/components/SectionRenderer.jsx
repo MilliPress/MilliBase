@@ -94,14 +94,14 @@ const SectionRenderer = ( { section } ) => {
 
 	const visibleFields = ( section.fields || [] ).filter( isFieldVisible );
 	const rows = groupFieldsIntoRows( visibleFields );
-	// Status indicator evaluation.
+	// Status evaluation.
 	const statusConfig = section.status;
 	const hasStatus = statusConfig?.key != null;
 	const isOk = hasStatus
 		? resolveDotPath( status, statusConfig.key ) === statusConfig.ok
 		: true;
 
-	const indicatorColor = isOk ? '#00a32a' : '#d63638';
+	const statusColor = isOk ? '#00a32a' : '#d63638';
 
 	// Active-toggle element for section header.
 	const activeToggleElement = active ? (
@@ -123,18 +123,6 @@ const SectionRenderer = ( { section } ) => {
 	const title = ( hasStatus || active ) ? (
 		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px', width: '100%' } }>
 			{ activeToggleElement }
-			{ hasStatus && statusConfig.indicator === true && (
-				<span
-					style={ {
-						display: 'inline-block',
-						width: '8px',
-						height: '8px',
-						borderRadius: '50%',
-						backgroundColor: indicatorColor,
-						flexShrink: 0,
-					} }
-				/>
-			) }
 			<span>{ section.title }</span>
 			{ hasStatus && statusConfig.badge && (
 				<span
@@ -144,7 +132,7 @@ const SectionRenderer = ( { section } ) => {
 						padding: '4px 8px',
 						borderRadius: '9999px',
 						backgroundColor: isOk ? '#e3f5e1' : '#fcecec',
-						color: indicatorColor,
+						color: statusColor,
 						fontWeight: 500,
 					} }
 				>
