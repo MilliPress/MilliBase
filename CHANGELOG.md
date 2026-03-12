@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/MilliPress/MilliBase/compare/v1.2.0...v1.2.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* use strict false-check in decrypt_value return ([d299631](https://github.com/MilliPress/MilliBase/commit/d299631adb53aeada2e630d1e1fe9a43be03f417))
+
 ## [1.2.0](https://github.com/MilliPress/MilliBase/compare/v1.1.0...v1.2.0) (2026-03-11)
 
 
