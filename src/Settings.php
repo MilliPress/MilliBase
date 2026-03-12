@@ -658,11 +658,11 @@ final class Settings {
 	 *
 	 * @param string $encrypted_value The encrypted value.
 	 *
-	 * @return string|false The decrypted value, or false if not encrypted.
+	 * @return string The decrypted value, or empty string on failure.
 	 *
 	 * @throws \SodiumException If decryption fails.
 	 */
-	public static function decrypt_value( string $encrypted_value ) {
+	public static function decrypt_value( string $encrypted_value ): string {
 		if ( ! function_exists( 'sodium_crypto_secretbox_open' ) ) {
 			if ( defined( 'ABSPATH' ) ) {
 				require_once ABSPATH . 'wp-includes/sodium_compat/autoload.php';
@@ -682,7 +682,7 @@ final class Settings {
 
 		$decrypted = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 
-		return $decrypted ? $decrypted : '';
+		return false !== $decrypted ? $decrypted : '';
 	}
 
 	// ─── Backup / Restore ───────────────────────────────────────────────
