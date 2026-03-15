@@ -14,3 +14,5 @@
 /release-please-config.json   export-ignore
 /tests                        export-ignore
 /webpack.config.js            export-ignore
+
+/build                        -diff linguist-generated
