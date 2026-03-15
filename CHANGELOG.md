@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/MilliPress/MilliBase/compare/v1.2.1...v1.2.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* ensure build assets are always included in distributed package ([408a30b](https://github.com/MilliPress/MilliBase/commit/408a30b14b92a0244df0f829c930028963be0236))
+
 ## [1.2.1](https://github.com/MilliPress/MilliBase/compare/v1.2.0...v1.2.1) (2026-03-12)
 
 
