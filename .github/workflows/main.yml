@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   lint:
@@ -41,6 +43,7 @@ jobs:
 
   build-assets:
     name: Build & Commit Assets
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
