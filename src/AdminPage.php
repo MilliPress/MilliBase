@@ -140,29 +140,60 @@ final class AdminPage {
 	 */
 	private function enqueue_bundle(): void {
 		$package_dir = $this->resolve_package_dir();
-		$asset_file  = $package_dir . '/build/millibase.asset.php';
+		$build_dir   = $package_dir . '/build';
+		$asset_file  = $build_dir . '/millibase.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			return;
 		}
 
-		$asset     = include $asset_file;
-		$build_url = $this->resolve_build_url();
+		$asset      = include $asset_file;
+		$build_url  = $this->resolve_build_url();
+		$js_deps    = array_merge( $asset['dependencies'], array( 'wp-api-fetch' ) );
+		$js_in_foot = array( 'in_footer' => true );
 
-		wp_enqueue_style(
-			'millibase',
-			$build_url . '/millibase.css',
-			array(),
-			$asset['version']
-		);
+		if ( '' !== $build_url ) {
+			wp_enqueue_style( 'millibase', $build_url . '/millibase.css', array(), $asset['version'] );
+			wp_enqueue_script( 'millibase', $build_url . '/millibase.js', $js_deps, $asset['version'], $js_in_foot );
+			return;
+		}
 
-		wp_enqueue_script(
-			'millibase',
-			$build_url . '/millibase.js',
-			array_merge( $asset['dependencies'], array( 'wp-api-fetch' ) ),
-			$asset['version'],
-			array( 'in_footer' => true )
-		);
+		// Fallback: inline the assets when the build directory is not web-accessible.
+		$this->enqueue_inline_assets( $build_dir, $asset['version'], $js_deps, $js_in_foot );
+	}
+
+	/**
+	 * Enqueue build assets inline via wp_add_inline_script/style.
+	 *
+	 * Used as a fallback when the build directory is outside the web root
+	 * (e.g. Composer library in vendor/).
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string               $build_dir The absolute path to the build directory.
+	 * @param string               $version   The asset version string.
+	 * @param array<int, string>   $js_deps   JavaScript dependency handles.
+	 * @param array{strategy?: string, in_footer?: bool, fetchpriority?: string} $js_args Script registration args.
+	 *
+	 * @return void
+	 */
+	private function enqueue_inline_assets( string $build_dir, string $version, array $js_deps, array $js_args ): void {
+		$js_file  = $build_dir . '/millibase.js';
+		$css_file = $build_dir . '/millibase.css';
+
+		if ( file_exists( $css_file ) ) {
+			wp_register_style( 'millibase', false, array(), $version );
+			wp_enqueue_style( 'millibase' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local build asset.
+			wp_add_inline_style( 'millibase', (string) file_get_contents( $css_file ) );
+		}
+
+		if ( file_exists( $js_file ) ) {
+			wp_register_script( 'millibase', false, $js_deps, $version, $js_args );
+			wp_enqueue_script( 'millibase' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local build asset.
+			wp_add_inline_script( 'millibase', (string) file_get_contents( $js_file ), 'before' );
+		}
 	}
 
 	/**
@@ -227,7 +258,6 @@ final class AdminPage {
 	 * @return string
 	 */
 	private function resolve_package_dir(): string {
-		// The package's src/ is one level up from this file.
 		return dirname( __DIR__ );
 	}
 
@@ -236,8 +266,8 @@ final class AdminPage {
 	 *
 	 * Resolution order:
 	 * 1. Explicit `build_url` config override.
-	 * 2. Plugin basename from `{SLUG}_BASENAME` constant (handles symlinks).
-	 * 3. Direct `plugins_url()` from the package directory.
+	 * 2. Path detection against WP_CONTENT_DIR (covers plugins, mu-plugins, vendor inside content).
+	 * 3. Empty string (triggers inline asset fallback for paths outside the web root).
 	 *
 	 * @since 1.0.0
 	 *
@@ -248,53 +278,11 @@ final class AdminPage {
 			return $this->config_string( 'build_url' );
 		}
 
-		$package_dir = $this->resolve_package_dir();
-		$slug        = $this->config_string( 'slug', 'millibase' );
-		$constant    = strtoupper( str_replace( '-', '_', $slug ) ) . '_BASENAME';
+		$build_dir   = wp_normalize_path( $this->resolve_package_dir() . '/build' );
+		$content_dir = wp_normalize_path( (string) WP_CONTENT_DIR );
 
-		if ( defined( $constant ) ) {
-			$basename   = constant( $constant );
-			$plugin_dir = plugin_dir_path( WP_PLUGIN_DIR . '/' . $basename );
-			$relative   = str_replace( $plugin_dir, '', $package_dir . '/' );
-
-			// If the package resolves outside the plugin directory (e.g. Composer
-			// path repository symlink), try the vendor path instead.
-			if ( strpos( $relative, '/' ) === 0 || strpos( $relative, DIRECTORY_SEPARATOR ) === 0 ) {
-				$relative = $this->resolve_vendor_relative_path( $plugin_dir );
-			}
-
-			if ( $relative ) {
-				return plugins_url( $relative . 'build', WP_PLUGIN_DIR . '/' . $basename );
-			}
-		}
-
-		return plugins_url( 'build', $package_dir . '/millibase' );
-	}
-
-	/**
-	 * Find the package path relative to the plugin via vendor directory.
-	 *
-	 * When the package is installed as a Composer path repository (symlink),
-	 * __DIR__ resolves to the real path outside the plugin. This method
-	 * walks common vendor paths to find a working relative path.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $plugin_dir The plugin's absolute directory path.
-	 *
-	 * @return string The relative path (with trailing slash) or empty string.
-	 */
-	private function resolve_vendor_relative_path( string $plugin_dir ): string {
-		$candidates = array(
-			'vendor/millipress/millibase/',
-			'deps/millipress/millibase/',
-		);
-
-		foreach ( $candidates as $candidate ) {
-			$candidate_build = $plugin_dir . $candidate . 'build/millibase.asset.php';
-			if ( file_exists( $candidate_build ) ) {
-				return $candidate;
-			}
+		if ( str_starts_with( $build_dir, $content_dir . '/' ) ) {
+			return content_url( substr( $build_dir, strlen( $content_dir ) ) );
 		}
 
 		return '';
