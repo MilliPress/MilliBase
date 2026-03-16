@@ -8,9 +8,12 @@ menu_order: 10
 
 The `Manager` constructor accepts a single configuration array. This page documents every top-level key.
 
+> **Important:** Create the Manager on the `init` hook (or later) so that translation functions like `__()` execute after textdomains are loaded. This is required since WordPress 6.7.
+
 ## Configuration Reference
 
 ```php
+add_action( 'init', function () {
 $manager = new \MilliBase\Manager([
     // ─── Required ──────────────────────────────────────────
     'slug'           => 'my-plugin',           // Unique identifier, used for hooks and DOM IDs
@@ -61,6 +64,7 @@ $manager = new \MilliBase\Manager([
     'settings'  => $external_settings,          // Optional: inject a pre-built Settings instance
     'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
 ]);
+} );
 ```
 
 ## Key Details
