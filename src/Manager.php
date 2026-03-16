@@ -39,6 +39,7 @@ final class Manager {
 	 * The Settings instance.
 	 *
 	 * @since 1.0.0
+	 * @var Settings
 	 */
 	private Settings $settings;
 
@@ -46,6 +47,7 @@ final class Manager {
 	 * The Schema instance.
 	 *
 	 * @since 1.0.0
+	 * @var Schema
 	 */
 	private Schema $schema;
 
