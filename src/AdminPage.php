@@ -170,9 +170,9 @@ final class AdminPage {
 	 *
 	 * @since 1.4.0
 	 *
-	 * @param string               $build_dir The absolute path to the build directory.
-	 * @param string               $version   The asset version string.
-	 * @param array<int, string>   $js_deps   JavaScript dependency handles.
+	 * @param string                                                             $build_dir The absolute path to the build directory.
+	 * @param string                                                             $version   The asset version string.
+	 * @param array<int, string>                                                 $js_deps   JavaScript dependency handles.
 	 * @param array{strategy?: string, in_footer?: bool, fetchpriority?: string} $js_args Script registration args.
 	 *
 	 * @return void
