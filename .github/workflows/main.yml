@@ -43,6 +43,7 @@ jobs:
 
   build-assets:
     name: Build & Commit Assets
+    needs: [lint, test]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
