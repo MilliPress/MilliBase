@@ -3,12 +3,14 @@
  * Settings manager — the main entry point for consuming plugins.
  *
  * Usage:
- *   $manager = new \MilliBase\Manager([
- *       'slug' => 'milliplugin',
- *       'tabs' => [ ... ],
- *       // ... full config array
- *       // option_name defaults to {slug} ('milliplugin')
- *   ]);
+ *   add_action( 'init', function () {
+ *       $manager = new \MilliBase\Manager( [
+ *           'slug' => 'milliplugin',
+ *           'tabs' => [ ... ],
+ *           // ... full config array
+ *           // option_name defaults to {slug} ('milliplugin')
+ *       ] );
+ *   } );
  *
  *   // Programmatic access:
  *   $manager->settings()->get('cache.ttl');
@@ -22,8 +24,12 @@ namespace MilliBase;
 /**
  * Orchestrator that wires Settings + Schema + AdminPage + RestController together.
  *
- * The constructor takes the full configuration array, creates all internal
- * components, and registers all WordPress hooks directly.
+ * Accepts the configuration array directly. The consumer is responsible for
+ * creating the Manager on `init` (or later) so that translation functions
+ * like __() execute after the textdomain has been loaded (WordPress 6.7+).
+ *
+ * Settings and Schema are available immediately after construction.
+ * WordPress hook registration (boot) is deferred to `init` internally.
  *
  * @since 1.0.0
  */
@@ -62,7 +68,7 @@ final class Manager {
 	private ?RestController $rest_controller = null;
 
 	/**
-	 * The full configuration array.
+	 * The resolved configuration array.
 	 *
 	 * @since 1.0.0
 	 * @var array<string, mixed>
@@ -91,28 +97,29 @@ final class Manager {
 		$this->schema   = $this->resolve_schema();
 		$this->settings = $this->resolve_settings();
 
-		$this->boot();
+		if ( function_exists( 'did_action' ) && did_action( 'init' ) ) {
+			$this->boot();
+		} elseif ( function_exists( 'add_action' ) ) {
+			add_action( 'init', array( $this, 'boot' ), 0 );
+		}
 	}
-
-	// ─── Boot ───────────────────────────────────────────────────────────
 
 	/**
 	 * Register all WordPress integrations.
+	 *
+	 * Hooked to `init` (priority 0) when the Manager is created before
+	 * `init`, or called immediately when created on/after `init`.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
-	private function boot(): void {
+	public function boot(): void {
 		if ( ! function_exists( 'add_action' ) ) {
 			return;
 		}
 
-		if ( did_action( 'init' ) ) {
-			$this->register_settings();
-		} else {
-			add_action( 'init', array( $this, 'register_settings' ) );
-		}
+		$this->register_settings();
 
 		$this->admin_page = new AdminPage( $this->config, $this->schema );
 		$this->admin_page->register_hooks();
@@ -223,29 +230,31 @@ final class Manager {
 	 * @return Settings
 	 */
 	private function resolve_settings(): Settings {
-		if ( isset( $this->config['settings'] ) && $this->config['settings'] instanceof Settings ) {
-			$settings = $this->config['settings'];
+		$config = $this->config;
+
+		if ( isset( $config['settings'] ) && $config['settings'] instanceof Settings ) {
+			$settings = $config['settings'];
 		} else {
 			// Merge explicit defaults (non-UI fields) with schema-extracted defaults.
 			$defaults = array_replace_recursive(
-				(array) ( $this->config['defaults'] ?? array() ),
+				(array) ( $config['defaults'] ?? array() ),
 				$this->schema->get_defaults()
 			);
 
 			$settings = new Settings(
 				array(
-					'slug'            => $this->config['slug'] ?? '',
-					'option_name'     => $this->config['option_name'],
-					'constant_prefix' => $this->config['constant_prefix'] ?? '',
-					'encryption'      => $this->config['encryption'] ?? false,
+					'slug'            => $config['slug'] ?? '',
+					'option_name'     => $config['option_name'],
+					'constant_prefix' => $config['constant_prefix'] ?? '',
+					'encryption'      => $config['encryption'] ?? false,
+					'config_file'     => $config['config_file'] ?? false,
 					'defaults'        => $defaults,
-					'config_file'     => $this->config['config_file'] ?? false,
 				)
 			);
 		}
 
-		// Always merge schema defaults so active-toggle keys (and any other
-		// schema-derived defaults) are recognised even by pre-built instances.
+		// Always merge schema defaults, so active-toggle keys (and any other
+		// schema-derived defaults) are recognized even by pre-built instances.
 		$settings->merge_defaults( $this->schema->get_defaults() );
 
 		return $settings;
