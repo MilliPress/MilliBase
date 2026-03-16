@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.4](https://github.com/MilliPress/MilliBase/compare/v1.2.3...v1.2.4) (2026-03-16)
+
+
+### Bug Fixes
+
+* **assets:** inline fallback for builds outside the web root ([639295c](https://github.com/MilliPress/MilliBase/commit/639295c8774032f15cc94eefad4e2f527f62ab70))
+
 ## [1.2.3](https://github.com/MilliPress/MilliBase/compare/v1.2.2...v1.2.3) (2026-03-16)
 
 
