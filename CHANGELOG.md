@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.3](https://github.com/MilliPress/MilliBase/compare/v1.2.2...v1.2.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* defer boot() to init hook to avoid textdomain deprecation notice ([d08219e](https://github.com/MilliPress/MilliBase/commit/d08219e43c59dfeac457eba31b0fd89dce58c761))
+* defer boot() to init hook to avoid textdomain deprecation notice ([5ad70ca](https://github.com/MilliPress/MilliBase/commit/5ad70cae4a22bdac17115d2ab797a5a6e9bd6268))
+* **manager:** Add type hints for settings and schema properties ([9f43463](https://github.com/MilliPress/MilliBase/commit/9f43463099c1a2a6bd682a06bf91e1fd968be76c))
+
 ## [1.2.2](https://github.com/MilliPress/MilliBase/compare/v1.2.1...v1.2.2) (2026-03-15)
 
 
