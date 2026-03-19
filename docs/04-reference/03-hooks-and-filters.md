@@ -112,15 +112,53 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 
 ---
 
+### `{slug}_setting_changed/{dot_key}`
+
+Fires once per changed key whenever settings are saved (via `add_option` or `update_option`). The key uses dot notation matching `Settings::get()` syntax.
+
+```php
+add_action('my_plugin_setting_changed/warming.enabled', function ($new_value, $old_value, string $key): void {
+    if ($new_value) {
+        // Module was just enabled — prefetch sitemap URLs, etc.
+    }
+}, 10, 3);
+```
+
+**Parameters:**
+- `mixed $new_value` — the new value (`null` if the key was removed)
+- `mixed $old_value` — the old value (`null` if the key is new)
+- `string $key` — the dot-notation key that changed (e.g. `warming.enabled`)
+
+---
+
+### `{slug}_setting_changed`
+
+Fires once per save when at least one setting key changed. Useful for batch operations (e.g. flushing caches once after multiple changes).
+
+```php
+add_action('my_plugin_setting_changed', function (array $changes, array $new_settings, array $old_settings): void {
+    if (isset($changes['cache.ttl'])) {
+        // TTL changed from $changes['cache.ttl']['old'] to $changes['cache.ttl']['new'].
+    }
+}, 10, 3);
+```
+
+**Parameters:**
+- `array $changes` — changed keys as `['dot.key' => ['old' => mixed, 'new' => mixed], ...]`
+- `array $new_settings` — the full new settings array
+- `array $old_settings` — the full old settings array
+
+---
+
 ### `add_option_{option_name}`
 
-WordPress core action. MilliBase hooks into this to sync settings to the config file when the option is first created.
+WordPress core action. MilliBase hooks into this to sync settings to the config file and fire setting change hooks when the option is first created.
 
 ---
 
 ### `update_option_{option_name}`
 
-WordPress core action. MilliBase hooks into this to sync settings to the config file when the option is updated.
+WordPress core action. MilliBase hooks into this to sync settings to the config file and fire setting change hooks when the option is updated.
 
 ---
 

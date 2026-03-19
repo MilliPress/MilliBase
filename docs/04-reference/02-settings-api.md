@@ -148,6 +148,24 @@ Decrypt a single value. Non-encrypted values are returned as-is.
 
 Convert a string to its appropriate PHP type (`'true'` → `true`, `'42'` → `42`, etc.).
 
+## Diffing
+
+### `Settings::flatten_diff(array $old_data, array $new_data, string $prefix = ''): array` (static)
+
+Recursively diff two nested settings arrays into flat dot-notation changes. Returns an associative array keyed by dot-notation paths, each containing `['old' => mixed, 'new' => mixed]`.
+
+- Additions have `old => null`, removals have `new => null`
+- Recurses when both sides are arrays, or when one side is `null` and the other is an array
+- Uses strict `!==` comparison for leaf values
+
+```php
+$old = ['cache' => ['ttl' => 3600, 'enabled' => true]];
+$new = ['cache' => ['ttl' => 7200, 'enabled' => true]];
+
+Settings::flatten_diff($old, $new);
+// ['cache.ttl' => ['old' => 3600, 'new' => 7200]]
+```
+
 ## Hook Callbacks
 
 These methods are registered as WordPress hook callbacks by `register_hooks()`:
@@ -158,11 +176,11 @@ Hooked into `option_{name}` and `default_option_{name}`. Strips constant-defined
 
 ### `on_add_option(string $option, array $settings): void`
 
-Syncs to config file when the option is first created.
+Syncs to config file when the option is first created and fires setting change hooks (diffs against an empty array).
 
 ### `on_update_option(array $old, array $new): void`
 
-Syncs to config file when the option is updated.
+Syncs to config file when the option is updated and fires setting change hooks for any keys that changed.
 
 ### `on_delete_option(string $option): void`
 
