@@ -248,6 +248,104 @@ it('makes merged defaults visible to filter_settings_by_constants', function () 
     expect($after['minify']['enabled'])->toBeTrue();
 });
 
+// ─── flatten_diff() ─────────────────────────────────────────────────
+
+it('detects value changes', function () {
+    $old = ['cache' => ['ttl' => 3600, 'enabled' => true]];
+    $new = ['cache' => ['ttl' => 7200, 'enabled' => true]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.ttl' => ['old' => 3600, 'new' => 7200],
+    ]);
+});
+
+it('detects additions with old as null', function () {
+    $old = ['cache' => ['ttl' => 3600]];
+    $new = ['cache' => ['ttl' => 3600, 'enabled' => true]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.enabled' => ['old' => null, 'new' => true],
+    ]);
+});
+
+it('detects removals with new as null', function () {
+    $old = ['cache' => ['ttl' => 3600, 'enabled' => true]];
+    $new = ['cache' => ['ttl' => 3600]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.enabled' => ['old' => true, 'new' => null],
+    ]);
+});
+
+it('recurses into nested arrays', function () {
+    $old = ['warming' => ['schedule' => ['interval' => 60, 'enabled' => false]]];
+    $new = ['warming' => ['schedule' => ['interval' => 60, 'enabled' => true]]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'warming.schedule.enabled' => ['old' => false, 'new' => true],
+    ]);
+});
+
+it('returns empty array when identical', function () {
+    $data = ['cache' => ['ttl' => 3600, 'enabled' => true]];
+
+    expect(Settings::flatten_diff($data, $data))->toBe([]);
+});
+
+it('handles mixed types: array to scalar', function () {
+    $old = ['cache' => ['options' => ['a' => 1, 'b' => 2]]];
+    $new = ['cache' => ['options' => 'none']];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.options' => ['old' => ['a' => 1, 'b' => 2], 'new' => 'none'],
+    ]);
+});
+
+it('handles mixed types: scalar to array', function () {
+    $old = ['cache' => ['options' => 'none']];
+    $new = ['cache' => ['options' => ['a' => 1]]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.options' => ['old' => 'none', 'new' => ['a' => 1]],
+    ]);
+});
+
+it('diffs against empty array for first-time creation', function () {
+    $new = ['cache' => ['ttl' => 3600], 'debug' => ['verbose' => false]];
+
+    $result = Settings::flatten_diff([], $new);
+
+    expect($result)->toBe([
+        'cache.ttl'     => ['old' => null, 'new' => 3600],
+        'debug.verbose' => ['old' => null, 'new' => false],
+    ]);
+});
+
+it('uses strict comparison for type differences', function () {
+    $old = ['cache' => ['ttl' => 0]];
+    $new = ['cache' => ['ttl' => false]];
+
+    $result = Settings::flatten_diff($old, $new);
+
+    expect($result)->toBe([
+        'cache.ttl' => ['old' => 0, 'new' => false],
+    ]);
+});
+
+// ─── merge_defaults() ──────────────────────────────────────────────
+
 it('invalidates resolved cache after merge_defaults', function () {
     $settings = new Settings([
         'slug'     => 'test',

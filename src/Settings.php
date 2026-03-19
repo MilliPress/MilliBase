@@ -172,10 +172,12 @@ final class Settings {
 			add_filter( 'option_' . $this->option_name, array( $this, 'decrypt_sensitive_settings_data' ), 0 );
 		}
 
-		// Config file sync hooks.
+		// Setting change hooks (config file sync + change notifications).
+		add_action( 'add_option_' . $this->option_name, array( $this, 'on_add_option' ), 10, 2 );
+		add_action( 'update_option_' . $this->option_name, array( $this, 'on_update_option' ), 10, 2 );
+
+		// Config file cleanup only when config files are enabled.
 		if ( $this->config_file ) {
-			add_action( 'add_option_' . $this->option_name, array( $this, 'on_add_option' ), 10, 2 );
-			add_action( 'update_option_' . $this->option_name, array( $this, 'on_update_option' ), 10, 2 );
 			add_action( 'delete_option', array( $this, 'on_delete_option' ) );
 		}
 	}
@@ -897,6 +899,52 @@ final class Settings {
 	}
 
 	/**
+	 * Recursively diff two nested arrays into flat dot-notation changes.
+	 *
+	 * Returns an associative array keyed by dot-notation paths, each containing
+	 * `['old' => …, 'new' => …]` for every leaf value that changed. Additions
+	 * have `old => null`, removals have `new => null`.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array<string, mixed> $old_data The old settings array.
+	 * @param array<string, mixed> $new_data The new settings array.
+	 * @param string               $prefix   Internal dot-notation prefix for recursion.
+	 *
+	 * @return array<string, array{old: mixed, new: mixed}>
+	 */
+	public static function flatten_diff( array $old_data, array $new_data, string $prefix = '' ): array {
+		$changes  = array();
+		$all_keys = array_unique( array_merge( array_keys( $old_data ), array_keys( $new_data ) ) );
+
+		foreach ( $all_keys as $key ) {
+			$dot_key = '' === $prefix ? (string) $key : $prefix . '.' . $key;
+			$old_val = array_key_exists( $key, $old_data ) ? $old_data[ $key ] : null;
+			$new_val = array_key_exists( $key, $new_data ) ? $new_data[ $key ] : null;
+
+			$old_is_array = is_array( $old_val );
+			$new_is_array = is_array( $new_val );
+
+			if ( $old_is_array && $new_is_array ) {
+				$changes = array_merge( $changes, self::flatten_diff( $old_val, $new_val, $dot_key ) );
+			} elseif ( null === $old_val && $new_is_array ) {
+				// Addition of a new branch — recurse with empty old.
+				$changes = array_merge( $changes, self::flatten_diff( array(), $new_val, $dot_key ) );
+			} elseif ( $old_is_array && null === $new_val ) {
+				// Removal of a branch — recurse with empty new.
+				$changes = array_merge( $changes, self::flatten_diff( $old_val, array(), $dot_key ) );
+			} elseif ( $old_val !== $new_val ) {
+				$changes[ $dot_key ] = array(
+					'old' => $old_val,
+					'new' => $new_val,
+				);
+			}
+		}
+
+		return $changes;
+	}
+
+	/**
 	 * Get the option name.
 	 *
 	 * @since 1.0.0
@@ -923,6 +971,8 @@ final class Settings {
 		if ( $this->config_file ) {
 			$this->config_file->write( $settings );
 		}
+
+		$this->fire_setting_changed_hooks( array(), $settings );
 	}
 
 	/**
@@ -939,6 +989,8 @@ final class Settings {
 		if ( $this->config_file ) {
 			$this->config_file->write( $settings );
 		}
+
+		$this->fire_setting_changed_hooks( $old_settings, $settings );
 	}
 
 	/**
@@ -956,6 +1008,50 @@ final class Settings {
 		}
 
 		$this->config_file->delete();
+	}
+
+	// ─── Setting change notifications ──────────────────────────────────
+
+	/**
+	 * Diff old vs new settings and fire per-key and general change actions.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array<string, mixed> $old_settings The previous settings.
+	 * @param array<string, mixed> $new_settings The updated settings.
+	 *
+	 * @return void
+	 */
+	private function fire_setting_changed_hooks( array $old_settings, array $new_settings ): void {
+		$changes = self::flatten_diff( $old_settings, $new_settings );
+
+		if ( empty( $changes ) ) {
+			return;
+		}
+
+		foreach ( $changes as $key => $change ) {
+			/**
+			 * Fires when an individual setting key changes.
+			 *
+			 * @since 1.3.0
+			 *
+			 * @param mixed  $new_value The new value (null if removed).
+			 * @param mixed  $old_value The old value (null if added).
+			 * @param string $key       The dot-notation key that changed.
+			 */
+			do_action( "{$this->slug}_setting_changed/{$key}", $change['new'], $change['old'], $key );
+		}
+
+		/**
+		 * Fires once after settings are saved, if any keys changed.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array<string, array{old: mixed, new: mixed}> $changes      All changed keys.
+		 * @param array<string, mixed>                         $new_settings The full new settings.
+		 * @param array<string, mixed>                         $old_settings The full old settings.
+		 */
+		do_action( "{$this->slug}_setting_changed", $changes, $new_settings, $old_settings );
 	}
 
 	// ─── Private helpers ────────────────────────────────────────────────

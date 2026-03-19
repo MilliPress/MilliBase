@@ -13,6 +13,7 @@
     <rule ref="WordPress">
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="WordPress.NamingConventions.ValidHookName.UseUnderscores"/>
 
         <!-- base64_encode/decode are used for sodium encryption, not obfuscation. -->
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode"/>
