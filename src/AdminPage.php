@@ -166,7 +166,7 @@ final class AdminPage {
 	 * Enqueue build assets inline via wp_add_inline_script/style.
 	 *
 	 * Used as a fallback when the build directory is outside the web root
-	 * (e.g. Composer library in vendor/).
+	 * (e.g., Composer library in vendor/).
 	 *
 	 * @since 1.4.0
 	 *

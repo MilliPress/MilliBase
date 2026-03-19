@@ -175,11 +175,7 @@ final class Settings {
 		// Setting change hooks (config file sync + change notifications).
 		add_action( 'add_option_' . $this->option_name, array( $this, 'on_add_option' ), 10, 2 );
 		add_action( 'update_option_' . $this->option_name, array( $this, 'on_update_option' ), 10, 2 );
-
-		// Config file cleanup only when config files are enabled.
-		if ( $this->config_file ) {
-			add_action( 'delete_option', array( $this, 'on_delete_option' ) );
-		}
+		add_action( 'delete_option', array( $this, 'on_delete_option' ) );
 	}
 
 	/**
