@@ -3,6 +3,11 @@ html:has(.millibase-page) {
 	overflow-y: scroll;
 }
 
+// Prevent modals from breaking sticky positioning by removing body scroll.
+body.modal-open:has(.millibase-page) {
+	overflow: unset;
+}
+
 .millibase-page {
 	&.wrap {
 		margin: 0 0 0 -20px;
