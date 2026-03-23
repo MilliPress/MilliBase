@@ -1,8 +1,3 @@
-// Prevent layout shift when content height changes between tabs.
-html:has(.millibase-page) {
-	overflow-y: scroll;
-}
-
 .millibase-page {
 	&.wrap {
 		margin: 0 0 0 -20px;
@@ -11,14 +6,6 @@ html:has(.millibase-page) {
 	.millibase-header,
 	.millibase-loading-container {
 		background-color: white;
-	}
-
-	// Sticky header — sits below the WP admin bar.
-	// --millibase-adminbar-h is set by JS from the actual #wpadminbar height.
-	.millibase-header {
-		position: sticky;
-		top: var(--millibase-adminbar-h, 32px);
-		z-index: 100;
 	}
 
 	.millibase-settings-wrapper {
@@ -30,27 +17,16 @@ html:has(.millibase-page) {
 			justify-content: center;
 			background: #fff;
 			box-shadow: inset 0 -1px 0 #e0e0e0;
-			margin: 0;
+			margin: 0 0 20px;
 
 			&-item {
 				margin: 0 4px;
 			}
 		}
-
-		// Activated by JS when scrolling up past the natural tab position.
-		// Transform and transitions are managed entirely from JS for
-		// pixel-accurate slide-in and slide-out.
-		&.is-tabs-sticky .components-tab-panel__tabs {
-			position: sticky;
-			top: var(--millibase-tabs-top, 32px);
-			z-index: 99;
-			overflow: hidden;
-		}
 	}
 
 	.components-tab-panel__tab-content {
 		max-width: 800px;
-		margin-top: 16px;
 		margin-left: auto;
 		margin-right: auto;
 	}

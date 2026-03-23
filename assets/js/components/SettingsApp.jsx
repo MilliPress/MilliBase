@@ -4,7 +4,6 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { useEffect, useRef, useCallback } from '@wordpress/element';
 import {
 	Animate,
 	TabPanel,
@@ -15,130 +14,6 @@ import { caution } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Header from './Header.jsx';
 import TabRenderer from './TabRenderer.jsx';
-
-/**
- * Sticky-nav state machine (all DOM-driven for per-pixel performance).
- *
- * Phases:
- *   idle        – tabs in normal document flow, no stickiness.
- *   sticky      – scrolling up past natural position → tabs stick below header.
- *   sliding-out – scrolling down while sticky → tabs shift up pixel-by-pixel.
- */
-const useStickyNav = ( wrapperRef ) => {
-	const lastScrollY = useRef( window.scrollY );
-	const tabsNaturalTop = useRef( 0 );
-	const phase = useRef( 'idle' );
-	const slideOffset = useRef( 0 );
-
-	const updateCssVars = useCallback( () => {
-		const el = wrapperRef.current;
-		if ( ! el ) return;
-
-		const adminBar = document.getElementById( 'wpadminbar' );
-		const adminBarH = adminBar
-			? adminBar.getBoundingClientRect().height
-			: 0;
-		const header = el.querySelector( '.millibase-header' );
-		const headerH = header ? header.getBoundingClientRect().height : 0;
-
-		const page = el.closest( '.millibase-page' );
-		if ( page ) {
-			page.style.setProperty(
-				'--millibase-adminbar-h',
-				`${ adminBarH }px`
-			);
-			page.style.setProperty(
-				'--millibase-tabs-top',
-				`${ adminBarH + headerH }px`
-			);
-		}
-
-		// Record the natural document-offset of the tab bar.
-		const tabBar = el.querySelector( '.components-tab-panel__tabs' );
-		if ( tabBar ) {
-			tabsNaturalTop.current = tabBar.offsetTop + el.offsetTop;
-		}
-	}, [ wrapperRef ] );
-
-	/** Reset to idle: remove class, clear inline transform. */
-	const resetToIdle = ( tabPanel, tabBar ) => {
-		phase.current = 'idle';
-		slideOffset.current = 0;
-		tabPanel.classList.remove( 'is-tabs-sticky' );
-		tabBar.style.transform = '';
-	};
-
-	useEffect( () => {
-		updateCssVars();
-		window.addEventListener( 'resize', updateCssVars );
-
-		const onScroll = () => {
-			const el = wrapperRef.current;
-			if ( ! el ) return;
-
-			const currentY = window.scrollY;
-			const delta = currentY - lastScrollY.current;
-			lastScrollY.current = currentY;
-
-			if ( Math.abs( delta ) < 1 ) return;
-
-			const scrollingUp = delta < 0;
-			const pastTabs = currentY > tabsNaturalTop.current;
-			const tabPanel = el.querySelector( '.millibase-tabs' );
-			const tabBar = el.querySelector(
-				'.components-tab-panel__tabs'
-			);
-			if ( ! tabPanel || ! tabBar ) return;
-
-			const tabBarH = tabBar.getBoundingClientRect().height;
-
-			// Scrolled back to the natural tab position — always reset.
-			if ( ! pastTabs ) {
-				if ( phase.current !== 'idle' ) {
-					resetToIdle( tabPanel, tabBar );
-				}
-				return;
-			}
-
-			if ( phase.current === 'idle' && scrollingUp ) {
-				// Start sliding in from fully hidden.
-				phase.current = 'sliding';
-				slideOffset.current = tabBarH;
-				tabPanel.classList.add( 'is-tabs-sticky' );
-			}
-
-			if ( phase.current === 'sliding' ) {
-				// Adjust offset: scrolling up decreases it, down increases it.
-				slideOffset.current = Math.min(
-					tabBarH,
-					Math.max( 0, slideOffset.current + delta )
-				);
-
-				if ( slideOffset.current >= tabBarH ) {
-					// Fully hidden — back to idle.
-					resetToIdle( tabPanel, tabBar );
-				} else if ( slideOffset.current <= 0 ) {
-					// Fully visible — lock in sticky.
-					phase.current = 'sticky';
-					tabBar.style.transform = '';
-				} else {
-					tabBar.style.transform = `translateY(${ -slideOffset.current }px)`;
-				}
-			} else if ( phase.current === 'sticky' && ! scrollingUp ) {
-				// Start sliding back out.
-				phase.current = 'sliding';
-				slideOffset.current = delta;
-				tabBar.style.transform = `translateY(${ -slideOffset.current }px)`;
-			}
-		};
-		window.addEventListener( 'scroll', onScroll, { passive: true } );
-
-		return () => {
-			window.removeEventListener( 'resize', updateCssVars );
-			window.removeEventListener( 'scroll', onScroll );
-		};
-	}, [ updateCssVars ] );
-};
 
 const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 	<div
@@ -237,9 +112,6 @@ const SettingsApp = ( { config } ) => {
 		isRetrying,
 	} = useSettings();
 
-	const wrapperRef = useRef( null );
-	useStickyNav( wrapperRef );
-
 	const tabs = ( config.schema?.tabs || [] ).map( ( tab ) => ( {
 		name: tab.name,
 		title: tab.title,
@@ -250,7 +122,7 @@ const SettingsApp = ( { config } ) => {
 	const initialTab = activeTab || ( tabs[ 0 ]?.name ?? 'settings' );
 
 	return (
-		<div className="millibase-settings-wrapper" ref={ wrapperRef }>
+		<div className="millibase-settings-wrapper">
 			<Header />
 
 			{ ( () => {
@@ -313,13 +185,9 @@ const SettingsApp = ( { config } ) => {
 										marginRight: '-1px',
 									} }
 									initialTabName={ initialTab }
-									onSelect={ ( tabName ) => {
-										setActiveTab( tabName );
-										window.scrollTo( {
-											top: 0,
-											behavior: 'instant',
-										} );
-									} }
+									onSelect={ ( tabName ) =>
+										setActiveTab( tabName )
+									}
 									tabs={ tabs }
 								>
 									{ ( tab ) => (
