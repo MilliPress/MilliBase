@@ -24,8 +24,16 @@ export const SettingsProvider = ( { config, children } ) => {
 	const [ error, setError ] = useState( null );
 	const [ hasChanges, setHasChanges ] = useState( false );
 	const [ hasStorageChanges, setHasStorageChanges ] = useState( false );
-	const [ activeTab, setActiveTab ] = useState( null );
+	const [ activeTab, setActiveTab ] = useState( () => {
+		const hash = window.location.hash.replace( '#', '' );
+		return hash || null;
+	} );
 	const [ isRetrying, setIsRetrying ] = useState( false );
+
+	const setActiveTabWithHash = useCallback( ( tabName ) => {
+		setActiveTab( tabName );
+		window.location.hash = tabName;
+	}, [] );
 	const statusIntervalRef = useRef( null );
 	const { showSnackbar } = useSnackbar();
 
@@ -267,7 +275,7 @@ export const SettingsProvider = ( { config, children } ) => {
 				saveSettings,
 				triggerAction,
 				activeTab,
-				setActiveTab,
+				setActiveTab: setActiveTabWithHash,
 				retryConnection,
 				isRetrying,
 			} }
