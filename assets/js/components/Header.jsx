@@ -17,10 +17,8 @@ import {
 	ExternalLink,
 	ProgressBar,
 } from '@wordpress/components';
-import { backup, flipVertical, lifesaver, moreVertical } from '@wordpress/icons';
+import * as wpIcons from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
-
-const iconMap = { lifesaver, backup, flipVertical };
 
 const Header = () => {
 	const {
@@ -126,7 +124,7 @@ const Header = () => {
 							renderToggle={ ( { isOpen, onToggle } ) => (
 								<Button
 									__next40pxDefaultSize
-									icon={ moreVertical }
+									icon={ wpIcons.moreVertical }
 									label={ __( 'More Actions', 'millibase' ) }
 									disabled={ isSaving || isLoading }
 									onClick={ onToggle }
@@ -143,7 +141,7 @@ const Header = () => {
 											key={ idx }
 											__next40pxDefaultSize
 											icon={
-												iconMap[ item.icon ] || null
+												wpIcons[ item.icon ] || null
 											}
 											iconPosition="left"
 											onClick={ () => {
@@ -167,7 +165,7 @@ const Header = () => {
 									{ /* Built-in: Reset */ }
 									<MenuItem
 										__next40pxDefaultSize
-										icon={ flipVertical }
+										icon={ wpIcons.flipVertical }
 										iconPosition="left"
 										onClick={ () => {
 											onClose();
@@ -188,7 +186,7 @@ const Header = () => {
 										status.settings?.has_defaults && (
 											<MenuItem
 												__next40pxDefaultSize
-												icon={ backup }
+												icon={ wpIcons.backup }
 												iconPosition="left"
 												onClick={ () => {
 													onClose();
