@@ -19,10 +19,12 @@ import {
 } from '@wordpress/components';
 import * as wpIcons from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
+import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
 
 const Header = () => {
 	const {
 		config,
+		settings,
 		status,
 		saveSettings,
 		isSaving,
@@ -135,8 +137,16 @@ const Header = () => {
 								<MenuGroup
 									label={ __( 'More Actions', 'millibase' ) }
 								>
-									{ /* Custom menu items */ }
-									{ menuItems.map( ( item, idx ) => (
+									{ /* Custom menu items (filtered by condition) */ }
+									{ menuItems.filter( ( item ) => {
+										if ( ! item.condition ) {
+											return true;
+										}
+										if ( typeof item.condition === 'string' ) {
+											return !! resolveDotPath( settings, item.condition );
+										}
+										return evaluateCondition( item.condition, settings );
+									} ).map( ( item, idx ) => (
 										<MenuItem
 											key={ idx }
 											__next40pxDefaultSize
