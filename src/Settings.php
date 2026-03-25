@@ -196,6 +196,18 @@ final class Settings {
 		$this->resolved = array();
 	}
 
+	/**
+	 * Check whether a field key denotes an encrypted field.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $key Field key.
+	 * @return bool
+	 */
+	private static function is_enc_key(string $key ): bool {
+		return strpos( $key, 'enc_' ) === 0;
+	}
+
 	// ─── Settings access ────────────────────────────────────────────────
 
 	/**
@@ -421,7 +433,7 @@ final class Settings {
 
 				if ( defined( $constant ) ) {
 					$result[ $module_key ][ $key ] = constant( $constant );
-				} elseif ( strpos( $key, 'enc_' ) === 0 ) {
+				} elseif ( self::is_enc_key( $key ) ) {
 					// For encrypted fields, also check without the enc_ prefix.
 					$enc_constant = str_replace( 'ENC_', '', $constant );
 					if ( defined( $enc_constant ) ) {
@@ -584,7 +596,7 @@ final class Settings {
 				continue;
 			}
 			foreach ( $module_settings as $key => $value ) {
-				if ( strpos( $key, 'enc_' ) === 0 && is_string( $value ) ) {
+				if ( self::is_enc_key( $key ) && is_string( $value ) ) {
 					$settings[ $module ][ $key ] = self::encrypt_value( $value );
 				}
 			}
@@ -610,7 +622,7 @@ final class Settings {
 				continue;
 			}
 			foreach ( $module_settings as $key => $value ) {
-				if ( strpos( $key, 'enc_' ) === 0 && is_string( $value ) ) {
+				if ( self::is_enc_key( $key ) && is_string( $value ) ) {
 					$settings[ $module ][ $key ] = self::decrypt_value( $value );
 				}
 			}
@@ -798,7 +810,7 @@ final class Settings {
 				continue;
 			}
 			foreach ( $module_settings as $key => $value ) {
-				if ( strpos( $key, 'enc_' ) !== 0 ) {
+				if ( ! self::is_enc_key( $key ) ) {
 					continue;
 				}
 

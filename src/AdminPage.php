@@ -281,7 +281,7 @@ final class AdminPage {
 		$build_dir   = wp_normalize_path( $this->resolve_package_dir() . '/build' );
 		$content_dir = wp_normalize_path( (string) WP_CONTENT_DIR );
 
-		if ( str_starts_with( $build_dir, $content_dir . '/' ) ) {
+		if ( strpos( $build_dir, $content_dir . '/' ) === 0 ) {
 			return content_url( substr( $build_dir, strlen( $content_dir ) ) );
 		}
 
