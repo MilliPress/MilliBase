@@ -67,16 +67,7 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 	return (
 		<UnitControl
 			__next40pxDefaultSize
-			label={
-				field.tooltip ? (
-					<LabelWithTooltip
-						label={ field.label }
-						tooltip={ field.tooltip }
-					/>
-				) : (
-					field.label
-				)
-			}
+			label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 			disabled={ disabled }
 			value={ `${ display.number }${ display.unit }` }
 			unit={ display.unit }

@@ -22,7 +22,12 @@ export const LabelWithTooltip = ( {
 	style = {},
 	tooltipProps = {},
 	iconProps = {},
-} ) => (
+} ) => {
+	if ( ! tooltip ) {
+		return label;
+	}
+
+	return (
 	<Flex align="center" gap={ 1 } style={ style } justify={ justify }>
 		<span>{ label }</span>
 		<Tooltip
@@ -39,4 +44,5 @@ export const LabelWithTooltip = ( {
 			</span>
 		</Tooltip>
 	</Flex>
-);
+	);
+};

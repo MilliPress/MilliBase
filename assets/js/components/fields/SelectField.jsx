@@ -4,13 +4,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 const SelectField = ( { field, value, onChange, disabled } ) => (
 	<SelectControl
 		__next40pxDefaultSize
-		label={
-			field.tooltip ? (
-				<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
-			) : (
-				field.label
-			)
-		}
+		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

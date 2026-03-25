@@ -3,11 +3,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 
 const ColorField = ( { field, value, onChange, disabled } ) => (
 	<div>
-		{ field.tooltip ? (
-			<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
-		) : (
-			<span>{ field.label }</span>
-		) }
+		<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
 		<ColorPicker
 			color={ value || '#000000' }
 			onChange={ onChange }

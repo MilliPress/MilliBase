@@ -8,13 +8,7 @@ const PasswordField = ( { field, value, onChange, disabled } ) => (
 	<InputControl
 		__next40pxDefaultSize
 		type="password"
-		label={
-			field.tooltip ? (
-				<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
-			) : (
-				field.label
-			)
-		}
+		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }
