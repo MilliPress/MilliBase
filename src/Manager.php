@@ -68,6 +68,14 @@ final class Manager {
 	private ?RestController $rest_controller = null;
 
 	/**
+	 * The CliController instance.
+	 *
+	 * @since 1.2.0
+	 * @var CliController|null
+	 */
+	private ?CliController $cli_controller = null;
+
+	/**
 	 * The resolved configuration array.
 	 *
 	 * @since 1.0.0
@@ -126,6 +134,9 @@ final class Manager {
 
 		$this->rest_controller = new RestController( $this->config, $this->settings );
 		$this->rest_controller->register_hooks();
+
+		$this->cli_controller = new CliController( $this->config, $this->settings );
+		$this->cli_controller->register_hooks();
 	}
 
 	/**
@@ -222,7 +233,7 @@ final class Manager {
 	 * Resolve the Settings: use an external instance or build one from the schema.
 	 *
 	 * Pass a pre-built Settings via `$config['settings']` when you need custom
-	 * encryption, constants, or config-file support. Otherwise the manager
+	 * encryption, constants, or config-file support. Otherwise, the manager
 	 * creates its own Settings from schema-extracted and explicit defaults.
 	 *
 	 * @since 1.0.0
