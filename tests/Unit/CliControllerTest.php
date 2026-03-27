@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/cli-stubs.php';
 
-use MilliBase\CliController;
+use MilliBase\CLI\Controller as CliController;
 use MilliBase\Settings;
 
 // ─── Helpers ────────────────────────────────────────────────────────

@@ -21,8 +21,11 @@
 
 namespace MilliBase;
 
+use MilliBase\CLI\Controller as CliController;
+use MilliBase\REST\Controller as RestController;
+
 /**
- * Orchestrator that wires Settings + Schema + AdminPage + RestController together.
+ * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller together.
  *
  * Accepts the configuration array directly. The consumer is responsible for
  * creating the Manager on `init` (or later) so that translation functions

@@ -10,8 +10,9 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase;
+namespace MilliBase\CLI;
 
+use MilliBase\Settings;
 use WP_CLI;
 
 /**
@@ -20,7 +21,7 @@ use WP_CLI;
  *
  * @since 1.2.0
  */
-final class CliController {
+final class Controller {
 
 	/**
 	 * The settings configuration.
