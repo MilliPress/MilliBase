@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Password field type — stores values as-is without sanitization stripping.
  *
  * @since 1.0.0
  */
-final class PasswordField implements FieldTypeInterface {
+final class Password implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

@@ -1,19 +1,19 @@
 <?php
 /**
- * Sanitization and schema for the color field type.
+ * Sanitization and schema for the code field type.
  *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
- * Color field type — validates hex color strings (#RGB, #RRGGBB, #RRGGBBAA).
+ * Code field type — stores raw code strings without sanitization stripping.
  *
  * @since 1.0.0
  */
-final class ColorField implements FieldTypeInterface {
+final class Code implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}
@@ -21,14 +21,11 @@ final class ColorField implements FieldTypeInterface {
 	 * @since 1.0.0
 	 */
 	public function get_type(): string {
-		return 'color';
+		return 'code';
 	}
 
 	/**
 	 * {@inheritDoc}
-	 *
-	 * Uses `sanitize_hex_color()` when available, otherwise falls back
-	 * to a regex check.
 	 *
 	 * @since 1.0.0
 	 *
@@ -36,15 +33,7 @@ final class ColorField implements FieldTypeInterface {
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ): string {
-		if ( ! is_string( $value ) ) {
-			return '';
-		}
-
-		if ( function_exists( 'sanitize_hex_color' ) ) {
-			return sanitize_hex_color( $value ) ?? '';
-		}
-
-		return preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ? $value : '';
+		return is_string( $value ) ? $value : ( is_scalar( $value ) ? (string) $value : '' );
 	}
 
 	/**

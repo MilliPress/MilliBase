@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Toggle (boolean) field type.
  *
  * @since 1.0.0
  */
-final class ToggleField implements FieldTypeInterface {
+final class Toggle implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Unit field type — stores a numeric value paired with a CSS unit selector.
  *
  * @since 1.0.0
  */
-final class UnitField implements FieldTypeInterface {
+final class Unit implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

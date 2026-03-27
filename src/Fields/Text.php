@@ -1,19 +1,19 @@
 <?php
 /**
- * Sanitization and schema for the code field type.
+ * Sanitization and schema for the text field type.
  *
  * @package MilliBase
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
- * Code field type — stores raw code strings without sanitization stripping.
+ * Text field type — sanitizes values through `sanitize_text_field()`.
  *
  * @since 1.0.0
  */
-final class CodeField implements FieldTypeInterface {
+final class Text implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}
@@ -21,7 +21,7 @@ final class CodeField implements FieldTypeInterface {
 	 * @since 1.0.0
 	 */
 	public function get_type(): string {
-		return 'code';
+		return 'text';
 	}
 
 	/**
@@ -33,7 +33,7 @@ final class CodeField implements FieldTypeInterface {
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ): string {
-		return is_string( $value ) ? $value : ( is_scalar( $value ) ? (string) $value : '' );
+		return is_string( $value ) ? sanitize_text_field( $value ) : ( is_scalar( $value ) ? (string) $value : '' );
 	}
 
 	/**
