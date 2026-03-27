@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Select field type — validates against a whitelist of allowed option values.
  *
  * @since 1.0.0
  */
-final class SelectField implements FieldTypeInterface {
+final class Select implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

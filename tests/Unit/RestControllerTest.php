@@ -1,6 +1,6 @@
 <?php
 
-use MilliBase\RestController;
+use MilliBase\REST\Controller as RestController;
 use MilliBase\Settings;
 
 // ─── Stubs ──────────────────────────────────────────────────────────

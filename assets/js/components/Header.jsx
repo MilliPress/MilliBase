@@ -17,14 +17,14 @@ import {
 	ExternalLink,
 	ProgressBar,
 } from '@wordpress/components';
-import { backup, flipVertical, lifesaver, moreVertical } from '@wordpress/icons';
+import * as wpIcons from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
-
-const iconMap = { lifesaver, backup, flipVertical };
+import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
 
 const Header = () => {
 	const {
 		config,
+		settings,
 		status,
 		saveSettings,
 		isSaving,
@@ -126,7 +126,7 @@ const Header = () => {
 							renderToggle={ ( { isOpen, onToggle } ) => (
 								<Button
 									__next40pxDefaultSize
-									icon={ moreVertical }
+									icon={ wpIcons.moreVertical }
 									label={ __( 'More Actions', 'millibase' ) }
 									disabled={ isSaving || isLoading }
 									onClick={ onToggle }
@@ -137,13 +137,21 @@ const Header = () => {
 								<MenuGroup
 									label={ __( 'More Actions', 'millibase' ) }
 								>
-									{ /* Custom menu items */ }
-									{ menuItems.map( ( item, idx ) => (
+									{ /* Custom menu items (filtered by condition) */ }
+									{ menuItems.filter( ( item ) => {
+										if ( ! item.condition ) {
+											return true;
+										}
+										if ( typeof item.condition === 'string' ) {
+											return !! resolveDotPath( settings, item.condition );
+										}
+										return evaluateCondition( item.condition, settings );
+									} ).map( ( item, idx ) => (
 										<MenuItem
 											key={ idx }
 											__next40pxDefaultSize
 											icon={
-												iconMap[ item.icon ] || null
+												wpIcons[ item.icon ] || null
 											}
 											iconPosition="left"
 											onClick={ () => {
@@ -167,7 +175,7 @@ const Header = () => {
 									{ /* Built-in: Reset */ }
 									<MenuItem
 										__next40pxDefaultSize
-										icon={ flipVertical }
+										icon={ wpIcons.flipVertical }
 										iconPosition="left"
 										onClick={ () => {
 											onClose();
@@ -188,7 +196,7 @@ const Header = () => {
 										status.settings?.has_defaults && (
 											<MenuItem
 												__next40pxDefaultSize
-												icon={ backup }
+												icon={ wpIcons.backup }
 												iconPosition="left"
 												onClick={ () => {
 													onClose();

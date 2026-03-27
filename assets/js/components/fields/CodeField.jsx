@@ -3,13 +3,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 
 const CodeField = ( { field, value, onChange, disabled } ) => (
 	<TextareaControl
-		label={
-			field.tooltip ? (
-				<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
-			) : (
-				field.label
-			)
-		}
+		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

@@ -185,9 +185,13 @@ const SettingsApp = ( { config } ) => {
 										marginRight: '-1px',
 									} }
 									initialTabName={ initialTab }
-									onSelect={ ( tabName ) =>
-										setActiveTab( tabName )
-									}
+									onSelect={ ( tabName ) => {
+										setActiveTab( tabName );
+										window.scrollTo( {
+											top: 0,
+											behavior: 'instant',
+										} );
+									} }
 									tabs={ tabs }
 								>
 									{ ( tab ) => (

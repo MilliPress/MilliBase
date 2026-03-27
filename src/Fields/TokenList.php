@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Token list field type — stores an array of sanitized string tokens.
  *
  * @since 1.0.0
  */
-final class TokenListField implements FieldTypeInterface {
+final class TokenList implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

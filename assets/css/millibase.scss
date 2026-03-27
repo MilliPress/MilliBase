@@ -1,11 +1,44 @@
+// Prevent layout shift when content height changes between tabs.
+html:has(.millibase-page) {
+	overflow-y: scroll;
+}
+
+// Prevent modals from breaking sticky positioning by removing body scroll.
+body.modal-open:has(.millibase-page) {
+	overflow: unset;
+}
+
 .millibase-page {
 	&.wrap {
 		margin: 0 0 0 -20px;
+
+		@media screen and (max-width: 782px) {
+			margin-left: -10px;
+			margin-right: 0;
+		}
 	}
 
 	.millibase-header,
 	.millibase-loading-container {
 		background-color: white;
+	}
+
+	// Mobile-friendly header: stack title and buttons vertically.
+	@media screen and (max-width: 782px) {
+		.millibase-header > .components-flex {
+			flex-direction: column;
+			align-items: center;
+			gap: 12px;
+
+			> .components-flex-item {
+				text-align: center;
+
+				// Center the external links row.
+				> .components-flex {
+					justify-content: center;
+				}
+			}
+		}
 	}
 
 	.millibase-settings-wrapper {
@@ -18,6 +51,12 @@
 			background: #fff;
 			box-shadow: inset 0 -1px 0 #e0e0e0;
 			margin: 0 0 20px;
+
+			@media screen and (min-width: 783px) {
+				position: sticky;
+				top: 32px;
+				z-index: 2;
+			}
 
 			&-item {
 				margin: 0 4px;

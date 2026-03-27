@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Each field type provides sanitization logic and a JSON schema fragment.
  *
  * @since 1.0.0
  */
-interface FieldTypeInterface {
+interface FieldInterface {
 
 	/**
 	 * Get the field type identifier.

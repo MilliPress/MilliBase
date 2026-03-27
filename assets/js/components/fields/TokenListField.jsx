@@ -4,13 +4,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 const TokenListField = ( { field, value, onChange, disabled } ) => (
 	<FormTokenField
 		__next40pxDefaultSize
-		label={
-			field.tooltip ? (
-				<LabelWithTooltip label={ field.label } tooltip={ field.tooltip } />
-			) : (
-				field.label
-			)
-		}
+		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 		placeholder={ field.placeholder || '' }
 		value={ Array.isArray( value ) ? value : [] }
 		disabled={ disabled }

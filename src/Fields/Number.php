@@ -6,14 +6,14 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase\FieldTypes;
+namespace MilliBase\Fields;
 
 /**
  * Number field type — clamps values to optional min/max bounds.
  *
  * @since 1.0.0
  */
-final class NumberField implements FieldTypeInterface {
+final class Number implements FieldInterface {
 
 	/**
 	 * {@inheritDoc}

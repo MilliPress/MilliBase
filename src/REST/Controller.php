@@ -6,7 +6,10 @@
  * @author  Philipp Wellmer <hello@millipress.com>
  */
 
-namespace MilliBase;
+namespace MilliBase\REST;
+
+use MilliBase\ServerVars;
+use MilliBase\Settings;
 
 /**
  * Registers REST endpoints for built-in actions (reset, restore)
@@ -14,7 +17,7 @@ namespace MilliBase;
  *
  * @since 1.0.0
  */
-final class RestController {
+final class Controller {
 
 	/**
 	 * The settings configuration.
