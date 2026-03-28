@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.3.0](https://github.com/MilliPress/MilliBase/compare/v1.2.4...v1.3.0) (2026-03-28)
+
+
+### Features
+
+* add WP-CLI settings commands via CliController ([a03e119](https://github.com/MilliPress/MilliBase/commit/a03e119b88081d993bf924d9db765e5056b3d797))
+* **settings:** fire per-key actions when settings change ([bc8c9a7](https://github.com/MilliPress/MilliBase/commit/bc8c9a743671e9149fc179aed0fe2f8b9fc87135))
+* **settings:** Sync active tab with URL hash for better navigation ([9e4a6a0](https://github.com/MilliPress/MilliBase/commit/9e4a6a0bb4db18dc46219400ed3c65dff505d248))
+* **ui:** Add condition support for header menu items ([942de9b](https://github.com/MilliPress/MilliBase/commit/942de9b8a947818c9b53965431dbf2eb0f4ec8f8))
+* **ui:** Add sticky positioning to tabs for improved navigation experience ([71219a0](https://github.com/MilliPress/MilliBase/commit/71219a0b10094f4cfe01902c8ac00d560e120166))
+* **ui:** Mobile-friendly header, desktop-only sticky tabs, and full icon set ([c10bbff](https://github.com/MilliPress/MilliBase/commit/c10bbff458e15d3eaa4b0d3e2cb14f8062b89444))
+* **ui:** sticky header and smart scroll-to-reveal tabs navigation ([12fe7e8](https://github.com/MilliPress/MilliBase/commit/12fe7e8e47322726d4c2c9c7165d6264072d5332))
+
+
+### Bug Fixes
+
+* **ci:** use RELEASE_TOKEN for build-assets push to protected branch ([9168620](https://github.com/MilliPress/MilliBase/commit/9168620d2cfff1fae20a458f23db95030cc246da))
+* PHP 7.4 compat and extract encrypted-key helper ([a69b2fc](https://github.com/MilliPress/MilliBase/commit/a69b2fc243ddb4f26a4bc12ac2910c1e108a7a5a))
+* resolve PHPCS errors and suppress false-positive warnings ([d95f041](https://github.com/MilliPress/MilliBase/commit/d95f041f372ca7523423d336c71e4ab45cd79e07))
+* **settings:** Ensure config file cleanup occurs on option deletion ([819c0ac](https://github.com/MilliPress/MilliBase/commit/819c0acaf67dbda893e6eb5ecb3e9862cc32e737))
+* **ui:** Prevent modals from disrupting sticky positioning by adjusting body overflow ([051081f](https://github.com/MilliPress/MilliBase/commit/051081fcf938b73c782c0a9c407fd25130f95e5f))
+
+
+### Refactoring
+
+* move controllers to CLI and REST namespaces ([5eed702](https://github.com/MilliPress/MilliBase/commit/5eed702198225432675dd953528512abede8d454))
+* rename FieldTypes to Fields namespace ([76b0edc](https://github.com/MilliPress/MilliBase/commit/76b0edcdb3bed7bdbfa3a889d3aa8a3cdd90d92b))
+* **ui:** simplify field label/tooltip pattern ([de5cad7](https://github.com/MilliPress/MilliBase/commit/de5cad71f7ac28188b22461b2e3067ceaaad3e9a))
+
 ## [1.2.4](https://github.com/MilliPress/MilliBase/compare/v1.2.3...v1.2.4) (2026-03-16)
 
 
