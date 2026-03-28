@@ -197,7 +197,7 @@ final class Controller {
 	 * @param array<string, string> $assoc_args Named arguments.
 	 * @return void
 	 */
-	public function set( array $args, array $assoc_args ): void {
+	public function set( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$key   = $args[0];
 		$value = Settings::coerce_value( $args[1] );
 
@@ -268,11 +268,9 @@ final class Controller {
 	 *
 	 * @since 1.2.0
 	 *
-	 * @param array<int, string>    $args       Positional arguments.
-	 * @param array<string, string> $assoc_args Named arguments.
 	 * @return void
 	 */
-	public function backup( array $args, array $assoc_args ): void {
+	public function backup(): void {
 		$this->settings->backup();
 		WP_CLI::success( 'Backup created. Expires in 12 hours.' );
 	}
@@ -286,11 +284,9 @@ final class Controller {
 	 *
 	 * @since 1.2.0
 	 *
-	 * @param array<int, string>    $args       Positional arguments.
-	 * @param array<string, string> $assoc_args Named arguments.
 	 * @return void
 	 */
-	public function restore( array $args, array $assoc_args ): void {
+	public function restore(): void {
 		if ( ! $this->settings->restore_backup() ) {
 			WP_CLI::error( 'No backup found or backup has expired.' );
 		}
@@ -346,6 +342,7 @@ final class Controller {
 		}
 
 		if ( null !== $file ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $file, $json . "\n" ) ) {
 				WP_CLI::error( "Failed to write to '{$file}'." );
 			}
@@ -388,7 +385,7 @@ final class Controller {
 	 */
 	public function import( array $args, array $assoc_args ): void {
 		$file = $assoc_args['file'] ?? null;
-		/** @var bool $merge */
+		/** Merge flag: true = merge into existing, false = overwrite.  @var bool $merge */
 		$merge = WP_CLI\Utils\get_flag_value( $assoc_args, 'merge', true );
 
 		if ( null === $file || '' === $file ) {
@@ -399,12 +396,13 @@ final class Controller {
 			WP_CLI::error( "File not found or not readable: {$file}" );
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		$contents = file_get_contents( $file );
 		if ( false === $contents ) {
 			WP_CLI::error( "Failed to read file: {$file}" );
 		}
 
-		/** @var array<string, mixed>|null $data */
+		/** Decoded JSON payload. @var array<string, mixed>|null $data */
 		$data = json_decode( $contents, true );
 		if ( ! is_array( $data ) ) {
 			WP_CLI::error( 'Invalid JSON in file.' );

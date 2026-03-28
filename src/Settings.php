@@ -204,7 +204,7 @@ final class Settings {
 	 * @param string $key Field key.
 	 * @return bool
 	 */
-	private static function is_enc_key(string $key ): bool {
+	private static function is_enc_key( string $key ): bool {
 		return strpos( $key, 'enc_' ) === 0;
 	}
 
