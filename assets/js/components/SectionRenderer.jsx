@@ -30,7 +30,7 @@ const groupFieldsIntoRows = ( fields ) => {
 	return rows;
 };
 
-const SectionRenderer = ( { section } ) => {
+const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle } ) => {
 	const context = useSettings();
 	const { status, settings, updateSetting } = context;
 	const constants = status?.settings?.constants || {};
@@ -116,7 +116,11 @@ const SectionRenderer = ( { section } ) => {
 					const next = ! isActive;
 					updateSetting( activeModule, activeKey, next );
 					if ( next ) {
-						setIsOpen( true );
+						if ( accordion && onAccordionToggle ) {
+							onAccordionToggle( section.id, true );
+						} else {
+							setIsOpen( true );
+						}
 					}
 				} }
 			/>
@@ -202,11 +206,19 @@ const SectionRenderer = ( { section } ) => {
 		</>
 	);
 
-	// Sections with an active toggle use controlled PanelBody so we can
-	// auto-open on activation. Others stay uncontrolled.
-	const panelProps = active
-		? { opened: isOpen, onToggle: () => setIsOpen( ! isOpen ) }
-		: { initialOpen };
+	// Determine panel controlled/uncontrolled props.
+	// Accordion mode and active-toggle sections both use controlled state.
+	let panelProps;
+	if ( accordion ) {
+		panelProps = {
+			opened: accordionOpen,
+			onToggle: () => onAccordionToggle( section.id, ! accordionOpen ),
+		};
+	} else if ( active ) {
+		panelProps = { opened: isOpen, onToggle: () => setIsOpen( ! isOpen ) };
+	} else {
+		panelProps = { initialOpen };
+	}
 
 	return (
 		<PanelBody

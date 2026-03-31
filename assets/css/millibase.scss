@@ -89,6 +89,30 @@ body.modal-open:has(.millibase-page) {
 		z-index: 9999;
 	}
 
+	// Section groups: gap between groups, heading above each Panel.
+	.millibase-tab-content {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	// Gap between sections within a group.
+	.millibase-section-group {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.millibase-section-group__heading {
+		font-size: 13px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: #646970;
+		margin: 0 0 4px;
+		padding: 0;
+	}
+
 	.millibase-section-intro {
 		margin: 0 0 16px;
 	}

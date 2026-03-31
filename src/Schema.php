@@ -178,6 +178,10 @@ final class Schema {
 				$client_tab['component'] = $tab['component'];
 			}
 
+			if ( ! empty( $tab['accordion'] ) ) {
+				$client_tab['accordion'] = true;
+			}
+
 			if ( isset( $tab['intro'] ) ) {
 				$client_tab['intro'] = $tab['intro'];
 			}
@@ -199,6 +203,10 @@ final class Schema {
 
 					if ( isset( $section['icon'] ) ) {
 						$client_section['icon'] = $section['icon'];
+					}
+
+					if ( isset( $section['group'] ) && is_string( $section['group'] ) ) {
+						$client_section['group'] = $section['group'];
 					}
 
 					if ( isset( $section['status'] ) ) {
