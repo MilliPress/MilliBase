@@ -35,6 +35,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `type` | `string` | No | Set to `'custom'` to render a custom component |
 | `component` | `string` | No | Name of a registered custom component |
 | `intro` | `string` | No | Introductory text shown above sections |
+| `accordion` | `bool` | No | When `true`, only one section can be open at a time (see [Accordion Mode](#accordion-mode)) |
 
 ## Section Structure
 
@@ -65,6 +66,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
 | `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                          |
 | `status`  | `array`         | No        | Runtime status badge config (see below)                                                                 |
+| `group`   | `string`        | No        | Group label — consecutive sections with the same group are visually batched (see [Section Groups](#section-groups)) |
 | `fields`  | `array`         | Yes       | Field definitions                                                                                       |
 
 > [!TIP]
@@ -169,6 +171,63 @@ When `status` is configured, `open` defaults to `'error'` (auto-open when there'
     'fields' => [ /* ... */ ],
 ],
 ```
+
+### Section Groups
+
+The `group` property lets you batch related sections under a shared heading. Consecutive sections with the same `group` value are grouped together visually, with the group label rendered as a heading above them.
+
+```php
+'tabs' => [
+    [
+        'name'      => 'performance',
+        'title'     => 'Performance',
+        'accordion' => true,
+        'sections'  => [
+            ['id' => 'editor-assets', 'group' => 'Block Editor', 'title' => 'Assets',  'fields' => [...]],
+            ['id' => 'block-styles',  'group' => 'Block Editor', 'title' => 'Styles',  'fields' => [...]],
+            ['id' => 'dns-prefetch',  'group' => 'Prefetching',  'title' => 'DNS',     'fields' => [...]],
+            ['id' => 'preconnect',    'group' => 'Prefetching',  'title' => 'Origins',  'fields' => [...]],
+        ],
+    ],
+],
+```
+
+This renders as:
+
+```
+Block Editor                    ← group heading
+┌─ Assets ─────────────────┐
+│  ...fields...            │   ← 5px gap between sections
+├─ Styles ─────────────────┤
+│  ...fields...            │
+└──────────────────────────┘
+                                ← 16px gap between groups
+Prefetching                     ← group heading
+┌─ DNS ────────────────────┐
+│  ...fields...            │
+├─ Origins ────────────────┤
+│  ...fields...            │
+└──────────────────────────┘
+```
+
+Sections without a `group` property are collected into a single implicit group (no heading). Groups must be formed by consecutive sections — sections with the same group label that are not adjacent will form separate groups.
+
+### Accordion Mode
+
+When `accordion` is set to `true` on a tab, only one section can be open at a time within each group. Opening a section automatically closes the previously open one.
+
+```php
+[
+    'name'      => 'modules',
+    'title'     => 'Modules',
+    'accordion' => true,        // enable accordion behavior
+    'sections'  => [ /* ... */ ],
+],
+```
+
+When sections use `group`, accordion state is scoped per group — opening a section in one group does not affect sections in another group. When no groups are defined, accordion applies across all sections in the tab.
+
+Accordion mode works with all section features including active toggles and status badges. When an active toggle is switched on, the section automatically opens (closing others in the same group).
 
 ## Field Structure
 
