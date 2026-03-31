@@ -8,6 +8,8 @@ menu_order: 30
 
 The `Settings` class provides the full API for reading and writing settings from PHP. Get it via `$manager->settings()`.
 
+> **Note:** When you pass a `Settings` instance to the `Manager` constructor, `$manager->settings()` is available immediately — even before `init`. Schema-derived defaults are merged at construction time.
+
 ## Reading Settings
 
 ### Dot-Notation Access

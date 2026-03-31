@@ -36,9 +36,9 @@ The `Manager` class is the only entry point. It creates all internal components,
 
 ## How It Works
 
-1. Your plugin defines a configuration array with tabs, sections, and fields
-2. `Manager` creates a `Schema` that extracts defaults and builds a JSON schema
-3. `Manager` creates a `Settings` instance that manages persistence (DB, constants, config files)
+1. Your plugin passes a config closure and an optional `Settings` instance to `Manager`
+2. At construction time (before `init`), `Manager` extracts schema-derived defaults and merges them into the `Settings` instance — making them available immediately
+3. On `init`, `Manager` calls the closure to get the full config (with translated strings), creates `Schema`, and wires all components
 4. On the admin page, the pre-built React bundle reads the schema and renders the UI
 5. The React app communicates with WordPress via `POST /wp/v2/settings` (save) and custom REST endpoints (reset, restore, status)
 

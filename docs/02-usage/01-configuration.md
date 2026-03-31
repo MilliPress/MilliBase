@@ -6,81 +6,82 @@ menu_order: 10
 
 # Configuration
 
-The `Manager` constructor accepts a single configuration array. This page documents every top-level key.
-
-> **Important:** Create the Manager on the `init` hook (or later) so that translation functions like `__()` execute after textdomains are loaded. This is required since WordPress 6.7.
+The `Manager` constructor accepts a `slug`, a config `Closure`, and an optional `Settings` instance. The closure is called on `init`, so translation functions like `__()` execute after textdomains are loaded. This page documents every key in the config array returned by the closure.
 
 ## Configuration Reference
 
 ```php
-add_action( 'init', function () {
-$manager = new \MilliBase\Manager([
-    // ─── Required ──────────────────────────────────────────
-    'slug'           => 'my-plugin',           // Unique identifier, used for hooks and DOM IDs
-    'tabs'           => [ /* ... */ ],         // Tab definitions (see Schema Definition)
+$manager = new \MilliBase\Manager(
+    slug: 'my-plugin',
+    config: fn() => [
+        // ─── Required ──────────────────────────────────────────
+        'tabs'           => [ /* ... */ ],         // Tab definitions (see Schema Definition)
 
-    // ─── Admin Menu ────────────────────────────────────────
-    'page_title'     => 'My Plugin Settings',  // Browser title
-    'menu_title'     => 'My Plugin',           // Menu label
-    'capability'     => 'manage_options',       // Required capability
-    'menu_parent'    => 'options-general.php',  // Parent menu slug, or '' for top-level
-    'menu_icon'      => 'dashicons-admin-generic', // Dashicon (top-level only)
+        // ─── Admin Menu ────────────────────────────────────────
+        'page_title'     => __( 'My Plugin Settings', 'my-plugin' ),
+        'menu_title'     => __( 'My Plugin', 'my-plugin' ),
+        'capability'     => 'manage_options',       // Required capability
+        'menu_parent'    => 'options-general.php',  // Parent menu slug, or '' for top-level
+        'menu_icon'      => 'dashicons-admin-generic', // Dashicon (top-level only)
 
-    // ─── Storage ───────────────────────────────────────────
-    'constant_prefix' => 'MP',                 // Prefix for wp-config.php constant overrides
-    'encryption'      => true,                 // Enable sodium encryption for enc_* fields
-    'config_file'     => [                     // Config file sync for pre-WordPress access
-        'directory' => '/path/to/config',
-    ],
-    'defaults'        => [                     // Non-UI defaults (merged with schema defaults)
-        'advanced' => ['debug' => false],
-    ],
-
-    // ─── Header ────────────────────────────────────────────
-    'header' => [
-        'title' => 'My Plugin Settings',
-        'links' => [
-            ['label' => 'Documentation', 'url' => 'https://example.com/docs'],
+        // ─── Storage ───────────────────────────────────────────
+        'constant_prefix' => 'MP',                 // Prefix for wp-config.php constant overrides
+        'encryption'      => true,                 // Enable sodium encryption for enc_* fields
+        'config_file'     => [                     // Config file sync for pre-WordPress access
+            'directory' => '/path/to/config',
         ],
-        'buttons'    => [ /* ... */ ],
-        'menu_items' => [ /* ... */ ],
-    ],
+        'defaults'        => [                     // Non-UI defaults (merged with schema defaults)
+            'advanced' => ['debug' => false],
+        ],
 
-    // ─── Actions ───────────────────────────────────────────
-    'actions'         => [ /* ... */ ],        // Custom REST action endpoints
-    'status' => [                            // Optional status endpoint data
-        'data'     => ['version' => '1.0'],  // Static data (merged first)
-        'callback' => function ($request) {  // Dynamic data (merged on top)
-            return ['healthy' => true];
-        },
-    ],
-    'troubleshooting' => [                   // Optional link shown on connection errors
-        'url'   => 'https://example.com/docs/troubleshooting',
-        'label' => 'View Troubleshooting Guide',  // Optional (has default)
-        'text'  => 'Need help fixing this issue?', // Optional (has default)
-    ],
+        // ─── Header ────────────────────────────────────────────
+        'header' => [
+            'title' => __( 'My Plugin Settings', 'my-plugin' ),
+            'links' => [
+                ['label' => __( 'Documentation', 'my-plugin' ), 'url' => 'https://example.com/docs'],
+            ],
+            'buttons'    => [ /* ... */ ],
+            'menu_items' => [ /* ... */ ],
+        ],
 
-    // ─── Advanced ──────────────────────────────────────────
-    'settings'  => $external_settings,          // Optional: inject a pre-built Settings instance
-    'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
-]);
-} );
+        // ─── Actions ───────────────────────────────────────────
+        'actions'         => [ /* ... */ ],        // Custom REST action endpoints
+        'status' => [                            // Optional status endpoint data
+            'data'     => ['version' => '1.0'],  // Static data (merged first)
+            'callback' => function ($request) {  // Dynamic data (merged on top)
+                return ['healthy' => true];
+            },
+        ],
+        'troubleshooting' => [                   // Optional link shown on connection errors
+            'url'   => 'https://example.com/docs/troubleshooting',
+            'label' => __( 'View Troubleshooting Guide', 'my-plugin' ),
+            'text'  => __( 'Need help fixing this issue?', 'my-plugin' ),
+        ],
+
+        // ─── Advanced ──────────────────────────────────────────
+        'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
+    ],
+    settings: $external_settings,  // Optional: pre-built Settings instance
+);
 ```
+
+> **Note:** The `slug` is passed as a named constructor parameter, not inside the config array. `option_name` and `rest_namespace` are auto-derived from the slug but can be overridden in the config array.
 
 ## Key Details
 
-### `slug`
+### `slug` (constructor parameter)
 
-Unique identifier for this settings page. Used for:
+Unique identifier for this settings page. Passed as the first argument to the `Manager` constructor (not inside the config array). Used for:
 
 - WordPress hook names (`{slug}_settings_schema`, `{slug}_rest_settings_action_performed`, `{slug}_rest_status_response`)
 - Admin page hook suffix (`settings_page_{slug}` or `toplevel_page_{slug}`)
 - DOM container ID (`{slug}-settings`)
 - The `data-slug` attribute used by the React auto-mount
+- Auto-deriving `option_name` and `rest_namespace` when not explicitly set
 
 ### `option_name`
 
-The WordPress option name in `wp_options`. Defaults to `{slug}_settings`. All settings are stored as a single serialized array under this key. Also used for:
+The WordPress option name in `wp_options`. Defaults to `{slug}`. All settings are stored as a single serialized array under this key. Also used for:
 
 - `register_setting()` registration
 - Backup transient key (`{option_name}_backup`)
@@ -143,9 +144,26 @@ MilliBase checks for this constant (derived from the `slug` config) and uses it 
 
 The `build_url` config key can be used as an explicit override when neither automatic resolution nor the basename constant produce the correct URL.
 
-### `settings`
+### `settings` (constructor parameter)
 
-Pass an externally created `Settings` instance to share storage across multiple settings pages or to use custom configuration. When a `Settings` instance is provided, MilliBase does not call `register_hooks()` on it — the caller manages its lifecycle.
+Pass an externally created `Settings` instance as the third constructor argument to share storage across multiple settings pages or to use custom configuration. When a `Settings` instance is provided:
+
+- Schema-derived defaults are merged into it at construction time (before `init`)
+- The instance is reused instead of creating a new one during initialization
+- The caller manages its lifecycle
+
+This is the recommended pattern for plugins that need settings access before `init`:
+
+```php
+$settings = new \MilliBase\Settings([...]);
+$manager  = new \MilliBase\Manager(
+    slug: 'my-plugin',
+    config: fn() => $this->get_ui_config(),
+    settings: $settings,
+);
+
+// $settings->get('cache.ttl') works immediately — no need to wait for init.
+```
 
 ### `header`
 

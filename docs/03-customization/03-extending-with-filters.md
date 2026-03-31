@@ -10,7 +10,12 @@ MilliBase fires several WordPress filters that allow add-on plugins to modify be
 
 ## Schema Filter
 
-The `{slug}_settings_schema` filter fires before the Schema is initialized. Use it to add tabs, sections, or fields from an add-on plugin:
+The `{slug}_settings_schema` filter fires in two phases:
+
+1. **At construction time** (before `init`) — with a minimal config (`['tabs' => []]`) to extract schema-derived defaults for early access
+2. **On `init`** — with the full config (including translated strings) for UI rendering
+
+Add-on filters may modify any config keys, but must gracefully handle the early phase where only the `tabs` key is present. Non-tabs modifications have no effect during the early phase and take full effect on `init`. Use it to add tabs, sections, or fields from an add-on plugin:
 
 ```php
 add_filter('my_plugin_settings_schema', function (array $config): array {

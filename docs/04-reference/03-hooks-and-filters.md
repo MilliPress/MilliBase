@@ -12,7 +12,12 @@ MilliBase uses WordPress hooks for extensibility. The `{slug}` placeholder refer
 
 ### `{slug}_settings_schema`
 
-Fires before Schema initialization. Modify the full configuration array to add tabs, sections, or fields.
+Fires before Schema initialization. This filter fires twice per request:
+
+1. **At construction time** (before `init`) — with a minimal config (`['tabs' => []]`) to extract defaults for early Settings access
+2. **On `init`** — with the full config (including translated strings) for UI rendering
+
+Add-on filters may modify any config keys, but must gracefully handle the early phase where only the `tabs` key is present.
 
 ```php
 add_filter('my_plugin_settings_schema', function (array $config): array {
@@ -21,7 +26,7 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 });
 ```
 
-**Parameters:** `array $config` — the full settings configuration array.
+**Parameters:** `array $config` — the settings configuration array.
 
 ---
 
