@@ -70,7 +70,6 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 			label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 			disabled={ disabled }
 			value={ `${ display.number }${ display.unit }` }
-			unit={ display.unit }
 			onChange={ ( combinedValue ) => {
 				if ( storeAsSeconds ) {
 					onChange( displayToSeconds( combinedValue ) );

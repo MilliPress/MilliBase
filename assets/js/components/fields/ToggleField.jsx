@@ -3,6 +3,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 
 const ToggleField = ( { field, value, onChange, disabled } ) => (
 	<ToggleControl
+		__nextHasNoMarginBottom
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
 		checked={ !! value }
 		disabled={ disabled }
