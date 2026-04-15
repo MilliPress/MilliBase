@@ -9,8 +9,8 @@
 import domReady from '@wordpress/dom-ready';
 import { createRoot } from '@wordpress/element';
 import SettingsApp from './components/SettingsApp.jsx';
-import { SnackbarProvider } from './components/SnackbarProvider.jsx';
-import { SettingsProvider } from './components/SettingsProvider.jsx';
+import { SnackbarProvider, useSnackbar } from './components/SnackbarProvider.jsx';
+import { SettingsProvider, useSettings } from './components/SettingsProvider.jsx';
 import { LabelWithTooltip } from './components/LabelWithTooltip.jsx';
 
 import '../css/millibase.scss';
@@ -61,10 +61,14 @@ window.MilliBase.components = {
 	LabelWithTooltip,
 };
 
-// useSettings and useSnackbar are re-exported from the providers
-// so custom components can import them:
-export { useSettings } from './components/SettingsProvider.jsx';
-export { useSnackbar } from './components/SnackbarProvider.jsx';
+// ─── Exposed hooks for custom tab authors ───────────────────────────
+
+window.MilliBase.hooks = {
+	useSettings,
+	useSnackbar,
+};
+
+export { useSettings, useSnackbar };
 
 // ─── Auto-mount ─────────────────────────────────────────────────────
 
