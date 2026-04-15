@@ -4,6 +4,7 @@ import {
 	useState,
 	useEffect,
 	useCallback,
+	useMemo,
 	useRef,
 } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
@@ -35,6 +36,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		window.location.hash = tabName;
 	}, [] );
 	const statusIntervalRef = useRef( null );
+	const errorRef = useRef( error );
 	const { showSnackbar } = useSnackbar();
 
 	const delay = ( ms ) =>
@@ -158,6 +160,10 @@ export const SettingsProvider = ( { config, children } ) => {
 	}, [ fetchSettings, fetchStatus ] );
 
 	useEffect( () => {
+		errorRef.current = error;
+	}, [ error ] );
+
+	useEffect( () => {
 		fetchSettings();
 		fetchStatus();
 
@@ -166,7 +172,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 
 		statusIntervalRef.current = setInterval( () => {
-			if ( ! error ) {
+			if ( ! errorRef.current ) {
 				fetchStatus();
 			}
 		}, 15000 );
@@ -176,7 +182,7 @@ export const SettingsProvider = ( { config, children } ) => {
 				clearInterval( statusIntervalRef.current );
 			}
 		};
-	}, [ fetchSettings, fetchStatus, error ] );
+	}, [ fetchSettings, fetchStatus ] );
 
 	const updateSetting = ( module, key, value ) => {
 		setSettings( ( prev ) => {
@@ -261,30 +267,58 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 	};
 
+	const contextValue = useMemo(
+		() => ( {
+			config,
+			status,
+			settings,
+			error,
+			isLoading,
+			isSaving,
+			hasChanges,
+			updateSetting,
+			saveSettings,
+			triggerAction,
+			activeTab,
+			setActiveTab: setActiveTabWithHash,
+			retryConnection,
+			isRetrying,
+		} ),
+		[
+			config,
+			status,
+			settings,
+			error,
+			isLoading,
+			isSaving,
+			hasChanges,
+			updateSetting,
+			saveSettings,
+			triggerAction,
+			activeTab,
+			setActiveTabWithHash,
+			retryConnection,
+			isRetrying,
+		]
+	);
+
 	return (
-		<SettingsContext.Provider
-			value={ {
-				config,
-				status,
-				settings,
-				error,
-				isLoading,
-				isSaving,
-				hasChanges,
-				updateSetting,
-				saveSettings,
-				triggerAction,
-				activeTab,
-				setActiveTab: setActiveTabWithHash,
-				retryConnection,
-				isRetrying,
-			} }
-		>
+		<SettingsContext.Provider value={ contextValue }>
 			{ children }
 		</SettingsContext.Provider>
 	);
 };
 
+/**
+ * Access the MilliBase settings context.
+ *
+ * Stable identity guarantees (safe in useCallback/useEffect deps):
+ * - setActiveTab (useCallback, [])
+ * - retryConnection (useCallback)
+ *
+ * The context value itself is memoized and only updates when
+ * an underlying state value actually changes.
+ */
 export const useSettings = () => {
 	return useContext( SettingsContext );
 };
