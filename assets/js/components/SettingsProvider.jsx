@@ -37,7 +37,13 @@ export const SettingsProvider = ( { config, children } ) => {
 	}, [] );
 	const statusIntervalRef = useRef( null );
 	const errorRef = useRef( error );
+	const initialSettingsRef = useRef( initialSettings );
+	const settingsRef = useRef( settings );
+	const statusRef = useRef( status );
+	const hasChangesRef = useRef( hasChanges );
+	const hasStorageChangesRef = useRef( hasStorageChanges );
 	const { showSnackbar } = useSnackbar();
+	const showSnackbarRef = useRef( showSnackbar );
 
 	const delay = ( ms ) =>
 		new Promise( ( resolve ) => setTimeout( resolve, ms ) );
@@ -79,45 +85,6 @@ export const SettingsProvider = ( { config, children } ) => {
 		[ handleApiError ]
 	);
 
-	const triggerAction = async ( action, data = {} ) => {
-		setIsLoading( true );
-		try {
-			// Determine endpoint: check if it matches a custom action.
-			let path = `/${ restNamespace }/settings`;
-			const customAction = ( config.actions || [] ).find(
-				( a ) => a.name === action
-			);
-			if ( customAction ) {
-				path = `/${ restNamespace }/${ customAction.endpoint }`;
-			}
-
-			const response = await apiRequest( {
-				path,
-				method: 'POST',
-				data: { action, ...data },
-			} );
-
-			await delay( 800 );
-
-			if ( response.success ) {
-				showSnackbar( response.message );
-				fetchSettings();
-				fetchStatus();
-			} else {
-				throw new Error(
-					response.message || __( 'Action failed', 'millibase' )
-				);
-			}
-		} catch ( actionError ) {
-			const errorText =
-				actionError.message || __( 'Action failed', 'millibase' );
-			showSnackbar( errorText, [], 6000, true );
-			throw actionError;
-		} finally {
-			setIsLoading( false );
-		}
-	};
-
 	const fetchStatus = useCallback( async () => {
 		try {
 			const response = await apiRequest( {
@@ -149,6 +116,45 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 	}, [ apiRequest, optionName ] );
 
+	const triggerAction = useCallback( async ( action, data = {} ) => {
+		setIsLoading( true );
+		try {
+			// Determine endpoint: check if it matches a custom action.
+			let path = `/${ restNamespace }/settings`;
+			const customAction = ( config.actions || [] ).find(
+				( a ) => a.name === action
+			);
+			if ( customAction ) {
+				path = `/${ restNamespace }/${ customAction.endpoint }`;
+			}
+
+			const response = await apiRequest( {
+				path,
+				method: 'POST',
+				data: { action, ...data },
+			} );
+
+			await delay( 800 );
+
+			if ( response.success ) {
+				showSnackbarRef.current( response.message );
+				fetchSettings();
+				fetchStatus();
+			} else {
+				throw new Error(
+					response.message || __( 'Action failed', 'millibase' )
+				);
+			}
+		} catch ( actionError ) {
+			const errorText =
+				actionError.message || __( 'Action failed', 'millibase' );
+			showSnackbarRef.current( errorText, [], 6000, true );
+			throw actionError;
+		} finally {
+			setIsLoading( false );
+		}
+	}, [ restNamespace, config.actions, apiRequest, fetchSettings, fetchStatus ] );
+
 	const retryConnection = useCallback( async () => {
 		setIsRetrying( true );
 		setError( null );
@@ -162,6 +168,24 @@ export const SettingsProvider = ( { config, children } ) => {
 	useEffect( () => {
 		errorRef.current = error;
 	}, [ error ] );
+	useEffect( () => {
+		initialSettingsRef.current = initialSettings;
+	}, [ initialSettings ] );
+	useEffect( () => {
+		settingsRef.current = settings;
+	}, [ settings ] );
+	useEffect( () => {
+		statusRef.current = status;
+	}, [ status ] );
+	useEffect( () => {
+		hasChangesRef.current = hasChanges;
+	}, [ hasChanges ] );
+	useEffect( () => {
+		hasStorageChangesRef.current = hasStorageChanges;
+	}, [ hasStorageChanges ] );
+	useEffect( () => {
+		showSnackbarRef.current = showSnackbar;
+	}, [ showSnackbar ] );
 
 	useEffect( () => {
 		fetchSettings();
@@ -184,7 +208,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		};
 	}, [ fetchSettings, fetchStatus ] );
 
-	const updateSetting = ( module, key, value ) => {
+	const updateSetting = useCallback( ( module, key, value ) => {
 		setSettings( ( prev ) => {
 			const updated = {
 				...prev,
@@ -195,7 +219,8 @@ export const SettingsProvider = ( { config, children } ) => {
 			};
 
 			setHasChanges(
-				JSON.stringify( updated ) !== JSON.stringify( initialSettings )
+				JSON.stringify( updated ) !==
+					JSON.stringify( initialSettingsRef.current )
 			);
 
 			if ( module === 'storage' ) {
@@ -204,10 +229,10 @@ export const SettingsProvider = ( { config, children } ) => {
 
 			return updated;
 		} );
-	};
+	}, [] );
 
-	const saveSettings = async () => {
-		if ( ! hasChanges ) {
+	const saveSettings = useCallback( async () => {
+		if ( ! hasChangesRef.current ) {
 			return;
 		}
 
@@ -217,17 +242,19 @@ export const SettingsProvider = ( { config, children } ) => {
 			await apiRequest( {
 				path: '/wp/v2/settings',
 				method: 'POST',
-				data: { [ optionName ]: settings },
+				data: { [ optionName ]: settingsRef.current },
 			} );
 
-			setInitialSettings( settings );
-			showSnackbar( __( 'Settings saved successfully.', 'millibase' ) );
+			setInitialSettings( settingsRef.current );
+			showSnackbarRef.current(
+				__( 'Settings saved successfully.', 'millibase' )
+			);
 			setHasChanges( false );
 
-			if ( hasStorageChanges ) {
-				const previousStatus = { ...status };
+			if ( hasStorageChangesRef.current ) {
+				const previousStatus = { ...statusRef.current };
 				await delay( 500 );
-				showSnackbar(
+				showSnackbarRef.current(
 					__( 'Storage settings updated. Testing connection…', 'millibase' )
 				);
 
@@ -240,19 +267,24 @@ export const SettingsProvider = ( { config, children } ) => {
 						! newStatus.storage?.connected
 					) {
 						await delay( 50 );
-						showSnackbar(
+						showSnackbarRef.current(
 							__( 'Storage connection lost.', 'millibase' )
 						);
 					} else if (
 						! previousStatus.storage?.connected &&
 						newStatus.storage?.connected
 					) {
-						showSnackbar(
+						showSnackbarRef.current(
 							__( 'Storage connection established.', 'millibase' )
 						);
 					}
 					if ( newStatus.storage?.error ) {
-						showSnackbar( newStatus.storage.error, [], 6000, true );
+						showSnackbarRef.current(
+							newStatus.storage.error,
+							[],
+							6000,
+							true
+						);
 					}
 				}
 
@@ -260,12 +292,13 @@ export const SettingsProvider = ( { config, children } ) => {
 			}
 		} catch ( saveError ) {
 			const errorMessage =
-				saveError.message || __( 'Failed to save settings.', 'millibase' );
-			showSnackbar( errorMessage, [], 6000, true );
+				saveError.message ||
+				__( 'Failed to save settings.', 'millibase' );
+			showSnackbarRef.current( errorMessage, [], 6000, true );
 		} finally {
 			setTimeout( () => setIsSaving( false ), 1200 );
 		}
-	};
+	}, [ apiRequest, optionName, fetchStatus ] );
 
 	const contextValue = useMemo(
 		() => ( {
@@ -292,10 +325,10 @@ export const SettingsProvider = ( { config, children } ) => {
 			isLoading,
 			isSaving,
 			hasChanges,
+			activeTab,
 			updateSetting,
 			saveSettings,
 			triggerAction,
-			activeTab,
 			setActiveTabWithHash,
 			retryConnection,
 			isRetrying,
@@ -314,6 +347,9 @@ export const SettingsProvider = ( { config, children } ) => {
  *
  * Stable identity guarantees (safe in useCallback/useEffect deps):
  * - setActiveTab (useCallback, [])
+ * - updateSetting (useCallback, [])
+ * - saveSettings (useCallback, stable deps)
+ * - triggerAction (useCallback, stable deps)
  * - retryConnection (useCallback)
  *
  * The context value itself is memoized and only updates when
