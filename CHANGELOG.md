@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0](https://github.com/MilliPress/MilliBase/compare/v2.0.0...v2.1.0) (2026-04-22)
+
+
+### Features
+
+* expose useSettings and useSnackbar hooks on window.MilliBase.hooks ([4b0f4ab](https://github.com/MilliPress/MilliBase/commit/4b0f4abfdc4e50ce17f85e822279aa40ff26e3ef))
+
+
+### Bug Fixes
+
+* add __nextHasNoMarginBottom props and remove deprecated unit prop ([c752f20](https://github.com/MilliPress/MilliBase/commit/c752f20b5953f83438c25400487746938055448a))
+* hide tab bar scrollbar and scope centering to desktop ([177169e](https://github.com/MilliPress/MilliBase/commit/177169e5b36919317c6ccdf6c3ec8f182e32d018))
+* memoize settings context and stabilize polling effect ([e6df09b](https://github.com/MilliPress/MilliBase/commit/e6df09bde617c227656c8bb110d3be48136036a9))
+* stabilize SettingsProvider callback identities with useCallback ([f350f61](https://github.com/MilliPress/MilliBase/commit/f350f6147d16abad0734dedc65b1cc8ef21403a3))
+
 ## [2.0.0](https://github.com/MilliPress/MilliBase/compare/v1.2.4...v2.0.0) (2026-03-31)
 
 
