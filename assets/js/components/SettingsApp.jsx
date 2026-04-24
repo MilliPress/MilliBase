@@ -195,10 +195,7 @@ const SettingsApp = ( { config } ) => {
 									tabs={ tabs }
 								>
 									{ ( tab ) => (
-										<div
-											className="millibase-tab-content"
-											style={ { margin: '-1px' } }
-										>
+										<div className="millibase-tab-content">
 											<TabRenderer tab={ tab } />
 										</div>
 									) }
