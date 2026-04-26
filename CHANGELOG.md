@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/MilliPress/MilliBase/compare/v2.1.0...v2.1.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* **settings:** Remove unnecessary margin from tab content ([4874a33](https://github.com/MilliPress/MilliBase/commit/4874a33a31adc78189ad348576df60e56de844b7))
+
 ## [2.1.0](https://github.com/MilliPress/MilliBase/compare/v2.0.0...v2.1.0) (2026-04-22)
 
 
