@@ -376,6 +376,32 @@ final class Schema {
 			'hide',
 		);
 
+		/**
+		 * Filters the field properties that pass through to the client.
+		 *
+		 * Custom field types registered via `window.MilliBase.registerFieldType()`
+		 * often need their own configuration props (e.g., a `plugin_prefix` for a
+		 * license field). Hook this filter to extend the allowlist for those props.
+		 *
+		 * Receives the current field definition so you can scope additions to a
+		 * specific `field.type`:
+		 *
+		 *     add_filter( 'millibase_field_safe_keys', function ( $keys, $field ) {
+		 *         if ( ( $field['type'] ?? '' ) === 'license' ) {
+		 *             $keys[] = 'plugin_prefix';
+		 *         }
+		 *         return $keys;
+		 *     }, 10, 2 );
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string[]             $safe_keys Property names allowed through to the client.
+		 * @param array<string, mixed> $field     The full field definition.
+		 */
+		if ( function_exists( 'apply_filters' ) ) {
+			$safe_keys = apply_filters( 'millibase_field_safe_keys', $safe_keys, $field );
+		}
+
 		foreach ( $safe_keys as $safe_key ) {
 			if ( isset( $field[ $safe_key ] ) ) {
 				$client[ $safe_key ] = $field[ $safe_key ];
