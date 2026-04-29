@@ -79,7 +79,9 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	const isFieldVisible = ( field ) => {
 		// Merge editable settings with constant overrides so that
 		// hide/show conditions reflect the effective runtime values.
-		const effective = { ...settings };
+		// Status data is exposed under the `status` namespace so that
+		// conditions can reference values like `status.storage.connected`.
+		const effective = { ...settings, status };
 		for ( const [ mod, vals ] of Object.entries( constants ) ) {
 			effective[ mod ] = { ...effective[ mod ], ...vals };
 		}
