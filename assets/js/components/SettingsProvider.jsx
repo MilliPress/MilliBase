@@ -23,6 +23,7 @@ export const SettingsProvider = ( { config, children } ) => {
 	const [ isLoading, setIsLoading ] = useState( true );
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ error, setError ] = useState( null );
+	const [ schemaError, setSchemaError ] = useState( null );
 	const [ hasChanges, setHasChanges ] = useState( false );
 	const [ hasStorageChanges, setHasStorageChanges ] = useState( false );
 	const [ activeTab, setActiveTab ] = useState( () => {
@@ -106,8 +107,25 @@ export const SettingsProvider = ( { config, children } ) => {
 		try {
 			setIsLoading( true );
 			const response = await apiRequest( { path: '/wp/v2/settings' } );
-			setSettings( response?.[ optionName ] );
-			setInitialSettings( response?.[ optionName ] );
+			const optionValue = response?.[ optionName ];
+
+			// `null` here means WP REST rejected the stored value against
+			// its registered schema (see WP_REST_Settings_Controller::prepare_value).
+			// Tracked in its own state so concurrent fetchStatus calls — which
+			// own the connection-level `error` — can't blank this message out.
+			if ( null === optionValue ) {
+				setSchemaError(
+					__(
+						'A stored value does not match the registered schema — typically a field with the wrong type (for example a string where a number is expected).',
+						'millibase'
+					)
+				);
+				return;
+			}
+
+			setSettings( optionValue ?? {} );
+			setInitialSettings( optionValue ?? {} );
+			setSchemaError( null );
 			setError( null );
 		} catch ( fetchError ) {
 			setError( fetchError.message );
@@ -210,10 +228,11 @@ export const SettingsProvider = ( { config, children } ) => {
 
 	const updateSetting = useCallback( ( module, key, value ) => {
 		setSettings( ( prev ) => {
+			const safePrev = prev ?? {};
 			const updated = {
-				...prev,
+				...safePrev,
 				[ module ]: {
-					...prev[ module ],
+					...( safePrev[ module ] ?? {} ),
 					[ key ]: value,
 				},
 			};
@@ -306,6 +325,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			status,
 			settings,
 			error,
+			schemaError,
 			isLoading,
 			isSaving,
 			hasChanges,
@@ -322,6 +342,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			status,
 			settings,
 			error,
+			schemaError,
 			isLoading,
 			isSaving,
 			hasChanges,

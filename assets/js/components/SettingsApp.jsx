@@ -4,16 +4,64 @@
  */
 
 import { __ } from '@wordpress/i18n';
+import { useState } from '@wordpress/element';
 import {
 	Animate,
 	TabPanel,
 	Button,
 } from '@wordpress/components';
-import { caution } from '@wordpress/icons';
+import { caution, backup } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Banner from './Banner.jsx';
 import Header from './Header.jsx';
 import TabRenderer from './TabRenderer.jsx';
+
+const RecoveryDisplay = ( {
+	error,
+	onReset,
+	onReload,
+	isResetting,
+	isRetrying,
+} ) => (
+	<Banner
+		icon={ backup }
+		iconColor="#dba617"
+		title={ __( 'Settings could not be loaded', 'millibase' ) }
+		message={ error }
+		actions={
+			<>
+				<Button
+					variant="primary"
+					onClick={ onReset }
+					isBusy={ isResetting }
+					disabled={ isResetting || isRetrying }
+				>
+					{ isResetting
+						? __( 'Resetting...', 'millibase' )
+						: __( 'Reset to defaults', 'millibase' ) }
+				</Button>
+				<Button
+					variant="secondary"
+					onClick={ onReload }
+					isBusy={ isRetrying }
+					disabled={ isResetting || isRetrying }
+				>
+					{ isRetrying
+						? __( 'Reloading...', 'millibase' )
+						: __( 'Reload', 'millibase' ) }
+				</Button>
+			</>
+		}
+		footer={
+			<p style={ { margin: '0' } }>
+				{ __(
+					'Resetting will replace the stored settings with the defaults. Your current settings — including the corrupt value — will be backed up automatically and can be restored later from the header menu.',
+					'millibase'
+				) }
+			</p>
+		}
+	/>
+);
 
 const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 	<Banner
@@ -58,12 +106,27 @@ const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 const SettingsApp = ( { config } ) => {
 	const {
 		error,
+		schemaError,
 		isLoading,
 		activeTab,
 		setActiveTab,
 		retryConnection,
 		isRetrying,
+		triggerAction,
 	} = useSettings();
+
+	const [ isResetting, setIsResetting ] = useState( false );
+
+	const handleReset = async () => {
+		setIsResetting( true );
+		try {
+			await triggerAction( 'reset' );
+		} catch ( e ) {
+			// triggerAction surfaces errors via snackbar; nothing else to do.
+		} finally {
+			setIsResetting( false );
+		}
+	};
 
 	const tabs = ( config.schema?.tabs || [] ).map( ( tab ) => ( {
 		name: tab.name,
@@ -104,6 +167,18 @@ const SettingsApp = ( { config } ) => {
 									</div>
 								) }
 							</Animate>
+						);
+					}
+
+					if ( schemaError ) {
+						return (
+							<RecoveryDisplay
+								error={ schemaError }
+								onReset={ handleReset }
+								onReload={ retryConnection }
+								isResetting={ isResetting }
+								isRetrying={ isRetrying }
+							/>
 						);
 					}
 
