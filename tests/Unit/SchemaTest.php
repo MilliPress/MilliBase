@@ -167,6 +167,61 @@ it('accepts custom defaults for rest schema generation', function () {
     expect($rest['properties']['custom']['properties']['name']['type'])->toBe('string');
 });
 
+it('emits a nullable type tuple when the default is null', function () {
+    // Fields without an explicit default end up with a null in get_defaults().
+    // The registered schema must accept null — otherwise WP REST's
+    // prepare_value() rejects the stored value and returns null for the
+    // whole option (see WP_REST_Settings_Controller::prepare_value).
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'mod.password', 'type' => 'password', 'label' => 'Password'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+
+    expect($rest['properties']['mod']['properties']['password']['type'])
+        ->toBe(['string', 'null']);
+});
+
+it('keeps a scalar type when the default is non-null', function () {
+    // A field with an explicit default keeps the scalar type form — no
+    // unnecessary union, so the schema stays as tight as before.
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'mod.with_default', 'type' => 'text', 'default' => ''],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+
+    expect($rest['properties']['mod']['properties']['with_default']['type'])->toBe('string');
+});
+
 // ─── to_client_array() ──────────────────────────────────────────────
 
 it('strips server-only properties and preserves safe keys', function () {

@@ -143,7 +143,15 @@ final class Schema {
 			);
 
 			foreach ( $module_settings as $key => $value ) {
-				$module_schema['properties'][ $key ] = array( 'type' => $this->php_type_to_json( $value ) );
+				// When the default is null, the registered schema must also
+				// accept null — otherwise WP REST validates the stored value
+				// and `prepare_value()` returns null for the entire option,
+				// breaking every consumer that reads it. JSON Schema permits
+				// an array of types for exactly this case.
+				$type                                = $this->php_type_to_json( $value );
+				$module_schema['properties'][ $key ] = array(
+					'type' => null === $value ? array( $type, 'null' ) : $type,
+				);
 			}
 
 			$schema['properties'][ $module_key ] = $module_schema;
