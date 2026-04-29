@@ -19,7 +19,8 @@
         "phpstan/extension-installer": "^1.3",
         "szepeviktor/phpstan-wordpress": "^1.3",
         "php-stubs/wp-cli-stubs": "^2.12",
-        "pestphp/pest": "^2.0"
+        "pestphp/pest": "^2.0",
+        "brainmaestro/composer-git-hooks": "^3.0"
     },
     "autoload": {
         "psr-4": {
@@ -41,13 +42,37 @@
         "test:unit": "pest --colors=always",
         "test:phpstan": "phpstan analyse -c phpstan.neon --memory-limit 1G",
         "test:lint": "phpcs -s",
-        "test:fix": "phpcbf"
+        "test:fix": "phpcbf",
+        "cghooks": [
+            "vendor/bin/cghooks"
+        ],
+        "post-install-cmd": "vendor/bin/cghooks add --ignore-lock",
+        "post-update-cmd": "vendor/bin/cghooks update"
     },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "phpstan/extension-installer": true,
             "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "hooks": {
+            "config": {
+                "stop-on-failure": ["pre-push"]
+            },
+            "pre-commit": [
+                "composer test:fix",
+                "npm run fix"
+            ],
+            "pre-push": [
+                "composer validate --no-check-all --no-check-publish",
+                "composer test",
+                "npm run lint"
+            ],
+            "post-merge": [
+                "composer install"
+            ]
         }
     }
 }
