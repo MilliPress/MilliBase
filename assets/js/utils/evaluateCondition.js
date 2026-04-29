@@ -1,24 +1,12 @@
-/**
- * Evaluate a show/hide condition tuple against current settings.
- *
- * Supports:
- * - 2-tuple: [field, value]  → equality (or glob match if value contains *)
- * - 3-tuple: [field, operator, value] → operator comparison
- *
- * Operators: =, !=, >, >=, <, <=
- * Glob: * in string values acts as a positional wildcard.
- *
- * @param {Array}  rule     The condition tuple.
- * @param {Object} settings Nested settings object.
- * @return {boolean}
- */
-const OPERATORS = new Set( [ '!=', '>', '>=', '<', '<=' ] );
-
 const resolveDotPath = ( obj, path ) => {
 	const parts = path.split( '.' );
 	let current = obj;
 	for ( const part of parts ) {
-		if ( current == null || typeof current !== 'object' ) {
+		if (
+			current === null ||
+			current === undefined ||
+			typeof current !== 'object'
+		) {
 			return undefined;
 		}
 		current = current[ part ];
@@ -74,6 +62,20 @@ const matchValue = ( actual, expected ) => {
 	return actual === expected;
 };
 
+/**
+ * Evaluate a show/hide condition tuple against current settings.
+ *
+ * Supports:
+ * - 2-tuple: [field, value]  → equality (or glob match if value contains *)
+ * - 3-tuple: [field, operator, value] → operator comparison
+ *
+ * Operators: =, !=, >, >=, <, <=
+ * Glob: * in string values acts as a positional wildcard.
+ *
+ * @param {Array}  rule     The condition tuple.
+ * @param {Object} settings Nested settings object.
+ * @return {boolean} True if the rule passes (field should be visible).
+ */
 const evaluateCondition = ( rule, settings ) => {
 	if ( ! Array.isArray( rule ) || rule.length < 2 ) {
 		return true;

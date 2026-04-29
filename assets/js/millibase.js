@@ -9,8 +9,14 @@
 import domReady from '@wordpress/dom-ready';
 import { createRoot } from '@wordpress/element';
 import SettingsApp from './components/SettingsApp.jsx';
-import { SnackbarProvider, useSnackbar } from './components/SnackbarProvider.jsx';
-import { SettingsProvider, useSettings } from './components/SettingsProvider.jsx';
+import {
+	SnackbarProvider,
+	useSnackbar,
+} from './components/SnackbarProvider.jsx';
+import {
+	SettingsProvider,
+	useSettings,
+} from './components/SettingsProvider.jsx';
 import { LabelWithTooltip } from './components/LabelWithTooltip.jsx';
 
 import '../css/millibase.scss';
@@ -30,10 +36,15 @@ window.MilliBase.customFieldTypes = window.MilliBase.customFieldTypes || {};
 
 /**
  * Register a config for a slug. Called by wp_add_inline_script() from PHP.
+ *
+ * @param {string} slug   The settings page slug.
+ * @param {Object} config The settings page config object.
  */
-window.MilliBase.init = window.MilliBase.init || function ( slug, config ) {
-	window.MilliBase.configs[ slug ] = config;
-};
+window.MilliBase.init =
+	window.MilliBase.init ||
+	function ( slug, config ) {
+		window.MilliBase.configs[ slug ] = config;
+	};
 
 /**
  * Register a custom component (e.g., for custom tab content).
