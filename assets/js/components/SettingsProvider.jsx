@@ -106,8 +106,12 @@ export const SettingsProvider = ( { config, children } ) => {
 		try {
 			setIsLoading( true );
 			const response = await apiRequest( { path: '/wp/v2/settings' } );
-			setSettings( response?.[ optionName ] );
-			setInitialSettings( response?.[ optionName ] );
+			// WP REST returns `null` for an option whose stored value fails its
+			// schema (see WP_REST_Settings_Controller::prepare_value). Coerce
+			// to `{}` so consumers don't have to null-check every read.
+			const optionValue = response?.[ optionName ] ?? {};
+			setSettings( optionValue );
+			setInitialSettings( optionValue );
 			setError( null );
 		} catch ( fetchError ) {
 			setError( fetchError.message );
@@ -210,10 +214,11 @@ export const SettingsProvider = ( { config, children } ) => {
 
 	const updateSetting = useCallback( ( module, key, value ) => {
 		setSettings( ( prev ) => {
+			const safePrev = prev ?? {};
 			const updated = {
-				...prev,
+				...safePrev,
 				[ module ]: {
-					...prev[ module ],
+					...( safePrev[ module ] ?? {} ),
 					[ key ]: value,
 				},
 			};
