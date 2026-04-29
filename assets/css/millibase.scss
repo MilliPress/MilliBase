@@ -9,6 +9,7 @@ body.modal-open:has(.millibase-page) {
 }
 
 .millibase-page {
+
 	&.wrap {
 		margin: 0 0 0 -20px;
 
@@ -20,13 +21,14 @@ body.modal-open:has(.millibase-page) {
 
 	.millibase-header,
 	.millibase-loading-container {
-		background-color: white;
+		background-color: #fff;
 		padding-right: 20px;
 		padding-left: 20px;
 	}
 
 	// Mobile-friendly header: stack title and buttons vertically.
 	@media screen and (max-width: 782px) {
+
 		.millibase-header > .components-flex {
 			flex-direction: column;
 			align-items: center;
@@ -48,6 +50,7 @@ body.modal-open:has(.millibase-page) {
 	}
 
 	.millibase-tabs {
+
 		.components-tab-panel__tabs {
 			background: #fff;
 			box-shadow: inset 0 -1px 0 #e0e0e0;
@@ -107,6 +110,7 @@ body.modal-open:has(.millibase-page) {
 	}
 
 	@media screen and (max-width: 782px) {
+
 		.millibase-tab-content {
 			padding-left: 10px;
 			padding-right: 10px;
@@ -136,6 +140,7 @@ body.modal-open:has(.millibase-page) {
 
 	// Inactive section: muted title text.
 	.millibase-section-disabled {
+
 		.components-panel__body-title {
 			color: #949494;
 		}
@@ -146,7 +151,8 @@ body.modal-open:has(.millibase-page) {
 		font-size: 13px;
 	}
 
-	// Inline button fields: align with sibling inputs (label-spacer above) and grow to fill the FlexItem.
+	// Inline button fields: align with sibling inputs (label-spacer above)
+	// and grow to fill the FlexItem.
 	.millibase-button-field--inline {
 		width: 100%;
 		display: flex;
@@ -181,6 +187,7 @@ body.modal-open:has(.millibase-page) {
 	}
 
 	.components-form-token-field {
+
 		.components-form-token-field__input-container.is-disabled {
 			background-color: var(--wp-components-color-gray-100, #f0f0f0);
 
