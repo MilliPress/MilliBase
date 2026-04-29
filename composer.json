@@ -32,7 +32,12 @@
         }
     },
     "scripts": {
-        "test": "composer test:lint && composer test:phpstan && composer test:unit",
+        "test": [
+            "@test:fix",
+            "@test:lint",
+            "@test:phpstan",
+            "@test:unit"
+        ],
         "test:unit": "pest --colors=always",
         "test:phpstan": "phpstan analyse -c phpstan.neon --memory-limit 1G",
         "test:lint": "phpcs -s",
