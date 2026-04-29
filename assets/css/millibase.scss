@@ -146,6 +146,26 @@ body.modal-open:has(.millibase-page) {
 		font-size: 13px;
 	}
 
+	// Inline button fields: align with sibling inputs (label-spacer above) and grow to fill the FlexItem.
+	.millibase-button-field--inline {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.millibase-button-field__label-spacer {
+		font-size: 11px;
+		line-height: 1.4;
+		margin-bottom: calc(8px);
+		visibility: hidden;
+	}
+
+	.millibase-button-field__button {
+		height: 42px; // Field Size + 2px Border
+		width: 100%;
+		justify-content: center;
+	}
+
 	// WordPress component overrides.
 
 	table.widefat {

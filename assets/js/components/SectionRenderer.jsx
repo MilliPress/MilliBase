@@ -46,6 +46,19 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	}
 
 	const renderField = ( field ) => {
+		// Buttons have no module/key lookup and no value/onChange contract.
+		if ( field.type === 'button' ) {
+			return (
+				<FieldRenderer
+					key={ field.key }
+					field={ field }
+					value={ undefined }
+					onChange={ () => {} }
+					disabled={ !! ( active && ! isActive ) }
+				/>
+			);
+		}
+
 		const parts = field.key.split( '.' );
 		const module = parts[ 0 ];
 		const key = parts[ 1 ];

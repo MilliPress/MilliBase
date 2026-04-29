@@ -12,6 +12,7 @@ import UnitField from './fields/UnitField.jsx';
 import TokenListField from './fields/TokenListField.jsx';
 import ColorField from './fields/ColorField.jsx';
 import CodeField from './fields/CodeField.jsx';
+import ButtonField from './fields/ButtonField.jsx';
 
 const builtinTypes = {
 	text: TextField,
@@ -23,6 +24,7 @@ const builtinTypes = {
 	'token-list': TokenListField,
 	color: ColorField,
 	code: CodeField,
+	button: ButtonField,
 };
 
 const FieldRenderer = ( { field, value, onChange, disabled } ) => {

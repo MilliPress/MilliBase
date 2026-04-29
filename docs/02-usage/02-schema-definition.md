@@ -252,40 +252,46 @@ Accordion mode works with all section features including active toggles and stat
 
 ### Required Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `key` | `string` | Dot-notation key in `module.setting` format. The module (before the dot) groups settings in the stored option. |
-| `type` | `string` | Field type: `text`, `number`, `password`, `toggle`, `select`, `unit`, `token-list`, `color`, `code` |
+| Property   | Type     | Description                                                                                                                                                                             |
+|------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `key`      | `string` | Dot-notation key in `module.setting` format. The module (before the dot) groups settings in the stored option. For `button` fields the key is a render-only identifier (not persisted). |
+| `type`     | `string` | Field type: `text`, `number`, `password`, `toggle`, `select`, `unit`, `token-list`, `color`, `code`, `button`                                                                           |
 
 ### Common Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `label` | `string` | `''` | Display label shown above the field |
-| `default` | `mixed` | `null` | Default value extracted by the Schema |
-| `tooltip` | `string` | — | Help text shown in an info icon tooltip |
-| `placeholder` | `string` | — | Placeholder text (text, password, token-list) |
-| `disabled` | `bool` | `false` | Render field as read-only |
-| `encrypted` | `bool` | `false` | Hint for the UI (actual encryption uses `enc_` key prefix) |
+| Property      | Type     | Default   | Description                                                |
+|---------------|----------|-----------|------------------------------------------------------------|
+| `label`       | `string` | `''`      | Display label shown above the field                        |
+| `default`     | `mixed`  | `null`    | Default value extracted by the Schema                      |
+| `tooltip`     | `string` | —         | Help text shown in an info icon tooltip                    |
+| `placeholder` | `string` | —         | Placeholder text (text, password, token-list)              |
+| `disabled`    | `bool`   | `false`   | Render field as read-only                                  |
+| `encrypted`   | `bool`   | `false`   | Hint for the UI (actual encryption uses `enc_` key prefix) |
 
 ### Layout Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `inline` | `bool` | `false` | Join this field to the previous field's row |
-| `width` | `string` | — | CSS width when inline (e.g. `'200px'`) |
+| Property   | Type     | Default   | Description                                 |
+|------------|----------|-----------|---------------------------------------------|
+| `inline`   | `bool`   | `false`   | Join this field to the previous field's row |
+| `width`    | `string` | —         | CSS width when inline (e.g. `'200px'`)      |
 
 ### Type-Specific Properties
 
-| Property | Types | Description |
-|----------|-------|-------------|
-| `min` | `number`, `unit` | Minimum value |
-| `max` | `number`, `unit` | Maximum value |
-| `options` | `select` | Array of `{label, value}` objects |
-| `units` | `unit` | Array of `{label, value}` unit options |
-| `save` | `unit` | Set to `'seconds'` for automatic time unit conversion |
-| `rows` | `code` | Number of textarea rows (default: 6) |
-| `language` | `code` | Syntax language hint |
+| Property        | Types            | Description                                                       |
+|-----------------|------------------|-------------------------------------------------------------------|
+| `min`           | `number`, `unit` | Minimum value                                                     |
+| `max`           | `number`, `unit` | Maximum value                                                     |
+| `options`       | `select`         | Array of `{label, value}` objects                                 |
+| `units`         | `unit`           | Array of `{label, value}` unit options                            |
+| `save`          | `unit`           | Set to `'seconds'` for automatic time unit conversion             |
+| `rows`          | `code`           | Number of textarea rows (default: 6)                              |
+| `language`      | `code`           | Syntax language hint                                              |
+| `action`        | `button`         | Required. Name of an `actions` entry to trigger.                  |
+| `variant`       | `button`         | `'primary' \| 'secondary' \| 'tertiary' \| 'link'`.               |
+| `size`          | `button`         | `'default' \| 'compact' \| 'small'`.                              |
+| `isDestructive` | `button`         | Renders the button in destructive (red) styling.                  |
+| `icon`          | `button`         | Icon name from `@wordpress/icons`.                                |
+| `confirm`       | `button`         | Optional confirm-modal prompt shown before triggering the action. |
 
 ## Field Key Convention
 

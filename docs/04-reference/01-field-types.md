@@ -1,12 +1,12 @@
 ---
 title: 'Field Types'
-post_excerpt: 'Reference for all 9 built-in field types: properties, sanitization, and JSON schema.'
+post_excerpt: 'Reference for all 10 built-in field types: properties, sanitization, and JSON schema.'
 menu_order: 10
 ---
 
 # Field Types
 
-MilliBase ships with 9 built-in field types. Each type provides server-side sanitization and a matching React component.
+MilliBase ships with 10 built-in field types. Each type provides server-side sanitization and a matching React component.
 
 ## text
 
@@ -240,6 +240,53 @@ Multi-line textarea for code input. Stores the raw value without sanitization (n
 
 > [!CAUTION]
 > The `code` field type stores raw input. If you output the value in HTML, ensure proper escaping.
+
+---
+
+## button
+
+Imperative action trigger — fires a custom REST action via `triggerAction()`. Buttons are not stateful settings: they have no value, no default, and do not appear in the persisted options or REST schema.
+
+Place a button anywhere in `fields`. Combine with `inline: true` to position it next to another field (e.g. an "Activate" button beside a license-key input), or omit `inline` to render it on its own row.
+
+```php
+[
+    'key'           => 'license.activate',
+    'type'          => 'button',
+    'label'         => 'Activate',
+    'action'        => 'license_activate',
+    'variant'       => 'primary',
+    'size'          => 'compact',
+    'icon'          => 'unlock',
+    'isDestructive' => false,
+    'inline'        => true,
+    'show'          => [ 'license.is_valid', '!=', true ],
+    'confirm'       => 'Activate this license?',
+]
+```
+
+| Property        | Type                                               | Default       | Description                                                                                                              |
+|-----------------|----------------------------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| `action`        | `string`                                           | —             | Required. Name of a custom action registered in the config's `actions` array. Triggered via `triggerAction(action)`.     |
+| `variant`       | `'primary' \| 'secondary' \| 'tertiary' \| 'link'` | `'secondary'` | WordPress `Button` variant.                                                                                              |
+| `size`          | `'default' \| 'compact' \| 'small'`                | `'default'`   | WordPress `Button` size. `'default'` enables the 40-pixel default-size opt-in automatically.                             |
+| `isDestructive` | `bool`                                             | `false`       | Renders the button in destructive (red) styling.                                                                         |
+| `icon`          | `string`                                           | —             | Icon name from `@wordpress/icons` (e.g. `'unlock'`, `'trash'`).                                                          |
+| `confirm`       | `string`                                           | —             | Optional. If set, the button opens a `<Modal>` with this prompt and Cancel/Confirm buttons before triggering the action. |
+| `tooltip`       | `string`                                           | —             | Hover tooltip text.                                                                                                      |
+| `inline`        | `bool`                                             | `false`       | Place the button on the same row as the previous field.                                                                  |
+| `width`         | `string`                                           | —             | CSS width applied to the inline-row flex item (e.g. `'200px'`, `'30%'`).                                                 |
+| `show` / `hide` | `[field, op, value]`                               | —             | Conditional visibility against the current settings (e.g. `['license.is_valid', '=', true]`).                            |
+
+**Action wiring:** the button's `action` must match the `name` of an entry in the config's `actions` array (which registers a REST endpoint). See [Schema Definition → Actions](../02-usage/02-schema-definition.md) for full action registration.
+
+**Busy/disabled state:** automatic — `isBusy` reflects the global loading state, and the button is disabled while saving or loading. Buttons are also disabled when the section's `active` toggle is off.
+
+**Sanitization:** none — buttons are not persisted.
+**JSON schema:** none — buttons do not appear in the REST settings schema.
+
+> [!NOTE]
+> Buttons require a `key` purely as a React identifier. The key is **not** read from or written to the settings store, even though it follows the standard `module.name` dot-notation.
 
 ## Next Steps
 

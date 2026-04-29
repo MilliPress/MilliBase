@@ -70,6 +70,32 @@ it('handles missing keys, non-string keys, and single-segment keys', function ()
     ]);
 });
 
+it('skips button-type fields when extracting defaults', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'license',
+                        'title' => 'License',
+                        'fields' => [
+                            ['key' => 'license.key', 'type' => 'password', 'default' => ''],
+                            ['key' => 'license.activate', 'type' => 'button', 'label' => 'Activate', 'action' => 'license_activate'],
+                            ['key' => 'license.deactivate', 'type' => 'button', 'label' => 'Deactivate', 'action' => 'license_deactivate'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    expect($schema->get_defaults())->toBe([
+        'license' => ['key' => ''],
+    ]);
+});
+
 it('caches defaults after first call', function () {
     $schema = new Schema([
         'tabs' => [
@@ -175,6 +201,53 @@ it('strips server-only properties and preserves safe keys', function () {
 
     expect($field)->toHaveKeys(['key', 'type', 'label', 'default', 'tooltip']);
     expect($field)->not->toHaveKeys(['sanitize', 'validate']);
+});
+
+it('passes button-specific field properties through to the client', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'license',
+                        'title' => 'License',
+                        'fields' => [
+                            [
+                                'key' => 'license.activate',
+                                'type' => 'button',
+                                'label' => 'Activate',
+                                'action' => 'license_activate',
+                                'variant' => 'primary',
+                                'size' => 'compact',
+                                'isDestructive' => false,
+                                'icon' => 'unlock',
+                                'confirm' => 'Activate license?',
+                                'show' => ['license.is_valid', '!=', true],
+                                'inline' => true,
+                                'callback' => 'some_php_callback', // server-only — should be stripped
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+    $field = $client['tabs'][0]['sections'][0]['fields'][0];
+
+    expect($field)->toHaveKeys([
+        'key', 'type', 'label', 'action', 'variant', 'size',
+        'isDestructive', 'icon', 'confirm', 'show', 'inline',
+    ]);
+    expect($field['action'])->toBe('license_activate');
+    expect($field['variant'])->toBe('primary');
+    expect($field['size'])->toBe('compact');
+    expect($field['icon'])->toBe('unlock');
+    expect($field['confirm'])->toBe('Activate license?');
+    expect($field)->not->toHaveKey('callback');
 });
 
 it('handles custom tab types, intro text, and icons', function () {

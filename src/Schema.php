@@ -66,6 +66,11 @@ final class Schema {
 				continue;
 			}
 
+			// Buttons have no default value.
+			if ( ( $field['type'] ?? '' ) === 'button' ) {
+				continue;
+			}
+
 			$parts = explode( '.', $field['key'] );
 			if ( count( $parts ) < 2 ) {
 				continue;
@@ -374,6 +379,13 @@ final class Schema {
 			'width',
 			'show',
 			'hide',
+			// Button-specific.
+			'action',
+			'variant',
+			'size',
+			'isDestructive',
+			'icon',
+			'confirm',
 		);
 
 		foreach ( $safe_keys as $safe_key ) {
