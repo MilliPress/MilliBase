@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.2.1](https://github.com/MilliPress/MilliBase/compare/v2.2.0...v2.2.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* **schema:** allow null in REST schema when default is null ([#32](https://github.com/MilliPress/MilliBase/issues/32)) ([f38bc56](https://github.com/MilliPress/MilliBase/commit/f38bc56835ea537860f8942475388d067090be21))
+* **settings:** show recovery banner instead of crashing on null option ([2e93eda](https://github.com/MilliPress/MilliBase/commit/2e93edaff1b8aa499690c39a63e1342f955649cd))
+
+
+### Refactoring
+
+* **banner:** extract reusable Banner component ([350b488](https://github.com/MilliPress/MilliBase/commit/350b488bb7028a22f2cbb68cd22d3160673ae0e5))
+
 ## [2.2.0](https://github.com/MilliPress/MilliBase/compare/v2.1.1...v2.2.0) (2026-04-29)
 
 
