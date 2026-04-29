@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.0](https://github.com/MilliPress/MilliBase/compare/v2.1.1...v2.2.0) (2026-04-29)
+
+
+### Features
+
+* **schema:** add button field type with confirm-modal ([0c02229](https://github.com/MilliPress/MilliBase/commit/0c02229f442f85eb7a1c46077597b381804300d2))
+* **schema:** expose status namespace to show/hide conditions ([a3853ff](https://github.com/MilliPress/MilliBase/commit/a3853ff59b5091eb36dda6c804c33bf70a6b8b51))
+
 ## [2.1.1](https://github.com/MilliPress/MilliBase/compare/v2.1.0...v2.1.1) (2026-04-24)
 
 
