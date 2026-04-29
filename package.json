@@ -16,6 +16,12 @@
     },
     "scripts": {
         "build": "wp-scripts build",
-        "start": "wp-scripts start"
+        "start": "wp-scripts start",
+        "lint": "npm run lint:js && npm run lint:style",
+        "fix": "npm run fix:js && npm run fix:style",
+        "lint:js": "wp-scripts lint-js assets/js",
+        "fix:js": "wp-scripts lint-js assets/js --fix",
+        "lint:style": "wp-scripts lint-style assets/css/**/*.scss",
+        "fix:style": "wp-scripts lint-style --fix assets/css/**/*.scss"
     }
 }
