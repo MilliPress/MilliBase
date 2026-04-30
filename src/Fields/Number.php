@@ -61,7 +61,9 @@ final class Number implements FieldInterface {
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
-		$schema = array( 'type' => 'number' );
+		$schema = array(
+			'type' => is_int( $field['default'] ?? null ) ? 'integer' : 'number',
+		);
 
 		if ( isset( $field['min'] ) ) {
 			$schema['minimum'] = $field['min'];

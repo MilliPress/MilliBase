@@ -8,6 +8,8 @@
 
 namespace MilliBase;
 
+use MilliBase\Fields\FieldInterface;
+
 /**
  * Handles the declarative schema: extracts defaults from field definitions,
  * generates JSON schema for show_in_rest, and generates client-safe config.
@@ -15,6 +17,24 @@ namespace MilliBase;
  * @since 1.0.0
  */
 final class Schema {
+
+	/**
+	 * Map of field type identifier → handler class for schema dispatch.
+	 *
+	 * @since 2.3.0
+	 * @var array<string, class-string<FieldInterface>>
+	 */
+	private const FIELD_HANDLERS = array(
+		'text'       => Fields\Text::class,
+		'number'     => Fields\Number::class,
+		'select'     => Fields\Select::class,
+		'toggle'     => Fields\Toggle::class,
+		'color'      => Fields\Color::class,
+		'code'       => Fields\Code::class,
+		'password'   => Fields\Password::class,
+		'token-list' => Fields\TokenList::class,
+		'unit'       => Fields\Unit::class,
+	);
 
 	/**
 	 * The full configuration array.
@@ -31,6 +51,22 @@ final class Schema {
 	 * @var array<string, array<string, mixed>>|null
 	 */
 	private ?array $defaults = null;
+
+	/**
+	 * Cached field-by-key index (dot-notation key → field definition).
+	 *
+	 * @since 2.3.0
+	 * @var array<string, array<string, mixed>>|null
+	 */
+	private ?array $field_index = null;
+
+	/**
+	 * Cached field-type handler instances, keyed by type identifier.
+	 *
+	 * @since 2.3.0
+	 * @var array<string, FieldInterface>
+	 */
+	private array $handler_cache = array();
 
 	/**
 	 * Create a new Schema instance.
@@ -121,7 +157,11 @@ final class Schema {
 	 * When $defaults is null, uses schema-extracted defaults (UI fields only).
 	 * Pass full defaults (including non-UI fields) to generate a complete schema.
 	 *
+	 * UI fields delegate to their field-type handler (e.g. `enum` for select,
+	 * `minimum`/`maximum` for number); non-UI defaults fall back to PHP-type inference.
+	 *
 	 * @since 1.0.0
+	 * @since 2.3.0 Delegates to field-type handlers for UI fields.
 	 *
 	 * @param array<string, array<string, mixed>>|null $defaults Optional defaults to generate schema from.
 	 *
@@ -131,6 +171,7 @@ final class Schema {
 		if ( null === $defaults ) {
 			$defaults = $this->get_defaults();
 		}
+		$index  = $this->get_field_index();
 		$schema = array(
 			'type'       => 'object',
 			'properties' => array(),
@@ -143,21 +184,78 @@ final class Schema {
 			);
 
 			foreach ( $module_settings as $key => $value ) {
+				$field    = $index[ "{$module_key}.{$key}" ] ?? null;
+				$property = array( 'type' => $this->php_type_to_json( $value ) );
+
+				if ( null !== $field ) {
+					$handler = $this->handler( is_string( $field['type'] ?? null ) ? $field['type'] : '' );
+					if ( null !== $handler ) {
+						$property = $handler->get_schema( $field );
+					}
+				}
+
 				// When the default is null, the registered schema must also
 				// accept null — otherwise WP REST validates the stored value
 				// and `prepare_value()` returns null for the entire option,
 				// breaking every consumer that reads it. JSON Schema permits
 				// an array of types for exactly this case.
-				$type                                = $this->php_type_to_json( $value );
-				$module_schema['properties'][ $key ] = array(
-					'type' => null === $value ? array( $type, 'null' ) : $type,
-				);
+				if ( null === $value ) {
+					$type             = $property['type'] ?? 'string';
+					$property['type'] = is_array( $type ) ? array_merge( $type, array( 'null' ) ) : array( $type, 'null' );
+				}
+
+				$module_schema['properties'][ $key ] = $property;
 			}
 
 			$schema['properties'][ $module_key ] = $module_schema;
 		}
 
 		return $schema;
+	}
+
+	/**
+	 * Resolve a field-type handler instance, with caching.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param string $type The field type identifier (e.g. 'text', 'number').
+	 *
+	 * @return FieldInterface|null The handler, or null for unknown types.
+	 */
+	private function handler( string $type ): ?FieldInterface {
+		if ( ! isset( self::FIELD_HANDLERS[ $type ] ) ) {
+			return null;
+		}
+
+		if ( ! isset( $this->handler_cache[ $type ] ) ) {
+			$class                        = self::FIELD_HANDLERS[ $type ];
+			$this->handler_cache[ $type ] = new $class();
+		}
+
+		return $this->handler_cache[ $type ];
+	}
+
+	/**
+	 * Build (or return cached) index of fields keyed by their dot-notation key.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function get_field_index(): array {
+		if ( null !== $this->field_index ) {
+			return $this->field_index;
+		}
+
+		$index = array();
+		foreach ( $this->get_all_fields() as $field ) {
+			if ( isset( $field['key'] ) && is_string( $field['key'] ) ) {
+				$index[ $field['key'] ] = $field;
+			}
+		}
+
+		$this->field_index = $index;
+		return $this->field_index;
 	}
 
 	/**

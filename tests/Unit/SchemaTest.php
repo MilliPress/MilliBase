@@ -196,6 +196,66 @@ it('emits a nullable type tuple when the default is null', function () {
         ->toBe(['string', 'null']);
 });
 
+it('emits enum constraint for select fields', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            [
+                                'key' => 'mod.mode',
+                                'type' => 'select',
+                                'default' => 'auto',
+                                'options' => [
+                                    ['value' => 'auto', 'label' => 'Auto'],
+                                    ['value' => 'manual', 'label' => 'Manual'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+
+    expect($rest['properties']['mod']['properties']['mode']['type'])->toBe('string');
+    expect($rest['properties']['mod']['properties']['mode']['enum'])->toBe(['auto', 'manual']);
+});
+
+it('emits minimum and maximum for number fields with bounds', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'mod.port', 'type' => 'number', 'default' => 6379, 'min' => 1, 'max' => 65535],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+    $prop = $rest['properties']['mod']['properties']['port'];
+
+    expect($prop['type'])->toBe('integer');
+    expect($prop['minimum'])->toBe(1);
+    expect($prop['maximum'])->toBe(65535);
+});
+
 it('keeps a scalar type when the default is non-null', function () {
     // A field with an explicit default keeps the scalar type form — no
     // unnecessary union, so the schema stays as tight as before.

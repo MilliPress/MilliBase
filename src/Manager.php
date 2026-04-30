@@ -60,10 +60,14 @@ final class Manager {
 	 * Available immediately when passed via constructor; otherwise created
 	 * during initialize().
 	 *
+	 * Untyped at runtime to tolerate cross-prefix instances during the brief
+	 * window when both Strauss-prefixed and unprefixed copies are autoloadable
+	 * (plugin activation switch). PHPStan still type-checks via `@var`.
+	 *
 	 * @since 1.0.0
 	 * @var Settings|null
 	 */
-	private ?Settings $settings;
+	private $settings;
 
 	/**
 	 * The resolved configuration array.
@@ -134,7 +138,7 @@ final class Manager {
 	public function __construct(
 		string $slug,
 		\Closure $config,
-		?Settings $settings = null,
+		$settings = null,
 	) {
 		$this->slug     = $slug;
 		$this->settings = $settings;
