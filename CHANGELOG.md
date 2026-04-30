@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.3.0](https://github.com/MilliPress/MilliBase/compare/v2.2.1...v2.3.0) (2026-04-30)
+
+
+### Features
+
+* **schema:** sanitize settings payload before persistence ([9cf91fa](https://github.com/MilliPress/MilliBase/commit/9cf91faefde7162ebe096e03de6067e1bbdc1827))
+
+
+### Bug Fixes
+
+* **manager:** tolerate cross-prefix Settings during dual-active window ([f2d2e3e](https://github.com/MilliPress/MilliBase/commit/f2d2e3e115d5bbae3c339bed984ca00a1ef0478f))
+* **settings:** split initial-load and action loading into distinct states ([#34](https://github.com/MilliPress/MilliBase/issues/34)) ([ffac56d](https://github.com/MilliPress/MilliBase/commit/ffac56d97270ea472e630d5e33ffa44e68f5c421))
+* **snackbar:** position past WP admin sidebar instead of behind it ([0f61471](https://github.com/MilliPress/MilliBase/commit/0f61471ecbb602e1f45e2d85284409ead0902836))
+
 ## [2.2.1](https://github.com/MilliPress/MilliBase/compare/v2.2.0...v2.2.1) (2026-04-29)
 
 
