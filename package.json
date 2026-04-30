@@ -1,6 +1,6 @@
 {
     "name": "millibase",
-    "version": "0.1.0",
+    "private": true,
     "author": "Philipp Wellmer <hello@millipress.com>",
     "license": "GPL-2.0-or-later",
     "devDependencies": {
@@ -22,6 +22,6 @@
         "lint:js": "wp-scripts lint-js assets/js",
         "fix:js": "wp-scripts lint-js assets/js --fix",
         "lint:style": "wp-scripts lint-style assets/css/**/*.scss",
-        "fix:style": "wp-scripts lint-style --fix assets/css/**/*.scss"
+        "fix:style": "wp-scripts lint-style assets/css/**/*.scss --fix"
     }
 }
