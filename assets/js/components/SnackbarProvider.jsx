@@ -12,6 +12,19 @@ export const SnackbarProvider = ( { slug, children } ) => {
 		timeout = 3000,
 		explicitDismiss = false
 	) => {
+		// Mirror the WP admin sidebar's current width into a CSS custom
+		// property so the snackbar's `left` offset (in millibase.scss) lands
+		// past it. Read on each show — snacks are short-lived, so a live
+		// observer for the rare "collapse during display" case isn't worth
+		// the complexity; the next snack will pick up any change.
+		const adminmenu = document.getElementById( 'adminmenuwrap' );
+		if ( adminmenu ) {
+			document.documentElement.style.setProperty(
+				'--millibase-adminmenu-width',
+				`${ adminmenu.offsetWidth }px`
+			);
+		}
+
 		const id = Math.random().toString( 36 ).slice( 2, 11 );
 		setSnackMessages( ( prev ) => [
 			...prev,

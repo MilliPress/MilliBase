@@ -93,11 +93,19 @@ body.modal-open:has(.millibase-page) {
 		z-index: 1;
 	}
 
+	// Position past the WP admin sidebar — width is mirrored into the
+	// `--millibase-adminmenu-width` custom property by SnackbarProvider so
+	// the offset adjusts live when the sidebar collapses/expands.
 	.millibase-snacks {
 		position: fixed;
 		bottom: 20px;
-		left: 20px;
+		left: calc(var(--millibase-adminmenu-width, 0px) + 20px);
 		z-index: 9999;
+
+		@media screen and (max-width: 782px) {
+			max-width: calc(100vw - 40px);
+			left: calc(var(--millibase-adminmenu-width, 0px) + 12px);
+		}
 	}
 
 	// Section groups: gap between groups, heading above each Panel.
