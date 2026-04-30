@@ -20,7 +20,9 @@ export const SettingsProvider = ( { config, children } ) => {
 	const [ status, setStatus ] = useState( {} );
 	const [ settings, setSettings ] = useState( {} );
 	const [ initialSettings, setInitialSettings ] = useState( {} );
-	const [ isLoading, setIsLoading ] = useState( true );
+	const [ isLoadingSettings, setIsLoadingSettings ] = useState( true );
+	const [ actionLoadingCount, setActionLoadingCount ] = useState( 0 );
+	const isLoadingAction = actionLoadingCount > 0;
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ schemaError, setSchemaError ] = useState( null );
@@ -105,7 +107,6 @@ export const SettingsProvider = ( { config, children } ) => {
 
 	const fetchSettings = useCallback( async () => {
 		try {
-			setIsLoading( true );
 			const response = await apiRequest( { path: '/wp/v2/settings' } );
 			const optionValue = response?.[ optionName ];
 
@@ -130,48 +131,71 @@ export const SettingsProvider = ( { config, children } ) => {
 		} catch ( fetchError ) {
 			setError( fetchError.message );
 		} finally {
-			setIsLoading( false );
+			setIsLoadingSettings( false );
 		}
 	}, [ apiRequest, optionName ] );
 
-	const triggerAction = useCallback( async ( action, data = {} ) => {
-		setIsLoading( true );
+	/**
+	 * Run an async callback while flagging `isLoadingAction` as true.
+	 *
+	 * Counter-based so concurrent callers (built-in `triggerAction` plus any
+	 * consumer hook calling `withLoading`) don't clear the busy state for
+	 * each other. Re-throws on error after decrementing the counter, so
+	 * consumers can wrap their call in their own `try/catch` if needed.
+	 *
+	 * Exposed via `MilliBase.hooks.useSettings()` for consumer plugins to
+	 * mark custom async work as "in progress" — every `<ButtonField>` and
+	 * any UI driven by `isLoadingAction` will show busy for the duration.
+	 *
+	 * @param {() => Promise<*>} fn The async callback to run.
+	 * @return {Promise<*>} Whatever `fn` resolves to.
+	 */
+	const withLoading = useCallback( async ( fn ) => {
+		setActionLoadingCount( ( c ) => c + 1 );
 		try {
-			// Determine endpoint: check if it matches a custom action.
-			let path = `/${ restNamespace }/settings`;
-			const customAction = ( config.actions || [] ).find(
-				( a ) => a.name === action
-			);
-			if ( customAction ) {
-				path = `/${ restNamespace }/${ customAction.endpoint }`;
-			}
-
-			const response = await apiRequest( {
-				path,
-				method: 'POST',
-				data: { action, ...data },
-			} );
-
-			await delay( 800 );
-
-			if ( response.success ) {
-				showSnackbarRef.current( response.message );
-				fetchSettings();
-				fetchStatus();
-			} else {
-				throw new Error(
-					response.message || __( 'Action failed', 'millibase' )
-				);
-			}
-		} catch ( actionError ) {
-			const errorText =
-				actionError.message || __( 'Action failed', 'millibase' );
-			showSnackbarRef.current( errorText, [], 6000, true );
-			throw actionError;
+			return await fn();
 		} finally {
-			setIsLoading( false );
+			setActionLoadingCount( ( c ) => c - 1 );
 		}
-	}, [ restNamespace, config.actions, apiRequest, fetchSettings, fetchStatus ] );
+	}, [] );
+
+	const triggerAction = useCallback( async ( action, data = {} ) => {
+		return withLoading( async () => {
+			try {
+				// Determine endpoint: check if it matches a custom action.
+				let path = `/${ restNamespace }/settings`;
+				const customAction = ( config.actions || [] ).find(
+					( a ) => a.name === action
+				);
+				if ( customAction ) {
+					path = `/${ restNamespace }/${ customAction.endpoint }`;
+				}
+
+				const response = await apiRequest( {
+					path,
+					method: 'POST',
+					data: { action, ...data },
+				} );
+
+				await delay( 800 );
+
+				if ( response.success ) {
+					showSnackbarRef.current( response.message );
+					fetchSettings();
+					fetchStatus();
+				} else {
+					throw new Error(
+						response.message || __( 'Action failed', 'millibase' )
+					);
+				}
+			} catch ( actionError ) {
+				const errorText =
+					actionError.message || __( 'Action failed', 'millibase' );
+				showSnackbarRef.current( errorText, [], 6000, true );
+				throw actionError;
+			}
+		} );
+	}, [ withLoading, restNamespace, config.actions, apiRequest, fetchSettings, fetchStatus ] );
 
 	const retryConnection = useCallback( async () => {
 		setIsRetrying( true );
@@ -319,6 +343,11 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 	}, [ apiRequest, optionName, fetchStatus ] );
 
+	// Derived legacy alias — kept so custom components and buttons registered
+	// by consumer plugins (passed via Header/TabRenderer) still receive the
+	// any-busy flag they expect.
+	const isLoading = isLoadingSettings || isLoadingAction;
+
 	const contextValue = useMemo(
 		() => ( {
 			config,
@@ -326,6 +355,9 @@ export const SettingsProvider = ( { config, children } ) => {
 			settings,
 			error,
 			schemaError,
+			isLoadingSettings,
+			isLoadingAction,
+			withLoading,
 			isLoading,
 			isSaving,
 			hasChanges,
@@ -343,6 +375,9 @@ export const SettingsProvider = ( { config, children } ) => {
 			settings,
 			error,
 			schemaError,
+			isLoadingSettings,
+			isLoadingAction,
+			withLoading,
 			isLoading,
 			isSaving,
 			hasChanges,

@@ -107,7 +107,7 @@ const SettingsApp = ( { config } ) => {
 	const {
 		error,
 		schemaError,
-		isLoading,
+		isLoadingSettings,
 		activeTab,
 		setActiveTab,
 		retryConnection,
@@ -142,7 +142,7 @@ const SettingsApp = ( { config } ) => {
 			<Header />
 
 			{ ( () => {
-					if ( isLoading ) {
+					if ( isLoadingSettings ) {
 						return (
 							<Animate
 								type="slide-in"

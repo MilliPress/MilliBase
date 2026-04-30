@@ -5,7 +5,7 @@ import * as wpIcons from '@wordpress/icons';
 import { useSettings } from '../SettingsProvider.jsx';
 
 const ButtonField = ( { field, disabled } ) => {
-	const { triggerAction, isLoading, isSaving } = useSettings();
+	const { triggerAction, isLoadingAction, isSaving } = useSettings();
 	const [ confirmOpen, setConfirmOpen ] = useState( false );
 
 	const fire = () => {
@@ -38,8 +38,8 @@ const ButtonField = ( { field, disabled } ) => {
 			{ ...sizeProps }
 			variant={ field.variant || 'secondary' }
 			isDestructive={ !! field.isDestructive }
-			isBusy={ isLoading }
-			disabled={ disabled || isLoading || isSaving }
+			isBusy={ isLoadingAction }
+			disabled={ disabled || isLoadingAction || isSaving }
 			icon={ Icon }
 			label={ field.tooltip }
 			showTooltip={ !! field.tooltip }
