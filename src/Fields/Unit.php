@@ -33,7 +33,19 @@ final class Unit implements FieldInterface {
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function sanitize( $value, array $field ) {
-		return is_numeric( $value ) ? $value + 0 : 0;
+		$value = is_numeric( $value ) ? $value + 0 : 0;
+
+		$min = isset( $field['min'] ) && is_numeric( $field['min'] ) ? $field['min'] + 0 : null;
+		$max = isset( $field['max'] ) && is_numeric( $field['max'] ) ? $field['max'] + 0 : null;
+
+		if ( null !== $min && $value < $min ) {
+			$value = $min;
+		}
+		if ( null !== $max && $value > $max ) {
+			$value = $max;
+		}
+
+		return $value;
 	}
 
 	/**
@@ -44,6 +56,15 @@ final class Unit implements FieldInterface {
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
-		return array( 'type' => 'number' );
+		$schema = array( 'type' => 'number' );
+
+		if ( isset( $field['min'] ) ) {
+			$schema['minimum'] = $field['min'];
+		}
+		if ( isset( $field['max'] ) ) {
+			$schema['maximum'] = $field['max'];
+		}
+
+		return $schema;
 	}
 }

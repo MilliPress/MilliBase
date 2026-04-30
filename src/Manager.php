@@ -215,9 +215,10 @@ final class Manager {
 			'options',
 			$option_name,
 			array(
-				'type'         => 'object',
-				'default'      => $defaults,
-				'show_in_rest' => array(
+				'type'              => 'object',
+				'default'           => $defaults,
+				'sanitize_callback' => static fn( $values ) => $schema->sanitize( $values, $defaults ),
+				'show_in_rest'      => array(
 					'schema' => $schema->get_rest_schema( $defaults ),
 				),
 			)

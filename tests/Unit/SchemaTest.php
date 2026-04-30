@@ -926,6 +926,206 @@ it('combines active and status config in the same section', function () {
     ]);
 });
 
+// ─── sanitize() ─────────────────────────────────────────────────────
+
+it('clamps numbers to declared min/max bounds during sanitize', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'storage.port', 'type' => 'number', 'default' => 6379, 'min' => 1, 'max' => 65535],
+                            ['key' => 'storage.db', 'type' => 'number', 'default' => 0, 'min' => 0, 'max' => 15],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize([
+        'storage' => ['port' => 99999999, 'db' => 9999],
+    ]);
+
+    expect($clean['storage']['port'])->toBe(65535);
+    expect($clean['storage']['db'])->toBe(15);
+});
+
+it('falls back to default when select value is not in enum', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            [
+                                'key' => 'mod.mode',
+                                'type' => 'select',
+                                'default' => 'auto',
+                                'options' => [
+                                    ['value' => 'auto', 'label' => 'Auto'],
+                                    ['value' => 'manual', 'label' => 'Manual'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize([
+        'mod' => ['mode' => '../../etc/passwd'],
+    ]);
+
+    expect($clean['mod']['mode'])->toBe('auto');
+});
+
+it('strips HTML tags from text fields via sanitize_text_field', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'storage.host', 'type' => 'text', 'default' => '127.0.0.1'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize([
+        'storage' => ['host' => '<script>alert(1)</script>evil-host'],
+    ]);
+
+    // sanitize_text_field strips tags but keeps the text inside them — the
+    // XSS payload is neutered (no <script> survives) which is the goal.
+    expect($clean['storage']['host'])->not->toContain('<script>');
+    expect($clean['storage']['host'])->not->toContain('</script>');
+    expect($clean['storage']['host'])->toContain('evil-host');
+});
+
+it('drops unknown top-level keys and unknown sub-keys', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'storage.host', 'type' => 'text', 'default' => '127.0.0.1'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize([
+        'storage'  => ['host' => 'redis.example.com', 'rogue' => 'x'],
+        'attacker' => ['payload' => 'y'],
+    ]);
+
+    expect($clean)->toBe([
+        'storage' => ['host' => 'redis.example.com'],
+    ]);
+});
+
+it('strips HTML from non-UI string defaults via the sanitize_text_field fallback', function () {
+    // Non-UI keys (declared via top-level `defaults`, no field def in schema)
+    // are passed in through the second argument — Manager does this with the
+    // full Settings defaults so non-UI keys aren't dropped.
+    $schema = new Schema(['tabs' => []]);
+
+    $clean = $schema->sanitize(
+        ['storage' => ['host' => '<script>alert(1)</script>evil-host']],
+        ['storage' => ['host' => '127.0.0.1']],
+    );
+
+    expect($clean['storage']['host'])->not->toContain('<script>');
+    expect($clean['storage']['host'])->not->toContain('</script>');
+    expect($clean['storage']['host'])->toContain('evil-host');
+});
+
+it('coerces non-array input to empty array', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->sanitize('not an array'))->toBe([]);
+    expect($schema->sanitize(null))->toBe([]);
+    expect($schema->sanitize(42))->toBe([]);
+});
+
+it('clamps unit fields to declared min/max bounds during sanitize', function () {
+    // Unit fields (cache TTL, durations) persist as plain numbers — same
+    // min/max contract as Number. Without this, negative TTLs slip through.
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'unit', 'default' => 3600, 'min' => 1, 'max' => 86400],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize(['cache' => ['ttl' => -50]]);
+    expect($clean['cache']['ttl'])->toBe(1);
+
+    $clean = $schema->sanitize(['cache' => ['ttl' => 999999]]);
+    expect($clean['cache']['ttl'])->toBe(86400);
+});
+
+it('emits minimum and maximum for unit fields with bounds', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            ['key' => 'cache.ttl', 'type' => 'unit', 'default' => 3600, 'min' => 1],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $prop = $schema->get_rest_schema()['properties']['cache']['properties']['ttl'];
+
+    expect($prop['type'])->toBe('number');
+    expect($prop['minimum'])->toBe(1);
+});
+
 it('preserves order of distinct tabs and sections', function () {
     $schema = new Schema([
         'tabs' => [

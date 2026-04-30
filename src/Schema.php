@@ -214,6 +214,67 @@ final class Schema {
 	}
 
 	/**
+	 * Sanitize a settings payload before it's written to the database.
+	 *
+	 * Dispatches each known field through its handler, runs `sanitize_text_field()`
+	 * on strings without a handler (e.g. non-UI defaults declared via `defaults`),
+	 * and drops keys not declared in the schema.
+	 *
+	 * Pass the full defaults (including non-UI keys) when wiring this as a
+	 * `sanitize_callback` — see {@see Manager::register_settings()}.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param mixed                                    $values   The raw value to be persisted.
+	 * @param array<string, array<string, mixed>>|null $defaults Optional full defaults to use as the key allow-list.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function sanitize( $values, ?array $defaults = null ): array {
+		if ( ! is_array( $values ) ) {
+			return array();
+		}
+
+		if ( null === $defaults ) {
+			$defaults = $this->get_defaults();
+		}
+		$index = $this->get_field_index();
+		$clean = array();
+
+		foreach ( $values as $module => $module_values ) {
+			if ( ! isset( $defaults[ $module ] ) || ! is_array( $module_values ) ) {
+				continue;
+			}
+
+			$clean[ $module ] = array();
+
+			foreach ( $module_values as $key => $raw ) {
+				if ( ! array_key_exists( $key, $defaults[ $module ] ) ) {
+					continue;
+				}
+
+				$field = $index[ "{$module}.{$key}" ] ?? null;
+
+				if ( null !== $field ) {
+					$handler = $this->handler( is_string( $field['type'] ?? null ) ? $field['type'] : '' );
+					if ( null !== $handler ) {
+						$clean[ $module ][ $key ] = $handler->sanitize( $raw, $field );
+						continue;
+					}
+				}
+
+				if ( is_string( $raw ) && function_exists( 'sanitize_text_field' ) ) {
+					$clean[ $module ][ $key ] = sanitize_text_field( $raw );
+				} else {
+					$clean[ $module ][ $key ] = $raw;
+				}
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * Resolve a field-type handler instance, with caching.
 	 *
 	 * @since 2.3.0
