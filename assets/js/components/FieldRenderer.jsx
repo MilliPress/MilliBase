@@ -13,6 +13,7 @@ import TokenListField from './fields/TokenListField.jsx';
 import ColorField from './fields/ColorField.jsx';
 import CodeField from './fields/CodeField.jsx';
 import ButtonField from './fields/ButtonField.jsx';
+import renderHelpText from '../utils/renderHelpText.jsx';
 
 const builtinTypes = {
 	text: TextField,
@@ -36,9 +37,18 @@ const FieldRenderer = ( { field, value, onChange, disabled } ) => {
 		return null;
 	}
 
+	// Pre-process `field.help` for built-ins so plugin authors can write
+	// `[label](url)` inline. Custom field types receive the raw string —
+	// their `help` contract is theirs to define.
+	const isBuiltin = !! builtinTypes[ field.type ];
+	const fieldForRender =
+		isBuiltin && field.help
+			? { ...field, help: renderHelpText( field.help ) }
+			: field;
+
 	return (
 		<Component
-			field={ field }
+			field={ fieldForRender }
 			value={ value }
 			onChange={ onChange }
 			disabled={ disabled }

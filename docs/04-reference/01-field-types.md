@@ -18,7 +18,7 @@ Every field type accepts the following properties in addition to its type-specif
 | `type`    | `string` | Required. One of the type slugs documented below.                                                    |
 | `label`   | `string` | Field label.                                                                                         |
 | `tooltip` | `string` | Optional help text shown in a hover tooltip on a (?) icon next to the label.                         |
-| `help`    | `string` | Optional description rendered below the input. Supported on `text`, `password`, `number`, `select`, `toggle`, `unit`, and `code`. On `token-list` the prop is forwarded but only takes effect once the host WordPress ships `@wordpress/components` ≥ 33.0.0; `color` and `button` do not support it. |
+| `help`    | `string` | Optional description rendered below the input. Supports inline `[label](url)` markdown-style links: allowed schemes are `https://`, `http://`, `mailto:`, `tel:`, and root-relative paths. `http(s)://` links open in a new tab with `noopener noreferrer`; relative / `mailto:` / `tel:` stay in the current tab. Unsafe schemes (`javascript:`, `data:`, …) render the label as plain text. Supported on `text`, `password`, `number`, `select`, `toggle`, `unit`, and `code`. On `token-list` the prop is forwarded but only takes effect once the host WordPress ships `@wordpress/components` ≥ 33.0.0; `color` and `button` do not support it. |
 | `default` | `mixed`  | Default value used when no value has been saved yet.                                                 |
 
 ---
