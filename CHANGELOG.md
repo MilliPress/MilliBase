@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/MilliPress/MilliBase/compare/v2.3.1...v2.4.0) (2026-05-01)
+
+
+### Features
+
+* **schema:** chain action steps via array on button fields ([#38](https://github.com/MilliPress/MilliBase/issues/38)) ([3a46cb3](https://github.com/MilliPress/MilliBase/commit/3a46cb3b9eba94672fef593123207c50177e571b))
+
 ## [2.3.1](https://github.com/MilliPress/MilliBase/compare/v2.3.0...v2.3.1) (2026-05-01)
 
 
