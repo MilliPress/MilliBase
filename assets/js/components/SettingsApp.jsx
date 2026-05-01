@@ -120,7 +120,7 @@ const SettingsApp = ( { config } ) => {
 	const handleReset = async () => {
 		setIsResetting( true );
 		try {
-			await triggerAction( 'reset' );
+			await triggerAction( '__reset' );
 		} catch ( e ) {
 			// triggerAction surfaces errors via snackbar; nothing else to do.
 		} finally {

@@ -179,7 +179,7 @@ const Header = () => {
 										iconPosition="left"
 										onClick={ () => {
 											onClose();
-											triggerAction( 'reset' );
+											triggerAction( '__reset' );
 										} }
 										disabled={
 											status.settings?.has_defaults
@@ -200,7 +200,7 @@ const Header = () => {
 												iconPosition="left"
 												onClick={ () => {
 													onClose();
-													triggerAction( 'restore' );
+													triggerAction( '__restore' );
 												} }
 											>
 												{ __(

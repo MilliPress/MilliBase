@@ -56,7 +56,7 @@ add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed):
 });
 ```
 
-**Parameters:** `array $allowed` — action name strings. Default: `['reset', 'restore']`.
+**Parameters:** `array $allowed` — action name strings. Default: `['__reset', '__restore']`. Built-in framework actions use a leading double-underscore to keep the un-prefixed namespace available for consumer-registered actions.
 
 ---
 
@@ -100,18 +100,18 @@ WordPress core filter. When encryption is enabled, MilliBase hooks into this to 
 
 ### `{slug}_rest_settings_action_performed`
 
-Fires after a built-in settings action (reset, restore) has been successfully performed.
+Fires after a built-in settings action (`__reset`, `__restore`) has been successfully performed.
 
 ```php
 add_action('my_plugin_rest_settings_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
-    if ($action === 'reset') {
+    if ($action === '__reset') {
         // Clean up after reset.
     }
 }, 10, 3);
 ```
 
 **Parameters:**
-- `string $action` — the action that was performed (`'reset'`, `'restore'`)
+- `string $action` — the action that was performed (`'__reset'`, `'__restore'`)
 - `array $params` — the request parameters
 - `\WP_REST_Request $request` — the REST request object
 
@@ -178,7 +178,7 @@ MilliBase registers these REST routes:
 | Method | Route | Description |
 |--------|-------|-------------|
 | `POST` | `/wp/v2/settings` | Save settings (WordPress native) |
-| `POST` | `/{rest_namespace}/settings` | Built-in actions (reset, restore) |
+| `POST` | `/{rest_namespace}/settings` | Built-in actions (`__reset`, `__restore`) |
 | `GET` | `/{rest_namespace}/status` | Status endpoint (always registered; enriched by `status.data` and `status.callback`) |
 | varies | `/{rest_namespace}/{endpoint}` | Custom action endpoints |
 

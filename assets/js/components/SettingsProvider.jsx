@@ -65,10 +65,15 @@ export const SettingsProvider = ( { config, children } ) => {
 					message = __( 'Access denied.', 'millibase' );
 					break;
 				case 'rest_cookie_invalid_nonce':
-					message = __( 'Security check failed. Please refresh.', 'millibase' );
+					message = __(
+						'Security check failed. Please refresh.',
+						'millibase'
+					);
 					break;
 				default:
-					message = apiError.message || __( 'API request failed.', 'millibase' );
+					message =
+						apiError.message ||
+						__( 'API request failed.', 'millibase' );
 			}
 		}
 
@@ -159,43 +164,120 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 	}, [] );
 
-	const triggerAction = useCallback( async ( action, data = {} ) => {
-		return withLoading( async () => {
-			try {
-				// Determine endpoint: check if it matches a custom action.
-				let path = `/${ restNamespace }/settings`;
-				const customAction = ( config.actions || [] ).find(
-					( a ) => a.name === action
-				);
-				if ( customAction ) {
-					path = `/${ restNamespace }/${ customAction.endpoint }`;
+	/**
+	 * Dispatch a single action step against the REST API.
+	 *
+	 * Resolves three cases: the built-in `__save` step (mirrors the
+	 * dirty-settings save flow against `/wp/v2/settings`), the built-in
+	 * `__reset` / `__restore` steps (handled server-side by
+	 * `Controller::perform_settings_action` via the namespaced settings
+	 * endpoint), and consumer-registered custom actions (looked up by name
+	 * in `config.actions` and dispatched to their declared endpoint).
+	 *
+	 * `__save` is a silent no-op when there are no pending changes —
+	 * chains like `[ '__save', 'license_activate' ]` therefore stay safe
+	 * to re-click after a successful run, since the second invocation
+	 * falls through the save step and re-runs the action with the same
+	 * input. Returns an empty-message envelope in that case so chain-mode
+	 * callers can suppress per-step snackbars without special-casing.
+	 *
+	 * @param {string} step The action name (built-in or custom).
+	 * @param {Object} data Optional payload merged into every non-`__save` POST.
+	 * @return {Promise<{ success: boolean, message?: string }>}
+	 */
+	const dispatchStep = useCallback(
+		async ( step, data ) => {
+			if ( step === '__save' ) {
+				if ( ! hasChangesRef.current ) {
+					return { success: true, message: '' };
 				}
-
-				const response = await apiRequest( {
-					path,
+				await apiRequest( {
+					path: '/wp/v2/settings',
 					method: 'POST',
-					data: { action, ...data },
+					data: { [ optionName ]: settingsRef.current },
 				} );
+				setInitialSettings( settingsRef.current );
+				setHasChanges( false );
+				return { success: true, message: '' };
+			}
+
+			const customAction = ( config.actions || [] ).find(
+				( a ) => a.name === step
+			);
+			const path = customAction
+				? `/${ restNamespace }/${ customAction.endpoint }`
+				: `/${ restNamespace }/settings`;
+
+			return await apiRequest( {
+				path,
+				method: 'POST',
+				data: { action: step, ...data },
+			} );
+		},
+		[ apiRequest, optionName, restNamespace, config.actions ]
+	);
+
+	/**
+	 * Run one or more action steps as a sequential chain.
+	 *
+	 * Accepts a single action name or an array of names. The chain runs
+	 * sequentially, stops at the first non-success response, and surfaces
+	 * one trailing snackbar plus a single settings + status refresh — so
+	 * a two-step chain like `[ '__save', 'license_activate' ]` reads as
+	 * one operation to the user (one busy span, one toast, one refetch).
+	 *
+	 * Failure semantics: the failing step's `message` is shown via the
+	 * error snackbar. Earlier successful steps are not rolled back —
+	 * `__save` writing to the option is the canonical example: if a
+	 * subsequent action fails the saved settings stand, which matches the
+	 * mental model that Save was the user's first commitment anyway.
+	 *
+	 * Built-in step names (`__save`, `__reset`, `__restore`) are reserved
+	 * by the framework. Consumer-registered actions use un-prefixed names
+	 * matched against `config.actions`. Single-string callers
+	 * (`triggerAction( 'license_activate' )`) keep working unchanged — a
+	 * one-element chain is exactly equivalent to the legacy single call.
+	 *
+	 * @param {string|string[]} action One step name or a sequence of names.
+	 * @param {Object}          data   Optional payload merged into every POST.
+	 * @return {Promise<void>}
+	 */
+	const triggerAction = useCallback(
+		async ( action, data = {} ) => {
+			const steps = Array.isArray( action ) ? action : [ action ];
+
+			return withLoading( async () => {
+				let lastResponse = null;
+				try {
+					for ( const step of steps ) {
+						const response = await dispatchStep( step, data );
+						if ( ! response.success ) {
+							throw new Error(
+								response.message ||
+									__( 'Action failed', 'millibase' )
+							);
+						}
+						lastResponse = response;
+					}
+				} catch ( actionError ) {
+					const errorText =
+						actionError.message ||
+						__( 'Action failed', 'millibase' );
+					showSnackbarRef.current( errorText, [], 6000, true );
+					throw actionError;
+				}
 
 				await delay( 800 );
 
-				if ( response.success ) {
-					showSnackbarRef.current( response.message );
-					fetchSettings();
-					fetchStatus();
-				} else {
-					throw new Error(
-						response.message || __( 'Action failed', 'millibase' )
-					);
+				if ( lastResponse?.message ) {
+					showSnackbarRef.current( lastResponse.message );
 				}
-			} catch ( actionError ) {
-				const errorText =
-					actionError.message || __( 'Action failed', 'millibase' );
-				showSnackbarRef.current( errorText, [], 6000, true );
-				throw actionError;
-			}
-		} );
-	}, [ withLoading, restNamespace, config.actions, apiRequest, fetchSettings, fetchStatus ] );
+				fetchSettings();
+				fetchStatus();
+			} );
+		},
+		[ withLoading, dispatchStep, fetchSettings, fetchStatus ]
+	);
 
 	const retryConnection = useCallback( async () => {
 		setIsRetrying( true );
@@ -298,7 +380,10 @@ export const SettingsProvider = ( { config, children } ) => {
 				const previousStatus = { ...statusRef.current };
 				await delay( 500 );
 				showSnackbarRef.current(
-					__( 'Storage settings updated. Testing connection…', 'millibase' )
+					__(
+						'Storage settings updated. Testing connection…',
+						'millibase'
+					)
 				);
 
 				await delay( 3000 );

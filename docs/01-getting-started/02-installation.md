@@ -73,7 +73,7 @@ $manager = new Manager([
 This registers:
 - An admin submenu page under **Settings > My Plugin**
 - A REST endpoint at `POST /wp/v2/settings` for saving
-- Action endpoints at `POST /my-plugin/v1/settings` for reset/restore
+- Action endpoints at `POST /my-plugin/v1/settings` for `__reset` / `__restore`
 
 ## Verify
 

@@ -174,11 +174,15 @@ final class Controller {
 	}
 
 	/**
-	 * Handle built-in settings actions (reset, restore).
+	 * Handle built-in settings actions (`__reset`, `__restore`).
 	 *
 	 * Validates the requested action against a filterable allow-list, executes
 	 * it, and returns a standardised JSON response. A backup is created
 	 * automatically before a reset.
+	 *
+	 * Built-in action names use a leading double-underscore (`__`) so consumer
+	 * plugins can reserve un-prefixed names (`activate`, `clear_logs`, etc.)
+	 * for their own actions without colliding with framework primitives.
 	 *
 	 * @since 1.0.0
 	 *
@@ -195,11 +199,15 @@ final class Controller {
 		/**
 		 * Filters the allowed settings actions.
 		 *
+		 * Defaults to the built-in `__reset` and `__restore` slugs. Consumers
+		 * extending this list should keep the `__` prefix reserved for
+		 * framework primitives and use plain names for their own actions.
+		 *
 		 * @param string[] $allowed Array of allowed action slugs.
 		 */
 		$allowed = apply_filters(
 			"{$slug}_rest_settings_allowed_actions",
-			array( 'reset', 'restore' )
+			array( '__reset', '__restore' )
 		);
 
 		if ( ! is_string( $action ) || ! in_array( $action, $allowed, true ) ) {
@@ -214,13 +222,13 @@ final class Controller {
 
 		try {
 			switch ( $action ) {
-				case 'reset':
+				case '__reset':
 					$this->settings->backup();
 					delete_option( $option_name );
 					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
-				case 'restore':
+				case '__restore':
 					$restored = $this->settings->restore_backup();
 					if ( ! $restored ) {
 						return new \WP_REST_Response(

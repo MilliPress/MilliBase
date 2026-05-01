@@ -145,7 +145,7 @@ add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed):
 });
 ```
 
-By default, only `['reset', 'restore']` are allowed.
+By default, only `['__reset', '__restore']` are allowed. Built-in framework actions use a leading double-underscore so consumer plugins can register un-prefixed names without colliding with framework primitives.
 
 ## Status Response Filter
 
@@ -165,7 +165,7 @@ The `{slug}_rest_settings_action_performed` action fires after a built-in action
 
 ```php
 add_action('my_plugin_rest_settings_action_performed', function (string $action, array $params, \WP_REST_Request $request): void {
-    if ($action === 'reset') {
+    if ($action === '__reset') {
         // Perform cleanup after settings reset.
         delete_transient('my_plugin_cache');
     }
