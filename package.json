@@ -22,6 +22,7 @@
         "lint:js": "wp-scripts lint-js assets/js",
         "fix:js": "wp-scripts lint-js assets/js --fix",
         "lint:style": "wp-scripts lint-style assets/css/**/*.scss",
-        "fix:style": "wp-scripts lint-style assets/css/**/*.scss --fix"
+        "fix:style": "wp-scripts lint-style assets/css/**/*.scss --fix",
+        "test:js": "wp-scripts test-unit-js"
     }
 }

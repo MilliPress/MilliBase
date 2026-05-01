@@ -11,6 +11,7 @@ import apiFetch from '@wordpress/api-fetch';
 import { stripTags } from '@wordpress/sanitize';
 import { __ } from '@wordpress/i18n';
 import { useSnackbar } from './SnackbarProvider.jsx';
+import { runActionChain } from './actionChain.js';
 
 const SettingsContext = createContext();
 
@@ -165,39 +166,38 @@ export const SettingsProvider = ( { config, children } ) => {
 	}, [] );
 
 	/**
-	 * Dispatch a single action step against the REST API.
+	 * Persist dirty settings against `/wp/v2/settings`. Shared by
+	 * `saveSettings` and the chain-mode `__save` step.
 	 *
-	 * Resolves three cases: the built-in `__save` step (mirrors the
-	 * dirty-settings save flow against `/wp/v2/settings`), the built-in
-	 * `__reset` / `__restore` steps (handled server-side by
-	 * `Controller::perform_settings_action` via the namespaced settings
-	 * endpoint), and consumer-registered custom actions (looked up by name
-	 * in `config.actions` and dispatched to their declared endpoint).
+	 * @return {Promise<boolean>} `true` if a POST happened, `false` when already clean.
+	 */
+	const persistDirtySettings = useCallback( async () => {
+		if ( ! hasChangesRef.current ) {
+			return false;
+		}
+		await apiRequest( {
+			path: '/wp/v2/settings',
+			method: 'POST',
+			data: { [ optionName ]: settingsRef.current },
+		} );
+		setInitialSettings( settingsRef.current );
+		setHasChanges( false );
+		return true;
+	}, [ apiRequest, optionName ] );
+
+	/**
+	 * Dispatch one action step. `__save` delegates to persistDirtySettings;
+	 * other names hit a custom-action endpoint or fall back to the
+	 * namespaced settings endpoint (built-in `__reset` / `__restore`).
 	 *
-	 * `__save` is a silent no-op when there are no pending changes —
-	 * chains like `[ '__save', 'license_activate' ]` therefore stay safe
-	 * to re-click after a successful run, since the second invocation
-	 * falls through the save step and re-runs the action with the same
-	 * input. Returns an empty-message envelope in that case so chain-mode
-	 * callers can suppress per-step snackbars without special-casing.
-	 *
-	 * @param {string} step The action name (built-in or custom).
-	 * @param {Object} data Optional payload merged into every non-`__save` POST.
+	 * @param {string} step The action name.
+	 * @param {Object} data Payload merged into every non-`__save` POST.
 	 * @return {Promise<{ success: boolean, message?: string }>}
 	 */
 	const dispatchStep = useCallback(
 		async ( step, data ) => {
 			if ( step === '__save' ) {
-				if ( ! hasChangesRef.current ) {
-					return { success: true, message: '' };
-				}
-				await apiRequest( {
-					path: '/wp/v2/settings',
-					method: 'POST',
-					data: { [ optionName ]: settingsRef.current },
-				} );
-				setInitialSettings( settingsRef.current );
-				setHasChanges( false );
+				await persistDirtySettings();
 				return { success: true, message: '' };
 			}
 
@@ -214,32 +214,17 @@ export const SettingsProvider = ( { config, children } ) => {
 				data: { action: step, ...data },
 			} );
 		},
-		[ apiRequest, optionName, restNamespace, config.actions ]
+		[ apiRequest, persistDirtySettings, restNamespace, config.actions ]
 	);
 
 	/**
-	 * Run one or more action steps as a sequential chain.
+	 * Run one or more action steps as a sequential chain. Stops at the
+	 * first non-success; earlier successful steps are not rolled back.
+	 * One trailing snackbar + one settings/status refetch on success.
+	 * Built-in names (`__save`, `__reset`, `__restore`) are reserved.
 	 *
-	 * Accepts a single action name or an array of names. The chain runs
-	 * sequentially, stops at the first non-success response, and surfaces
-	 * one trailing snackbar plus a single settings + status refresh — so
-	 * a two-step chain like `[ '__save', 'license_activate' ]` reads as
-	 * one operation to the user (one busy span, one toast, one refetch).
-	 *
-	 * Failure semantics: the failing step's `message` is shown via the
-	 * error snackbar. Earlier successful steps are not rolled back —
-	 * `__save` writing to the option is the canonical example: if a
-	 * subsequent action fails the saved settings stand, which matches the
-	 * mental model that Save was the user's first commitment anyway.
-	 *
-	 * Built-in step names (`__save`, `__reset`, `__restore`) are reserved
-	 * by the framework. Consumer-registered actions use un-prefixed names
-	 * matched against `config.actions`. Single-string callers
-	 * (`triggerAction( 'license_activate' )`) keep working unchanged — a
-	 * one-element chain is exactly equivalent to the legacy single call.
-	 *
-	 * @param {string|string[]} action One step name or a sequence of names.
-	 * @param {Object}          data   Optional payload merged into every POST.
+	 * @param {string|string[]} action One step name or a chain of names.
+	 * @param {Object}          data   Payload merged into every non-`__save` POST.
 	 * @return {Promise<void>}
 	 */
 	const triggerAction = useCallback(
@@ -247,30 +232,22 @@ export const SettingsProvider = ( { config, children } ) => {
 			const steps = Array.isArray( action ) ? action : [ action ];
 
 			return withLoading( async () => {
-				let lastResponse = null;
-				try {
-					for ( const step of steps ) {
-						const response = await dispatchStep( step, data );
-						if ( ! response.success ) {
-							throw new Error(
-								response.message ||
-									__( 'Action failed', 'millibase' )
-							);
-						}
-						lastResponse = response;
-					}
-				} catch ( actionError ) {
+				const result = await runActionChain( steps, ( step ) =>
+					dispatchStep( step, data )
+				);
+
+				if ( ! result.ok ) {
 					const errorText =
-						actionError.message ||
+						result.error?.message ||
 						__( 'Action failed', 'millibase' );
 					showSnackbarRef.current( errorText, [], 6000, true );
-					throw actionError;
+					throw result.error;
 				}
 
 				await delay( 800 );
 
-				if ( lastResponse?.message ) {
-					showSnackbarRef.current( lastResponse.message );
+				if ( result.lastResponse?.message ) {
+					showSnackbarRef.current( result.lastResponse.message );
 				}
 				fetchSettings();
 				fetchStatus();
@@ -364,17 +341,11 @@ export const SettingsProvider = ( { config, children } ) => {
 		try {
 			setIsSaving( true );
 
-			await apiRequest( {
-				path: '/wp/v2/settings',
-				method: 'POST',
-				data: { [ optionName ]: settingsRef.current },
-			} );
+			await persistDirtySettings();
 
-			setInitialSettings( settingsRef.current );
 			showSnackbarRef.current(
 				__( 'Settings saved successfully.', 'millibase' )
 			);
-			setHasChanges( false );
 
 			if ( hasStorageChangesRef.current ) {
 				const previousStatus = { ...statusRef.current };
@@ -426,7 +397,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		} finally {
 			setTimeout( () => setIsSaving( false ), 1200 );
 		}
-	}, [ apiRequest, optionName, fetchStatus ] );
+	}, [ persistDirtySettings, fetchStatus ] );
 
 	// Derived legacy alias — kept so custom components and buttons registered
 	// by consumer plugins (passed via Header/TabRenderer) still receive the
