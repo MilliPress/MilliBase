@@ -32,22 +32,27 @@ final class Controller {
 	private array $config;
 
 	/**
-	 * The Settings instance.
+	 * The Settings instance. Cross-prefix tolerant; do not add a native type.
+	 * See docs/04-reference/04-namespace-prefixing.md.
+	 *
+	 * @noinspection PhpMissingFieldTypeInspection
 	 *
 	 * @since 1.2.0
 	 * @var Settings
 	 */
-	private Settings $settings;
+	private $settings;
 
 	/**
 	 * Create a new CliController instance.
 	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
 	 * @since 1.2.0
 	 *
 	 * @param array<string, mixed> $config   The settings configuration.
-	 * @param Settings             $settings The settings instance.
+	 * @param Settings             $settings Cross-prefix tolerant; see {@see self::$settings}.
 	 */
-	public function __construct( array $config, Settings $settings ) {
+	public function __construct( array $config, $settings ) {
 		$this->config   = $config;
 		$this->settings = $settings;
 	}

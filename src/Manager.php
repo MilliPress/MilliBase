@@ -55,14 +55,11 @@ final class Manager {
 	private string $slug;
 
 	/**
-	 * The Settings instance.
+	 * The Settings instance. Cross-prefix tolerant; do not add a native type.
+	 * Any consumer of this value must follow the same rule.
+	 * See docs/04-reference/04-namespace-prefixing.md.
 	 *
-	 * Available immediately when passed via constructor; otherwise created
-	 * during initialize().
-	 *
-	 * Untyped at runtime to tolerate cross-prefix instances during the brief
-	 * window when both Strauss-prefixed and unprefixed copies are autoloadable
-	 * (plugin activation switch). PHPStan still type-checks via `@var`.
+	 * @noinspection PhpMissingFieldTypeInspection
 	 *
 	 * @since 1.0.0
 	 * @var Settings|null
@@ -367,18 +364,18 @@ final class Manager {
 	/**
 	 * Resolve the Settings: use an existing instance or build one from the schema.
 	 *
-	 * When an external Settings instance is provided (via the constructor),
-	 * it is reused. Otherwise, a new instance is created from the config.
+	 * @noinspection PhpMissingParamTypeInspection
+	 * @noinspection PhpMissingReturnTypeInspection
 	 *
 	 * @since 1.0.0
 	 * @since 2.0.0 Accepts an explicit Settings instance parameter.
 	 *
 	 * @param Schema        $schema   The resolved Schema instance.
-	 * @param Settings|null $existing Pre-built Settings instance, or null to create one.
+	 * @param Settings|null $existing Cross-prefix tolerant; see {@see self::$settings}.
 	 *
 	 * @return Settings
 	 */
-	private function resolve_settings( Schema $schema, ?Settings $existing = null ): Settings {
+	private function resolve_settings( Schema $schema, $existing = null ) {
 		$config = $this->config;
 
 		if ( null !== $existing ) {

@@ -11,6 +11,15 @@ Declarative WordPress settings framework. Define your settings page in PHP array
 
 ## Quick Start
 
+> **⚠ Plugin authors: prefix MilliBase before shipping.**
+> If you bundle MilliBase inside a distributed plugin, you **must** vendor-prefix
+> it with [Strauss](https://github.com/BrianHenryIE/strauss) or php-scoper.
+> Two plugins shipping the unprefixed `MilliBase\` namespace will collide at
+> runtime — only one copy will load, and the other plugin runs against a
+> version it wasn't tested with. See
+> [Namespace Prefixing](docs/04-reference/04-namespace-prefixing.md) for setup
+> and the rationale behind MilliBase's cross-prefix-tolerant typing.
+
 ```bash
 composer require millipress/millibase
 ```
@@ -79,7 +88,7 @@ Full documentation is in the [`docs/`](docs/) directory:
 - [Custom Field Types](docs/03-customization/01-custom-field-types.md)
 - [Custom Tab Components](docs/03-customization/02-custom-tab-components.md)
 - [Extending with Filters](docs/03-customization/03-extending-with-filters.md)
-- [Reference: Field Types](docs/04-reference/01-field-types.md) · [Settings API](docs/04-reference/02-settings-api.md) · [Hooks & Filters](docs/04-reference/03-hooks-and-filters.md)
+- [Reference: Field Types](docs/04-reference/01-field-types.md) · [Settings API](docs/04-reference/02-settings-api.md) · [Hooks & Filters](docs/04-reference/03-hooks-and-filters.md) · [Namespace Prefixing](docs/04-reference/04-namespace-prefixing.md)
 
 ## License
 

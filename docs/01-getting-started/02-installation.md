@@ -6,6 +6,14 @@ menu_order: 20
 
 # Installation
 
+> **⚠ Shipping a plugin? Prefix MilliBase first.**
+> If MilliBase is going to live inside a distributed WordPress plugin, you
+> must vendor-prefix it (Strauss, php-scoper, or equivalent) so two plugins
+> bundling MilliBase don't collide on the same `MilliBase\` namespace at
+> runtime. See [Namespace Prefixing](../04-reference/04-namespace-prefixing.md)
+> for a Strauss-based setup and the contract MilliBase follows internally to
+> tolerate cross-prefix Settings instances.
+
 ## Install the Package
 
 ```bash
@@ -105,3 +113,4 @@ $all = $settings->get_all();
 - **[Configuration](../02-usage/01-configuration.md)** — all configuration options explained
 - **[Schema Definition](../02-usage/02-schema-definition.md)** — define tabs, sections, fields, and conditions
 - **[Field Types](../04-reference/01-field-types.md)** — reference for all 9 built-in field types
+- **[Namespace Prefixing](../04-reference/04-namespace-prefixing.md)** — required reading before shipping a plugin that bundles MilliBase
