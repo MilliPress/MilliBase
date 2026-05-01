@@ -17,4 +17,4 @@
 /webpack.config.js             export-ignore
 /CHANGELOG.md                  export-ignore
 
-/build                        -diff linguist-generated
+/build                        -diff linguist-generated merge=ours
