@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.3.1](https://github.com/MilliPress/MilliBase/compare/v2.3.0...v2.3.1) (2026-05-01)
+
+
+### Features
+
+* **fields:** support `help` description text on field registration ([1ff2872](https://github.com/MilliPress/MilliBase/commit/1ff287262fb95e6778ff2a26fb65628abd4f8e85))
+
+
+### Bug Fixes
+
+* **controllers:** tolerate cross-prefix Settings in REST and CLI controllers ([032447e](https://github.com/MilliPress/MilliBase/commit/032447ea648c2be44340e2cab3d7688fc79b2424))
+
+
+### Miscellaneous
+
+* release 2.3.1 ([c802ab4](https://github.com/MilliPress/MilliBase/commit/c802ab439dbe4c43442d4f2c93c30091d69036b7))
+
 ## [2.3.0](https://github.com/MilliPress/MilliBase/compare/v2.2.1...v2.3.0) (2026-04-30)
 
 
