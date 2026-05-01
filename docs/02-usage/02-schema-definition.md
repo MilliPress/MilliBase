@@ -286,7 +286,7 @@ Accordion mode works with all section features including active toggles and stat
 | `save`          | `unit`           | Set to `'seconds'` for automatic time unit conversion             |
 | `rows`          | `code`           | Number of textarea rows (default: 6)                              |
 | `language`      | `code`           | Syntax language hint                                              |
-| `action`        | `button`         | Required. Name of an `actions` entry to trigger.                  |
+| `action`        | `button`         | Required. Name (or ordered list of names) of an `actions` entry — or a reserved built-in (`__save`, `__reset`, `__restore`). |
 | `variant`       | `button`         | `'primary' \| 'secondary' \| 'tertiary' \| 'link'`.               |
 | `size`          | `button`         | `'default' \| 'compact' \| 'small'`.                              |
 | `isDestructive` | `button`         | Renders the button in destructive (red) styling.                  |

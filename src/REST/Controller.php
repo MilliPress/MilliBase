@@ -179,7 +179,7 @@ final class Controller {
 	}
 
 	/**
-	 * Handle built-in settings actions (reset, restore).
+	 * Handle built-in settings actions (`__reset`, `__restore`).
 	 *
 	 * Validates the requested action against a filterable allow-list, executes
 	 * it, and returns a standardised JSON response. A backup is created
@@ -204,7 +204,7 @@ final class Controller {
 		 */
 		$allowed = apply_filters(
 			"{$slug}_rest_settings_allowed_actions",
-			array( 'reset', 'restore' )
+			array( '__reset', '__restore' )
 		);
 
 		if ( ! is_string( $action ) || ! in_array( $action, $allowed, true ) ) {
@@ -219,13 +219,13 @@ final class Controller {
 
 		try {
 			switch ( $action ) {
-				case 'reset':
+				case '__reset':
 					$this->settings->backup();
 					delete_option( $option_name );
 					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
-				case 'restore':
+				case '__restore':
 					$restored = $this->settings->restore_backup();
 					if ( ! $restored ) {
 						return new \WP_REST_Response(

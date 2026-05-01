@@ -282,7 +282,7 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 
 | Property        | Type                                               | Default       | Description                                                                                                              |
 |-----------------|----------------------------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
-| `action`        | `string`                                           | —             | Required. Name of a custom action registered in the config's `actions` array. Triggered via `triggerAction(action)`.     |
+| `action`        | `string` \| `string[]`                             | —             | Required. Name of a custom action — or an ordered chain of names — to trigger. See [Chained actions](#chained-actions).  |
 | `variant`       | `'primary' \| 'secondary' \| 'tertiary' \| 'link'` | `'secondary'` | WordPress `Button` variant.                                                                                              |
 | `size`          | `'default' \| 'compact' \| 'small'`                | `'default'`   | WordPress `Button` size. `'default'` enables the 40-pixel default-size opt-in automatically.                             |
 | `isDestructive` | `bool`                                             | `false`       | Renders the button in destructive (red) styling.                                                                         |
@@ -293,7 +293,7 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 | `width`         | `string`                                           | —             | CSS width applied to the inline-row flex item (e.g. `'200px'`, `'30%'`).                                                 |
 | `show` / `hide` | `[field, op, value]`                               | —             | Conditional visibility against the current settings (e.g. `['license.is_valid', '=', true]`).                            |
 
-**Action wiring:** the button's `action` must match the `name` of an entry in the config's `actions` array (which registers a REST endpoint). See [Schema Definition → Actions](../02-usage/02-schema-definition.md) for full action registration.
+**Action wiring:** the button's `action` must match the `name` of an entry in the config's `actions` array (which registers a REST endpoint), or be one of the framework-reserved built-ins listed below. See [Schema Definition → Actions](../02-usage/02-schema-definition.md) for full action registration.
 
 **Busy/disabled state:** automatic — `isBusy` reflects the global loading state, and the button is disabled while saving or loading. Buttons are also disabled when the section's `active` toggle is off.
 
@@ -302,6 +302,34 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 
 > [!NOTE]
 > Buttons require a `key` purely as a React identifier. The key is **not** read from or written to the settings store, even though it follows the standard `module.name` dot-notation.
+
+### Chained actions
+
+`action` accepts either a single name or an ordered list of names. A list runs sequentially, stops at the first non-success response, and surfaces a single trailing snackbar plus one settings/status refresh — so a chain reads as one operation to the user (one busy span, one toast, one refetch).
+
+```php
+[
+    'key'    => 'license.activate',
+    'type'   => 'button',
+    'label'  => 'Activate',
+    'action' => [ '__save', 'license_activate' ],
+]
+```
+
+The example saves any pending field changes (the user pasted a key into a text input but hasn't clicked the global Save button yet), then runs the consumer-registered `license_activate` action against the saved state. If `__save` fails, `license_activate` is not invoked and the save error surfaces; if `license_activate` fails, the saved settings stand.
+
+> [!NOTE]
+> The chain primitive does not currently support per-step data. When `triggerAction` is invoked programmatically with a `data` payload (`triggerAction(['__save', 'foo'], { x: 1 })`), the same `data` is merged into every non-`__save` step's POST body. Callers that need divergent payloads per step should split the chain into separate `triggerAction` calls.
+
+#### Built-in actions
+
+The framework ships three built-in actions, named with a leading double-underscore (`__`) by convention to keep them visually distinct from consumer-registered actions. Consumer plugins are free to use any naming scheme; the only literal collisions to avoid are `__save`, `__reset`, and `__restore`.
+
+| Name        | Effect                                                                                                                                                     |
+|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `__save`    | Persists the current dirty settings against `/wp/v2/settings`. Silent no-op when there are no pending changes — safe to keep at the head of every chain.   |
+| `__reset`   | Backs up the current option, then deletes it so defaults take over. Allow-list filterable via `{slug}_rest_settings_allowed_actions`.                      |
+| `__restore` | Restores the most recent backup written by `__reset`. Returns a 400 `success: false` if no backup exists or the backup has expired.                        |
 
 ## Next Steps
 

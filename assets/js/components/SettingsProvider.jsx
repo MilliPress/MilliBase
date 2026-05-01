@@ -11,6 +11,7 @@ import apiFetch from '@wordpress/api-fetch';
 import { stripTags } from '@wordpress/sanitize';
 import { __ } from '@wordpress/i18n';
 import { useSnackbar } from './SnackbarProvider.jsx';
+import { runActionChain } from './actionChain.js';
 
 const SettingsContext = createContext();
 
@@ -65,10 +66,15 @@ export const SettingsProvider = ( { config, children } ) => {
 					message = __( 'Access denied.', 'millibase' );
 					break;
 				case 'rest_cookie_invalid_nonce':
-					message = __( 'Security check failed. Please refresh.', 'millibase' );
+					message = __(
+						'Security check failed. Please refresh.',
+						'millibase'
+					);
 					break;
 				default:
-					message = apiError.message || __( 'API request failed.', 'millibase' );
+					message =
+						apiError.message ||
+						__( 'API request failed.', 'millibase' );
 			}
 		}
 
@@ -159,43 +165,96 @@ export const SettingsProvider = ( { config, children } ) => {
 		}
 	}, [] );
 
-	const triggerAction = useCallback( async ( action, data = {} ) => {
-		return withLoading( async () => {
-			try {
-				// Determine endpoint: check if it matches a custom action.
-				let path = `/${ restNamespace }/settings`;
-				const customAction = ( config.actions || [] ).find(
-					( a ) => a.name === action
-				);
-				if ( customAction ) {
-					path = `/${ restNamespace }/${ customAction.endpoint }`;
-				}
+	/**
+	 * Persist dirty settings against `/wp/v2/settings`. Shared by
+	 * `saveSettings` and the chain-mode `__save` step.
+	 *
+	 * @return {Promise<boolean>} `true` if a POST happened, `false` when already clean.
+	 */
+	const persistDirtySettings = useCallback( async () => {
+		if ( ! hasChangesRef.current ) {
+			return false;
+		}
+		await apiRequest( {
+			path: '/wp/v2/settings',
+			method: 'POST',
+			data: { [ optionName ]: settingsRef.current },
+		} );
+		setInitialSettings( settingsRef.current );
+		setHasChanges( false );
+		return true;
+	}, [ apiRequest, optionName ] );
 
-				const response = await apiRequest( {
-					path,
-					method: 'POST',
-					data: { action, ...data },
-				} );
+	/**
+	 * Dispatch one action step. `__save` delegates to persistDirtySettings;
+	 * other names hit a custom-action endpoint or fall back to the
+	 * namespaced settings endpoint (built-in `__reset` / `__restore`).
+	 *
+	 * @param {string} step The action name.
+	 * @param {Object} data Payload merged into every non-`__save` POST.
+	 * @return {Promise<{ success: boolean, message?: string }>}
+	 */
+	const dispatchStep = useCallback(
+		async ( step, data ) => {
+			if ( step === '__save' ) {
+				await persistDirtySettings();
+				return { success: true, message: '' };
+			}
+
+			const customAction = ( config.actions || [] ).find(
+				( a ) => a.name === step
+			);
+			const path = customAction
+				? `/${ restNamespace }/${ customAction.endpoint }`
+				: `/${ restNamespace }/settings`;
+
+			return await apiRequest( {
+				path,
+				method: 'POST',
+				data: { action: step, ...data },
+			} );
+		},
+		[ apiRequest, persistDirtySettings, restNamespace, config.actions ]
+	);
+
+	/**
+	 * Run one or more action steps as a sequential chain. Stops at the
+	 * first non-success; earlier successful steps are not rolled back.
+	 * One trailing snackbar + one settings/status refetch on success.
+	 * Built-in names (`__save`, `__reset`, `__restore`) are reserved.
+	 *
+	 * @param {string|string[]} action One step name or a chain of names.
+	 * @param {Object}          data   Payload merged into every non-`__save` POST.
+	 * @return {Promise<void>}
+	 */
+	const triggerAction = useCallback(
+		async ( action, data = {} ) => {
+			const steps = Array.isArray( action ) ? action : [ action ];
+
+			return withLoading( async () => {
+				const result = await runActionChain( steps, ( step ) =>
+					dispatchStep( step, data )
+				);
+
+				if ( ! result.ok ) {
+					const errorText =
+						result.error?.message ||
+						__( 'Action failed', 'millibase' );
+					showSnackbarRef.current( errorText, [], 6000, true );
+					throw result.error;
+				}
 
 				await delay( 800 );
 
-				if ( response.success ) {
-					showSnackbarRef.current( response.message );
-					fetchSettings();
-					fetchStatus();
-				} else {
-					throw new Error(
-						response.message || __( 'Action failed', 'millibase' )
-					);
+				if ( result.lastResponse?.message ) {
+					showSnackbarRef.current( result.lastResponse.message );
 				}
-			} catch ( actionError ) {
-				const errorText =
-					actionError.message || __( 'Action failed', 'millibase' );
-				showSnackbarRef.current( errorText, [], 6000, true );
-				throw actionError;
-			}
-		} );
-	}, [ withLoading, restNamespace, config.actions, apiRequest, fetchSettings, fetchStatus ] );
+				fetchSettings();
+				fetchStatus();
+			} );
+		},
+		[ withLoading, dispatchStep, fetchSettings, fetchStatus ]
+	);
 
 	const retryConnection = useCallback( async () => {
 		setIsRetrying( true );
@@ -282,23 +341,20 @@ export const SettingsProvider = ( { config, children } ) => {
 		try {
 			setIsSaving( true );
 
-			await apiRequest( {
-				path: '/wp/v2/settings',
-				method: 'POST',
-				data: { [ optionName ]: settingsRef.current },
-			} );
+			await persistDirtySettings();
 
-			setInitialSettings( settingsRef.current );
 			showSnackbarRef.current(
 				__( 'Settings saved successfully.', 'millibase' )
 			);
-			setHasChanges( false );
 
 			if ( hasStorageChangesRef.current ) {
 				const previousStatus = { ...statusRef.current };
 				await delay( 500 );
 				showSnackbarRef.current(
-					__( 'Storage settings updated. Testing connection…', 'millibase' )
+					__(
+						'Storage settings updated. Testing connection…',
+						'millibase'
+					)
 				);
 
 				await delay( 3000 );
@@ -341,7 +397,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		} finally {
 			setTimeout( () => setIsSaving( false ), 1200 );
 		}
-	}, [ apiRequest, optionName, fetchStatus ] );
+	}, [ persistDirtySettings, fetchStatus ] );
 
 	// Derived legacy alias — kept so custom components and buttons registered
 	// by consumer plugins (passed via Header/TabRenderer) still receive the

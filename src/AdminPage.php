@@ -197,7 +197,7 @@ final class AdminPage {
 	}
 
 	/**
-	 * Inject the settings schema configuration via inline script.
+	 * Inject the settings schema configuration via an inline script.
 	 *
 	 * Passes the client-safe schema, actions, and header config to the
 	 * React UI through `window.MilliBase.init()`.
