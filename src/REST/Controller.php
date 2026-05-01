@@ -180,10 +180,6 @@ final class Controller {
 	 * it, and returns a standardised JSON response. A backup is created
 	 * automatically before a reset.
 	 *
-	 * Built-in action names use a leading double-underscore (`__`) so consumer
-	 * plugins can reserve un-prefixed names (`activate`, `clear_logs`, etc.)
-	 * for their own actions without colliding with framework primitives.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @param \WP_REST_Request $request The REST request.
@@ -198,10 +194,6 @@ final class Controller {
 
 		/**
 		 * Filters the allowed settings actions.
-		 *
-		 * Defaults to the built-in `__reset` and `__restore` slugs. Consumers
-		 * extending this list should keep the `__` prefix reserved for
-		 * framework primitives and use plain names for their own actions.
 		 *
 		 * @param string[] $allowed Array of allowed action slugs.
 		 */

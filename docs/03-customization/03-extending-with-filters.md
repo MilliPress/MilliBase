@@ -145,7 +145,7 @@ add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed):
 });
 ```
 
-By default, only `['__reset', '__restore']` are allowed. Built-in framework actions use a leading double-underscore so consumer plugins can register un-prefixed names without colliding with framework primitives.
+By default, only `['__reset', '__restore']` are allowed. The framework's built-in actions use a leading double-underscore by convention to stay visually distinct from consumer-registered names.
 
 ## Status Response Filter
 

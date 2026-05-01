@@ -303,9 +303,12 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 
 The example saves any pending field changes (the user pasted a key into a text input but hasn't clicked the global Save button yet), then runs the consumer-registered `license_activate` action against the saved state. If `__save` fails, `license_activate` is not invoked and the save error surfaces; if `license_activate` fails, the saved settings stand.
 
-#### Reserved built-ins
+> [!NOTE]
+> The chain primitive does not currently support per-step data. When `triggerAction` is invoked programmatically with a `data` payload (`triggerAction(['__save', 'foo'], { x: 1 })`), the same `data` is merged into every non-`__save` step's POST body. Callers that need divergent payloads per step should split the chain into separate `triggerAction` calls.
 
-Names starting with a double-underscore (`__`) are reserved for framework primitives. Consumer plugins should use un-prefixed names for their own actions.
+#### Built-in actions
+
+The framework ships three built-in actions, named with a leading double-underscore (`__`) by convention to keep them visually distinct from consumer-registered actions. Consumer plugins are free to use any naming scheme; the only literal collisions to avoid are `__save`, `__reset`, and `__restore`.
 
 | Name        | Effect                                                                                                                                                     |
 |-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|

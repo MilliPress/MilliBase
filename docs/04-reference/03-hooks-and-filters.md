@@ -56,7 +56,7 @@ add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed):
 });
 ```
 
-**Parameters:** `array $allowed` — action name strings. Default: `['__reset', '__restore']`. Built-in framework actions use a leading double-underscore to keep the un-prefixed namespace available for consumer-registered actions.
+**Parameters:** `array $allowed` — action name strings. Default: `['__reset', '__restore']`.
 
 ---
 
@@ -114,6 +114,9 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 - `string $action` — the action that was performed (`'__reset'`, `'__restore'`)
 - `array $params` — the request parameters
 - `\WP_REST_Request $request` — the REST request object
+
+> [!NOTE]
+> This hook does **not** fire for the chain-mode `__save` step. `__save` writes through WordPress core's `/wp/v2/settings` endpoint, not the framework's namespaced settings endpoint, so it bypasses `Controller::perform_settings_action`. To observe saves regardless of trigger (Save button, `__save` step, programmatic `update_option`), hook the WordPress-native `update_option_{option_name}` / `add_option_{option_name}` actions, or use the per-key `{slug}_setting_changed/{dot_key}` action below.
 
 ---
 
