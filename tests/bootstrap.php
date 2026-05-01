@@ -80,3 +80,120 @@ if (! function_exists('WP_Filesystem')) {
         return true;
     }
 }
+
+// ─── REST / hook stubs for action tests ─────────────────────────────
+
+if (! class_exists('WP_REST_Request')) {
+    class WP_REST_Request
+    {
+        private array $params;
+
+        public function __construct(array $params = [])
+        {
+            $this->params = $params;
+        }
+
+        public function get_param(string $key)
+        {
+            return $this->params[$key] ?? null;
+        }
+
+        public function get_params(): array
+        {
+            return $this->params;
+        }
+    }
+}
+
+if (! class_exists('WP_Error')) {
+    class WP_Error
+    {
+        public string $code;
+        public string $message;
+
+        public function __construct(string $code = '', string $message = '')
+        {
+            $this->code    = $code;
+            $this->message = $message;
+        }
+
+        public function get_error_code(): string
+        {
+            return $this->code;
+        }
+    }
+}
+
+if (! function_exists('add_filter')) {
+    function add_filter(string $hook, callable $callback, int $priority = 10): bool
+    {
+        $GLOBALS['__milli_test_filters'][$hook][$priority][] = $callback;
+        return true;
+    }
+}
+
+if (! function_exists('add_action')) {
+    function add_action(string $hook, callable $callback, int $priority = 10, int $accepted_args = 1): bool
+    {
+        return true;
+    }
+}
+
+if (! function_exists('apply_filters')) {
+    function apply_filters(string $hook, ...$args)
+    {
+        $value = $args[0];
+        $bag   = $GLOBALS['__milli_test_filters'][$hook] ?? [];
+        ksort($bag);
+        foreach ($bag as $callbacks) {
+            foreach ($callbacks as $callback) {
+                $value = $callback($value, ...array_slice($args, 1));
+            }
+        }
+        return $value;
+    }
+}
+
+if (! function_exists('do_action')) {
+    function do_action(string $hook, ...$args): void
+    {
+    }
+}
+
+if (! function_exists('get_transient')) {
+    function get_transient(string $key)
+    {
+        return false;
+    }
+}
+
+if (! function_exists('get_option')) {
+    function get_option(string $key, $default = false)
+    {
+        return $default;
+    }
+}
+
+if (! function_exists('delete_option')) {
+    function delete_option(string $name): bool
+    {
+        return true;
+    }
+}
+
+if (! function_exists('__')) {
+    function __(string $text, string $domain = 'default'): string
+    {
+        return $text;
+    }
+}
+
+if (! function_exists('rest_ensure_response')) {
+    function rest_ensure_response($response): WP_REST_Response
+    {
+        if ($response instanceof WP_REST_Response) {
+            return $response;
+        }
+        return new WP_REST_Response(is_array($response) ? $response : []);
+    }
+}
