@@ -9,6 +9,7 @@ const PasswordField = ( { field, value, onChange, disabled } ) => (
 		__next40pxDefaultSize
 		type="password"
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

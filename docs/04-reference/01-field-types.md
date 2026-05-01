@@ -8,6 +8,21 @@ menu_order: 10
 
 MilliBase ships with 10 built-in field types. Each type provides server-side sanitization and a matching React component.
 
+## Common Properties
+
+Every field type accepts the following properties in addition to its type-specific options:
+
+| Property  | Type     | Description                                                                                          |
+|-----------|----------|------------------------------------------------------------------------------------------------------|
+| `key`     | `string` | Required. Dot-notation identifier (e.g. `cache.ttl`).                                                |
+| `type`    | `string` | Required. One of the type slugs documented below.                                                    |
+| `label`   | `string` | Field label.                                                                                         |
+| `tooltip` | `string` | Optional help text shown in a hover tooltip on a (?) icon next to the label.                         |
+| `help`    | `string` | Optional description rendered below the input. Supported on `text`, `password`, `number`, `select`, `toggle`, `unit`, and `code`. On `token-list` the prop is forwarded but only takes effect once the host WordPress ships `@wordpress/components` ≥ 33.0.0; `color` and `button` do not support it. |
+| `default` | `mixed`  | Default value used when no value has been saved yet.                                                 |
+
+---
+
 ## text
 
 Standard text input. Sanitized via `sanitize_text_field()`.

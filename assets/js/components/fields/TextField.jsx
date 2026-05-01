@@ -8,6 +8,7 @@ const TextField = ( { field, value, onChange, disabled } ) => (
 	<InputControl
 		__next40pxDefaultSize
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

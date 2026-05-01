@@ -531,6 +531,7 @@ final class Schema {
 		// Copy through safe properties.
 		$safe_keys = array(
 			'tooltip',
+			'help',
 			'placeholder',
 			'default',
 			'min',

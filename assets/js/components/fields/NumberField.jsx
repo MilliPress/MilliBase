@@ -8,6 +8,7 @@ const NumberField = ( { field, value, onChange, disabled } ) => (
 	<NumberControl
 		__next40pxDefaultSize
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		value={ value ?? 0 }
 		disabled={ disabled }
 		min={ field.min }

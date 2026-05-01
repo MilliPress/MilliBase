@@ -5,6 +5,7 @@ const SelectField = ( { field, value, onChange, disabled } ) => (
 	<SelectControl
 		__next40pxDefaultSize
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

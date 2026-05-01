@@ -4,6 +4,7 @@ import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 const CodeField = ( { field, value, onChange, disabled } ) => (
 	<TextareaControl
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }

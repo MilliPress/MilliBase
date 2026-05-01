@@ -5,6 +5,7 @@ const ToggleField = ( { field, value, onChange, disabled } ) => (
 	<ToggleControl
 		__nextHasNoMarginBottom
 		label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+		help={ field.help }
 		checked={ !! value }
 		disabled={ disabled }
 		onChange={ onChange }

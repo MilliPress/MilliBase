@@ -300,7 +300,8 @@ it('strips server-only properties and preserves safe keys', function () {
                                 'type' => 'text',
                                 'label' => 'My Field',
                                 'default' => 'val',
-                                'tooltip' => 'Help text',
+                                'tooltip' => 'Tooltip text',
+                                'help' => 'Description below the input.',
                                 'sanitize' => 'some_callback', // server-only — should be stripped
                                 'validate' => 'another_callback', // server-only
                             ],
@@ -314,7 +315,7 @@ it('strips server-only properties and preserves safe keys', function () {
     $client = $schema->to_client_array();
     $field = $client['tabs'][0]['sections'][0]['fields'][0];
 
-    expect($field)->toHaveKeys(['key', 'type', 'label', 'default', 'tooltip']);
+    expect($field)->toHaveKeys(['key', 'type', 'label', 'default', 'tooltip', 'help']);
     expect($field)->not->toHaveKeys(['sanitize', 'validate']);
 });
 
