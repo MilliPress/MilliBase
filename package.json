@@ -7,12 +7,12 @@
         "@wordpress/scripts": "^32.0.0"
     },
     "dependencies": {
-        "@wordpress/api-fetch": "^7.44.0",
-        "@wordpress/components": "^32.6.0",
+        "@wordpress/api-fetch": "^7.45.0",
+        "@wordpress/components": "^33.0.0",
         "@wordpress/dom-ready": "^4.41.0",
         "@wordpress/element": "^6.41.0",
         "@wordpress/i18n": "^6.11.0",
-        "@wordpress/icons": "^12.0.0"
+        "@wordpress/icons": "^13.0.0"
     },
     "scripts": {
         "build": "wp-scripts build",
