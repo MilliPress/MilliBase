@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/MilliPress/MilliBase/compare/v2.4.0...v2.4.1) (2026-05-03)
+
+
+### Bug Fixes
+
+* **fields:** render markdown-style links in help text ([#40](https://github.com/MilliPress/MilliBase/issues/40)) ([68765bf](https://github.com/MilliPress/MilliBase/commit/68765bf6b906cd5e060fcc82cb0c46063200933b))
+
 ## [2.4.0](https://github.com/MilliPress/MilliBase/compare/v2.3.1...v2.4.0) (2026-05-01)
 
 
