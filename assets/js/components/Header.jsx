@@ -2,7 +2,6 @@
  * Header component: title, links, save button, custom buttons, actions dropdown, progress bar.
  * Fully driven by the PHP schema's `header` config.
  */
-// CI test: trigger asset rebuild to validate App-token push path.
 
 import { __ } from '@wordpress/i18n';
 import { createElement, useState } from '@wordpress/element';
@@ -103,7 +102,7 @@ const Header = () => {
 						{ /* Save button — always present */ }
 						<Button
 							__next40pxDefaultSize
-							style={ { marginRight: '10px' } }
+							style={ { marginRight: '11px' } }
 							isBusy={ isSaving }
 							isPrimary
 							onClick={ saveSettings }
