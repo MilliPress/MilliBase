@@ -3,8 +3,24 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'assets/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'webpack.config.js'
+      - 'phpstan.neon'
+      - 'phpcs.xml.dist'
+      - 'phpunit.xml'
   pull_request:
     branches: [main]
+    # No paths filter — always run CI on PRs to catch issues before merge.
+
+permissions:
+  contents: write
 
 jobs:
   lint:
@@ -44,14 +60,31 @@ jobs:
   build-assets:
     name: Build & Commit Assets
     needs: [lint, test]
-    if: github.event_name == 'push'
+    # On push to main: rebuild and auto-commit. On same-repo PR: rebuild and
+    # auto-commit to the PR branch. On fork PR: verify only.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      - name: Mint App installation token
+        id: app-token
+        if: |
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name == github.repository)
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.MILLIPRESS_BOT_APP_ID }}
+          private-key: ${{ secrets.MILLIPRESS_BOT_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.RELEASE_TOKEN }}
+          # App token (when present) lets the rebuild push trigger PR
+          # `synchronize` events so required checks re-run on the rebuild
+          # commit. Falls back to the default GITHUB_TOKEN on fork PRs.
+          token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          # Same-repo PR: check out the PR's head branch directly so the
+          # rebuild commit lands on the right ref. Fork PR / push: default ref.
+          ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || github.ref }}
 
       - uses: actions/setup-node@v6
         with:
@@ -61,12 +94,45 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Commit build assets
+      - name: Auto-rebuild & push (push or same-repo PR)
+        if: |
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          # PR: push back to the PR branch. Push: stay on main.
+          TARGET_REF: ${{ github.head_ref || github.ref_name }}
+          # Skip CI on push-to-main rebuilds so release-please doesn't
+          # re-trigger. On PR rebuilds, allow CI to re-run so the build-assets
+          # check goes green on the rebuild commit.
+          MSG_SUFFIX: ${{ github.event_name == 'push' && ' [skip ci]' || '' }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add build/
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: rebuild assets [skip ci]"
-            git push
+          if git diff --cached --quiet; then
+            echo "build/ is in sync with source — no rebuild needed."
+            exit 0
+          fi
+          if [ -z "$APP_TOKEN" ]; then
+            echo "::error::App installation token is not available."
+            git --no-pager diff --stat build/
+            exit 1
+          fi
+          git -c user.name="millipress-bot[bot]" \
+              -c user.email="millipress-bot[bot]@users.noreply.github.com" \
+              commit -m "chore: rebuild assets${MSG_SUFFIX}"
+          git push "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${TARGET_REF}"
+          echo "Pushed rebuild to '${TARGET_REF}'."
+
+      - name: Verify build (fork PRs only)
+        if: |
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          if git diff --quiet build/; then
+            echo "build/ is in sync with source."
+          else
+            echo "::error::build/ is out of sync. Fork PRs require manual rebuild by a maintainer."
+            git --no-pager diff --stat build/
+            exit 1
           fi
