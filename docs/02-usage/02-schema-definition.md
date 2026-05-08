@@ -266,7 +266,6 @@ Accordion mode works with all section features including active toggles and stat
 | `tooltip`     | `string` | —         | Help text shown in an info icon tooltip                    |
 | `placeholder` | `string` | —         | Placeholder text (text, password, token-list)              |
 | `disabled`    | `bool`   | `false`   | Render field as read-only                                  |
-| `encrypted`   | `bool`   | `false`   | Hint for the UI (actual encryption uses `enc_` key prefix) |
 
 ### Layout Properties
 

@@ -539,7 +539,6 @@ final class Schema {
 			'units',
 			'save',
 			'options',
-			'encrypted',
 			'disabled',
 			'rows',
 			'language',
