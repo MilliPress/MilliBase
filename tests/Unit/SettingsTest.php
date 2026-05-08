@@ -69,6 +69,30 @@ it('returns all defaults when no module specified', function () {
     );
 });
 
+it('derives host.domain from HTTP_HOST in standalone mode', function () {
+    $_SERVER['HTTP_HOST'] = 'example.com';
+
+    try {
+        $settings = new Settings(['slug' => 'test']);
+
+        expect($settings->get_default_settings()['host']['domain'])->toBe('example_com');
+    } finally {
+        unset($_SERVER['HTTP_HOST']);
+    }
+});
+
+it('reflects domain changes between calls (dynamic resolution)', function () {
+    $settings = new Settings(['slug' => 'test']);
+
+    $_SERVER['HTTP_HOST'] = 'first.example.com';
+    expect($settings->get_default_settings()['host']['domain'])->toBe('first_example_com');
+
+    $_SERVER['HTTP_HOST'] = 'second.example.com';
+    expect($settings->get_default_settings()['host']['domain'])->toBe('second_example_com');
+
+    unset($_SERVER['HTTP_HOST']);
+});
+
 it('returns defaults filtered by module', function () {
     $defaults = [
         'cache' => ['enabled' => true, 'ttl' => 3600],

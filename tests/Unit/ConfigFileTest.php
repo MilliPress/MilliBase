@@ -5,7 +5,12 @@ use MilliBase\ConfigFile;
 beforeEach(function () {
     $this->tmpDir = sys_get_temp_dir() . '/millibase-test-' . uniqid();
     mkdir($this->tmpDir, 0755, true);
-    $this->configFile = new ConfigFile($this->tmpDir, 'example_com', 'millibase');
+    $this->domain = 'example_com';
+    $this->configFile = new ConfigFile(
+        $this->tmpDir,
+        fn (): string => $this->domain,
+        'millibase'
+    );
 });
 
 afterEach(function () {
@@ -79,3 +84,49 @@ it('includes ABSPATH guard in written file', function () {
 
     expect($content)->toContain("defined( 'ABSPATH' ) || exit;");
 });
+
+// ─── Dynamic domain resolution (multisite / switch_to_blog) ─────────
+
+it('resolves the domain on every operation', function () {
+    // Write under the construction-time domain.
+    $this->configFile->write(['cache' => ['ttl' => 1]]);
+
+    // Simulate switch_to_blog by mutating the resolver's source.
+    $this->domain = 'sub_example_com';
+    $this->configFile->write(['cache' => ['ttl' => 2]]);
+
+    expect(file_exists($this->tmpDir . '/example_com.php'))->toBeTrue();
+    expect(file_exists($this->tmpDir . '/sub_example_com.php'))->toBeTrue();
+
+    // Read currently resolves to the second domain.
+    expect($this->configFile->read('cache'))->toBe(['cache' => ['ttl' => 2]]);
+
+    // Restore — read tracks back to the first.
+    $this->domain = 'example_com';
+    expect($this->configFile->read('cache'))->toBe(['cache' => ['ttl' => 1]]);
+});
+
+it('deletes the file at the currently-resolved domain', function () {
+    $this->configFile->write(['cache' => ['ttl' => 1]]);
+    $this->domain = 'sub_example_com';
+    $this->configFile->write(['cache' => ['ttl' => 2]]);
+
+    // Delete should target the *current* domain only.
+    expect($this->configFile->delete())->toBeTrue();
+    expect(file_exists($this->tmpDir . '/sub_example_com.php'))->toBeFalse();
+    expect(file_exists($this->tmpDir . '/example_com.php'))->toBeTrue();
+});
+
+// ─── Back-compat: string domain (pre-2.4.3 signature) ───────────────
+
+it('accepts a string domain for backward compatibility', function () {
+    $configFile = new ConfigFile($this->tmpDir, 'legacy_example_com', 'millibase');
+    $configFile->write(['cache' => ['ttl' => 42]]);
+
+    expect(file_exists($this->tmpDir . '/legacy_example_com.php'))->toBeTrue();
+    expect($configFile->read('cache'))->toBe(['cache' => ['ttl' => 42]]);
+});
+
+it('throws when the domain argument is neither string nor Closure', function () {
+    new ConfigFile($this->tmpDir, 123, 'millibase');
+})->throws(\InvalidArgumentException::class);

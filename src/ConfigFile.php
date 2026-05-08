@@ -24,12 +24,15 @@ final class ConfigFile {
 	private string $directory;
 
 	/**
-	 * The sanitized domain identifier.
+	 * Resolves the sanitized domain identifier at read/write time.
 	 *
-	 * @since 1.0.0
-	 * @var string
+	 * Called on every file-path lookup so multisite blog switches are
+	 * honoured rather than frozen at construction.
+	 *
+	 * @since 2.4.2
+	 * @var \Closure(): string
 	 */
-	private string $domain;
+	private \Closure $domain_resolver;
 
 	/**
 	 * The option name (used in the file header comment).
@@ -42,16 +45,32 @@ final class ConfigFile {
 	/**
 	 * Create a new ConfigFile instance.
 	 *
-	 * @since 1.0.0
+	 * The second argument may be a string (legacy: frozen domain) or a
+	 * `Closure(): string` (preferred: resolved on every read/write so multisite
+	 * blog switches are honoured). A string is wrapped as a constant closure.
 	 *
-	 * @param string $directory   The directory for config files.
-	 * @param string $domain      The sanitized domain identifier.
-	 * @param string $option_name The option name.
+	 * @since 1.0.0
+	 * @since 2.4.3 Accepts a `Closure(): string` resolver in addition to a string.
+	 *
+	 * @param string                    $directory       The directory for config files.
+	 * @param string|\Closure(): string $domain_resolver Sanitized domain identifier or a resolver returning one.
+	 * @param string                    $option_name     The option name.
+	 *
+	 * @throws \InvalidArgumentException If $domain_resolver is neither a string nor a Closure.
 	 */
-	public function __construct( string $directory, string $domain, string $option_name ) {
-		$this->directory   = rtrim( $directory, '/' ) . '/';
-		$this->domain      = $domain;
-		$this->option_name = $option_name;
+	public function __construct( string $directory, $domain_resolver, string $option_name ) {
+		if ( is_string( $domain_resolver ) ) {
+			$domain          = $domain_resolver;
+			$domain_resolver = static fn(): string => $domain;
+		} elseif ( ! $domain_resolver instanceof \Closure ) {
+			throw new \InvalidArgumentException(
+				'ConfigFile $domain_resolver must be a string or Closure(): string.'
+			);
+		}
+
+		$this->directory       = rtrim( $directory, '/' ) . '/';
+		$this->domain_resolver = $domain_resolver;
+		$this->option_name     = $option_name;
 	}
 
 	/**
@@ -156,7 +175,7 @@ final class ConfigFile {
 	 * @return string
 	 */
 	private function get_file_path(): string {
-		$filename = $this->domain;
+		$filename = ( $this->domain_resolver )();
 
 		if ( function_exists( 'sanitize_file_name' ) ) {
 			$filename = sanitize_file_name( $filename );

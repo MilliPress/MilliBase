@@ -85,14 +85,6 @@ final class Settings {
 	private array $resolved = array();
 
 	/**
-	 * The sanitized domain identifier for config file naming.
-	 *
-	 * @since 1.0.0
-	 * @var string
-	 */
-	private string $domain;
-
-	/**
 	 * Create a new Settings instance.
 	 *
 	 * @since 1.0.0
@@ -117,14 +109,13 @@ final class Settings {
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
 		$this->defaults        = is_array( $config['defaults'] ?? null ) ? $config['defaults'] : array();
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
-		$this->domain          = $this->resolve_domain();
 
 		// Initialize the config file handler if configured.
 		if ( ! empty( $config['config_file'] ) && is_array( $config['config_file'] ) ) {
 			$directory         = $config['config_file']['directory'] ?? '';
 			$this->config_file = new ConfigFile(
 				is_string( $directory ) ? $directory : '',
-				$this->domain,
+				fn(): string => $this->resolve_domain(),
 				$this->option_name
 			);
 		} else {
@@ -346,7 +337,7 @@ final class Settings {
 
 		// Inject the host module for full retrievals.
 		if ( null === $module ) {
-			$settings['host'] = array( 'domain' => $this->domain );
+			$settings['host'] = array( 'domain' => $this->resolve_domain() );
 		}
 
 		$this->resolved[ $cache_key ] = $settings;
@@ -404,7 +395,7 @@ final class Settings {
 		}
 
 		// Inject the host module for full retrievals.
-		$defaults['host'] = array( 'domain' => $this->domain );
+		$defaults['host'] = array( 'domain' => $this->resolve_domain() );
 
 		return $defaults;
 	}
@@ -1078,10 +1069,14 @@ final class Settings {
 	// ─── Private helpers ────────────────────────────────────────────────
 
 	/**
-	 * Resolve the domain identifier for config file naming.
+	 * Resolve the per-blog identifier used for the config file name.
 	 *
-	 * Falls back to `site_url()` when `$_SERVER['HTTP_HOST']` is unavailable
-	 * (e.g. WP-CLI context).
+	 * Called on every read/write so multisite blog switches are honoured.
+	 * `home_url()` is preferred when WP is loaded — it is blog-aware via
+	 * `switch_to_blog()` and matches the visitor-facing host (so it agrees
+	 * with `$_SERVER['HTTP_HOST']` and excludes Bedrock-style WP install
+	 * paths). We fall back to `$_SERVER['HTTP_HOST']` only for standalone /
+	 * pre-WP reads.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1090,11 +1085,11 @@ final class Settings {
 	private function resolve_domain(): string {
 		$host = '';
 
-		if ( ServerVars::has( 'HTTP_HOST' ) ) {
-			$host = ServerVars::get( 'HTTP_HOST' );
-		} elseif ( function_exists( 'site_url' ) ) {
-			$parsed = wp_parse_url( site_url() );
+		if ( function_exists( 'home_url' ) ) {
+			$parsed = wp_parse_url( home_url() );
 			$host   = $parsed['host'] ?? '';
+		} elseif ( ServerVars::has( 'HTTP_HOST' ) ) {
+			$host = ServerVars::get( 'HTTP_HOST' );
 		}
 
 		return (string) preg_replace( '/[^a-zA-Z0-9_\-]/', '_', $host );
