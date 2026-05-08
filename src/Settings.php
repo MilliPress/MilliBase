@@ -309,8 +309,15 @@ final class Settings {
 		}
 		$settings = $this->get_default_settings( $module );
 
-		// Merge from config file or DB.
-		$file_settings   = $this->config_file ? $this->config_file->read( $module ) : array();
+		// Merge from config file.
+		$file_settings = $this->config_file ? $this->config_file->read( $module ) : array();
+
+		// File-cached settings bypass `option_<name>` filters, so decrypt here if needed.
+		if ( ! empty( $file_settings ) && $this->encryption ) {
+			$file_settings = $this->decrypt_sensitive_settings_data( $file_settings );
+		}
+
+		// Prefer file over DB; the file is authoritative when present.
 		$config_settings = ! empty( $file_settings ) ? $file_settings : $this->get_settings_from_db( $module );
 
 		foreach ( $config_settings as $module_key => $module_settings ) {
@@ -608,13 +615,14 @@ final class Settings {
 	/**
 	 * Decrypt sensitive settings data (fields prefixed with 'enc_').
 	 *
+	 * Per-value failures are swallowed: a malformed ciphertext leaves the
+	 * encrypted value in place rather than aborting the whole batch.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array<string, array<string, mixed>> $settings The stored settings.
 	 *
 	 * @return array<string, array<string, mixed>>
-	 *
-	 * @throws \SodiumException If decryption fails.
 	 */
 	public function decrypt_sensitive_settings_data( array $settings ): array {
 		foreach ( $settings as $module => $module_settings ) {
@@ -622,8 +630,13 @@ final class Settings {
 				continue;
 			}
 			foreach ( $module_settings as $key => $value ) {
-				if ( self::is_enc_key( $key ) && is_string( $value ) ) {
+				if ( ! self::is_enc_key( $key ) || ! is_string( $value ) ) {
+					continue;
+				}
+				try {
 					$settings[ $module ][ $key ] = self::decrypt_value( $value );
+				} catch ( \SodiumException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					// Leave the encrypted value in place for this key.
 				}
 			}
 		}
