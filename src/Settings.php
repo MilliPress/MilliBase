@@ -1079,19 +1079,55 @@ final class Settings {
 	 * pre-WP reads.
 	 *
 	 * @since 1.0.0
+	 * @since 2.4.3 Subdirectory multisite appends the blog's path segment.
 	 *
 	 * @return string
 	 */
 	private function resolve_domain(): string {
 		$host = '';
+		$path = '';
+		$mode = self::multisite_mode();
 
 		if ( function_exists( 'home_url' ) ) {
 			$parsed = wp_parse_url( home_url() );
 			$host   = $parsed['host'] ?? '';
+			if ( 'subdirectory' === $mode ) {
+				$path = trim( (string) ( $parsed['path'] ?? '' ), '/' );
+			}
 		} elseif ( ServerVars::has( 'HTTP_HOST' ) ) {
 			$host = ServerVars::get( 'HTTP_HOST' );
+			if ( 'subdirectory' === $mode && ServerVars::has( 'REQUEST_URI' ) ) {
+				$segments = explode( '/', ServerVars::get( 'REQUEST_URI' ), 3 );
+				$path     = $segments[1] ?? '';
+			}
 		}
 
-		return (string) preg_replace( '/[^a-zA-Z0-9_\-]/', '_', $host );
+		$identifier = '' === $path ? $host : $host . '/' . $path;
+
+		return (string) preg_replace( '/[^a-zA-Z0-9_\-]/', '_', $identifier );
+	}
+
+	/**
+	 * Identify the multisite mode, working pre-WP and in WP context.
+	 *
+	 * Pre-WP relies on the `MULTISITE` and `SUBDOMAIN_INSTALL` constants
+	 * defined by `wp-config.php`; WP context uses `is_multisite()`.
+	 *
+	 * @since 2.4.3
+	 *
+	 * @return 'subdomain'|'subdirectory'|null
+	 */
+	private static function multisite_mode(): ?string {
+		$is_multisite = function_exists( 'is_multisite' )
+			? is_multisite()
+			: ( defined( 'MULTISITE' ) && MULTISITE );
+
+		if ( ! $is_multisite ) {
+			return null;
+		}
+
+		return ( defined( 'SUBDOMAIN_INSTALL' ) && SUBDOMAIN_INSTALL )
+			? 'subdomain'
+			: 'subdirectory';
 	}
 }
