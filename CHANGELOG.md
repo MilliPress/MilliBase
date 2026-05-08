@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.4.2](https://github.com/MilliPress/MilliBase/compare/v2.4.1...v2.4.2) (2026-05-08)
+
+
+### Bug Fixes
+
+* **settings:** decrypt enc_* values loaded from the config file ([0d79d24](https://github.com/MilliPress/MilliBase/commit/0d79d24af1d4ec35880e864230028883a7c89f8d))
+
+
+### Refactoring
+
+* **schema:** drop unused `encrypted` field property ([b4bd86e](https://github.com/MilliPress/MilliBase/commit/b4bd86e36ce1b574b542acd56055b7ca6d88e349))
+
 ## [2.4.1](https://github.com/MilliPress/MilliBase/compare/v2.4.0...v2.4.1) (2026-05-03)
 
 
