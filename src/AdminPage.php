@@ -32,6 +32,15 @@ final class AdminPage {
 	private Schema $schema;
 
 	/**
+	 * Hook suffix returned by `add_submenu_page` / `add_menu_page`,
+	 * captured for accurate asset-enqueue matching.
+	 *
+	 * @since 2.5.0
+	 * @var string
+	 */
+	private string $hook_suffix = '';
+
+	/**
 	 * Create a new AdminPage instance.
 	 *
 	 * @since 1.0.0
@@ -52,8 +61,25 @@ final class AdminPage {
 	 * @return void
 	 */
 	public function register_hooks(): void {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		if ( $this->is_network_admin() ) {
+			add_action( 'network_admin_menu', array( $this, 'add_network_admin_menu' ) );
+		} else {
+			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		}
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_assets' ) );
+	}
+
+	/**
+	 * Whether this page is registered under the Network Admin menu.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return bool
+	 */
+	private function is_network_admin(): bool {
+		return ( $this->config['network_admin'] ?? false ) === true
+			&& function_exists( 'is_multisite' )
+			&& is_multisite();
 	}
 
 	/**
@@ -74,29 +100,68 @@ final class AdminPage {
 		$menu_parent = $this->config_string( 'menu_parent', 'options-general.php' );
 		$menu_icon   = $this->config_string( 'menu_icon' );
 
-		$render_callback = function () use ( $slug ) {
-			printf( '<div class="wrap millibase-page" id="%s-settings" data-slug="%s"></div>', esc_attr( $slug ), esc_attr( $slug ) );
-		};
+		$render = $this->render_callback( $slug );
 
 		if ( $menu_parent ) {
-			add_submenu_page(
+			$this->hook_suffix = (string) add_submenu_page(
 				$menu_parent,
 				$page_title,
 				$menu_title,
 				$capability,
 				$slug,
-				$render_callback
+				$render
 			);
 		} else {
-			add_menu_page(
+			$this->hook_suffix = (string) add_menu_page(
 				$page_title,
 				$menu_title,
 				$capability,
 				$slug,
-				$render_callback,
+				$render,
 				$menu_icon
 			);
 		}
+	}
+
+	/**
+	 * Add the network admin menu item.
+	 *
+	 * Registered when `network_admin` is true in the config; defaults to the
+	 * network Settings menu with `manage_network_options` capability.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return void
+	 */
+	public function add_network_admin_menu(): void {
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$page_title  = $this->config_string( 'network_page_title', $this->config_string( 'page_title', 'Settings' ) );
+		$menu_title  = $this->config_string( 'network_menu_title', $this->config_string( 'menu_title', 'Settings' ) );
+		$capability  = $this->config_string( 'network_capability', 'manage_network_options' );
+		$menu_parent = $this->config_string( 'network_menu_parent', 'settings.php' );
+
+		$this->hook_suffix = (string) add_submenu_page(
+			$menu_parent,
+			$page_title,
+			$menu_title,
+			$capability,
+			$slug,
+			$this->render_callback( $slug )
+		);
+	}
+
+	/**
+	 * Build the React mount-point render callback for a given page slug.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $slug Page slug used as DOM id and `data-slug` attribute.
+	 * @return \Closure
+	 */
+	private function render_callback( string $slug ): \Closure {
+		return static function () use ( $slug ) {
+			printf( '<div class="wrap millibase-page" id="%s-settings" data-slug="%s"></div>', esc_attr( $slug ), esc_attr( $slug ) );
+		};
 	}
 
 	/**
@@ -112,15 +177,7 @@ final class AdminPage {
 	 * @return void
 	 */
 	public function enqueue_settings_assets( string $admin_page ): void {
-		$slug        = $this->config_string( 'slug', 'millibase' );
-		$menu_parent = $this->config_string( 'menu_parent', 'options-general.php' );
-
-		// Determine the expected hook suffix.
-		$expected_suffix = $menu_parent
-			? 'settings_page_' . $slug
-			: 'toplevel_page_' . $slug;
-
-		if ( $admin_page !== $expected_suffix ) {
+		if ( '' === $this->hook_suffix || $admin_page !== $this->hook_suffix ) {
 			return;
 		}
 
@@ -238,6 +295,7 @@ final class AdminPage {
 				'header'          => $this->config['header'] ?? array(),
 				'troubleshooting' => $this->config['troubleshooting'] ?? null,
 				'actions'         => $client_actions,
+				'isNetworkAdmin'  => $this->is_network_admin(),
 			)
 		);
 
