@@ -77,7 +77,7 @@ final class AdminPage {
 	 * @return bool
 	 */
 	private function is_network_admin(): bool {
-		return ( $this->config['network_admin'] ?? false ) === true
+		return ( $this->config['network'] ?? false ) === true
 			&& function_exists( 'is_multisite' )
 			&& is_multisite();
 	}
@@ -126,8 +126,8 @@ final class AdminPage {
 	/**
 	 * Add the network admin menu item.
 	 *
-	 * Registered when `network_admin` is true in the config; defaults to the
-	 * network Settings menu with `manage_network_options` capability.
+	 * Registered when `network` is true in the config (multisite only);
+	 * defaults to the network Settings menu with `manage_network_options`.
 	 *
 	 * @since 2.5.0
 	 *
