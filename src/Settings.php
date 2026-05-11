@@ -870,6 +870,19 @@ final class Settings {
 			: update_option( $this->option_name, $value );
 	}
 
+	/**
+	 * Delete all settings (including files).
+	 *
+	 * @return void
+	 */
+	public function delete() {
+		if ( $this->network ) {
+			delete_site_option( $this->option_name );
+		} else {
+			delete_option( $this->option_name );
+		}
+	}
+
 	// ─── Import / Export ────────────────────────────────────────────────
 
 	/**
@@ -1172,10 +1185,13 @@ final class Settings {
 	 */
 	private function resolve_domain(): string {
 		if ( $this->network ) {
-			// Network Settings.
-			$network_id = function_exists( 'get_current_network_id' )
-				? (int) get_current_network_id()
-				: 1;
+			if ( function_exists( 'get_network' ) ) {
+				$network_id = (int) get_current_network_id();
+			} elseif ( defined( 'SITE_ID_CURRENT_SITE' ) ) {
+				$network_id = (int) SITE_ID_CURRENT_SITE;
+			} else {
+				$network_id = 1;
+			}
 			return '_network-' . $network_id;
 		}
 

@@ -239,7 +239,7 @@ final class Controller {
 			switch ( $action ) {
 				case '__reset':
 					$this->settings->backup();
-					delete_option( $option_name );
+					$this->settings->delete();
 					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
