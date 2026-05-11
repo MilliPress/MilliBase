@@ -222,6 +222,31 @@ final class Manager {
 		);
 	}
 
+	/**
+	 * Register an additional admin page backed by this Manager's Settings instance.
+	 *
+	 * Useful when a plugin needs a second admin surface — e.g., a Network
+	 * Admin page on multisite — that shares the same WP option / settings
+	 * file but presents a different field subset, menu placement, or REST
+	 * namespace. The `register_setting` call is NOT repeated; only the
+	 * UI & REST surfaces are added.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param array<string, mixed> $config Full MilliBase config for the additional page.
+	 * @return void
+	 */
+	public function add_page( array $config ): void {
+		if ( null === $this->settings ) {
+			return;
+		}
+
+		$schema = new Schema( $config );
+
+		( new AdminPage( $config, $schema ) )->register_hooks();
+		( new RestController( $config, $this->settings ) )->register_hooks();
+	}
+
 	// ─── Accessors ──────────────────────────────────────────────────────
 
 	/**
