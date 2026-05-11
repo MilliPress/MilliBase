@@ -167,17 +167,64 @@ if (! function_exists('get_transient')) {
     }
 }
 
+// Stateful option/site_option/transient stubs for tests that exercise
+// storage round-trips (Migration runner, etc.). Backed by $GLOBALS so
+// tests can reset between cases.
+$GLOBALS['__milli_test_options']      = [];
+$GLOBALS['__milli_test_site_options'] = [];
+$GLOBALS['__milli_test_transients']   = [];
+$GLOBALS['__milli_test_is_multisite'] = false;
+
 if (! function_exists('get_option')) {
     function get_option(string $key, $default = false)
     {
-        return $default;
+        return $GLOBALS['__milli_test_options'][$key] ?? $default;
+    }
+}
+
+if (! function_exists('update_option')) {
+    function update_option(string $key, $value): bool
+    {
+        $GLOBALS['__milli_test_options'][$key] = $value;
+        return true;
     }
 }
 
 if (! function_exists('delete_option')) {
     function delete_option(string $name): bool
     {
+        unset($GLOBALS['__milli_test_options'][$name]);
         return true;
+    }
+}
+
+if (! function_exists('get_site_option')) {
+    function get_site_option(string $key, $default = false)
+    {
+        return $GLOBALS['__milli_test_site_options'][$key] ?? $default;
+    }
+}
+
+if (! function_exists('update_site_option')) {
+    function update_site_option(string $key, $value): bool
+    {
+        $GLOBALS['__milli_test_site_options'][$key] = $value;
+        return true;
+    }
+}
+
+if (! function_exists('delete_site_option')) {
+    function delete_site_option(string $name): bool
+    {
+        unset($GLOBALS['__milli_test_site_options'][$name]);
+        return true;
+    }
+}
+
+if (! function_exists('is_multisite')) {
+    function is_multisite(): bool
+    {
+        return (bool) ($GLOBALS['__milli_test_is_multisite'] ?? false);
     }
 }
 

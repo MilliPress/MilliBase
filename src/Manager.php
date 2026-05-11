@@ -28,6 +28,7 @@
 namespace MilliBase;
 
 use MilliBase\CLI\Controller as CliController;
+use MilliBase\Migration\Runner as MigrationRunner;
 use MilliBase\REST\Controller as RestController;
 
 /**
@@ -185,14 +186,46 @@ final class Manager {
 
 		$this->cli_controller = new CliController( $this->config, $settings );
 		$this->cli_controller->register_hooks();
+
+		$this->register_migrations();
 	}
 
 	/**
-	 * Register the option with WordPress.
+	 * Schedule the declarative migration list (if any) to run on `init`.
 	 *
-	 * Wires the default value and the Schema's sanitize callback. REST
-	 * exposure is intentionally NOT requested — settings are served via
-	 * the plugin's own namespaced endpoint (`/{namespace}/v1/settings`).
+	 * Runs at `init` priority 5 so migrations complete after MilliBase's
+	 * own setup (priority 0) but before most plugin code (default 10) —
+	 * downstream code reads already-migrated state.
+	 *
+	 * When the Manager is constructed after `init` has fired, the runner
+	 * is invoked immediately rather than hooked.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return void
+	 */
+	private function register_migrations(): void {
+		$migrations = $this->config['migrations'] ?? null;
+		if ( ! is_array( $migrations ) || empty( $migrations ) ) {
+			return;
+		}
+
+		$slug    = $this->slug;
+		$manager = $this;
+
+		$run = static function () use ( $slug, $migrations, $manager ): void {
+			( new MigrationRunner( $slug, $migrations, $manager ) )->run();
+		};
+
+		if ( function_exists( 'did_action' ) && did_action( 'init' ) ) {
+			$run();
+		} else {
+			add_action( 'init', $run, 5 );
+		}
+	}
+
+	/**
+	 * Register the Schema sanitize callback on the writer-specific filter.
 	 *
 	 * @since 1.0.0
 	 *
@@ -210,20 +243,10 @@ final class Manager {
 		$defaults    = $settings->get_default_settings();
 		$sanitize    = static fn( $values ) => $schema->sanitize( $values, $defaults );
 
-		// Network options bypass `register_setting()`. Sanitize, too.
-		if ( ! empty( $this->config['network'] ) ) {
-			add_filter( "pre_update_site_option_{$option_name}", $sanitize, -100 );
-			return;
-		}
-
-		register_setting(
-			'options',
-			$option_name,
-			array(
-				'type'              => 'object',
-				'default'           => $defaults,
-				'sanitize_callback' => $sanitize,
-			)
+		add_filter(
+			! empty( $this->config['network'] ) ? "pre_update_site_option_{$option_name}" : "pre_update_option_{$option_name}",
+			$sanitize,
+			-100
 		);
 	}
 
