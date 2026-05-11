@@ -175,13 +175,7 @@ final class ConfigFile {
 	 * @return string
 	 */
 	private function get_file_path(): string {
-		$filename = ( $this->domain_resolver )();
-
-		if ( function_exists( 'sanitize_file_name' ) ) {
-			$filename = sanitize_file_name( $filename );
-		}
-
-		return $this->directory . $filename . '.php';
+		return $this->directory . ( $this->domain_resolver )() . '.php';
 	}
 
 	/**

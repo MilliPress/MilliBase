@@ -75,6 +75,14 @@ final class Settings {
 	private bool $standalone;
 
 	/**
+	 * Whether these are Network Settings.
+	 *
+	 * @since 2.5.0
+	 * @var bool
+	 */
+	private bool $network;
+
+	/**
 	 * In-memory cache of resolved settings, keyed by cache key.
 	 *
 	 * Cleared on set(), reset(), and import().
@@ -109,6 +117,7 @@ final class Settings {
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
 		$this->defaults        = is_array( $config['defaults'] ?? null ) ? $config['defaults'] : array();
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
+		$this->network         = (bool) ( $config['network'] ?? false );
 
 		// Initialize the config file handler if configured.
 		if ( ! empty( $config['config_file'] ) && is_array( $config['config_file'] ) ) {
@@ -153,20 +162,38 @@ final class Settings {
 			return;
 		}
 
+		// Network mode swaps `option` for `site_option` in every WP hook name.
+		$opt  = $this->network ? 'site_option' : 'option';
+		$name = $this->option_name;
+
 		// Merge defaults and strip constant-defined keys from the stored option.
-		add_filter( 'option_' . $this->option_name, array( $this, 'filter_settings_by_constants' ) );
-		add_filter( 'default_option_' . $this->option_name, array( $this, 'filter_settings_by_constants' ) );
+		add_filter( "{$opt}_{$name}", array( $this, 'filter_settings_by_constants' ) );
+		add_filter( "default_{$opt}_{$name}", array( $this, 'filter_settings_by_constants' ) );
 
 		// Encryption hooks.
 		if ( $this->encryption ) {
-			add_filter( 'pre_update_option_' . $this->option_name, array( $this, 'encrypt_sensitive_settings_data' ), 0 );
-			add_filter( 'option_' . $this->option_name, array( $this, 'decrypt_sensitive_settings_data' ), 0 );
+			add_filter( "pre_update_{$opt}_{$name}", array( $this, 'encrypt_sensitive_settings_data' ), 0 );
+			add_filter( "{$opt}_{$name}", array( $this, 'decrypt_sensitive_settings_data' ), 0 );
 		}
 
 		// Setting change hooks (config file sync + change notifications).
-		add_action( 'add_option_' . $this->option_name, array( $this, 'on_add_option' ), 10, 2 );
-		add_action( 'update_option_' . $this->option_name, array( $this, 'on_update_option' ), 10, 2 );
-		add_action( 'delete_option', array( $this, 'on_delete_option' ) );
+		add_action( "add_{$opt}_{$name}", array( $this, 'on_add_option' ), 10, 2 );
+
+		// Different args for `update_site_option_<name>` and `update_option_<name>`.
+		if ( $this->network ) {
+			add_action(
+				"update_{$opt}_{$name}",
+				function ( $option, $value, $old_value ) {
+					$this->on_update_option( (array) $old_value, (array) $value );
+				},
+				10,
+				3
+			);
+		} else {
+			add_action( "update_{$opt}_{$name}", array( $this, 'on_update_option' ), 10, 2 );
+		}
+
+		add_action( "delete_{$opt}", array( $this, 'on_delete_option' ) );
 	}
 
 	/**
@@ -250,7 +277,9 @@ final class Settings {
 	 */
 	public function update( array $value ): bool {
 		$this->resolved = array();
-		return update_option( $this->option_name, $value );
+		return $this->network
+			? update_site_option( $this->option_name, $value )
+			: update_option( $this->option_name, $value );
 	}
 
 	/**
@@ -478,7 +507,10 @@ final class Settings {
 			return array();
 		}
 
-		$db_settings = (array) get_option( $this->option_name, array() );
+		$db_settings = (array) ( $this->network
+			? get_site_option( $this->option_name, array() )
+			: get_option( $this->option_name, array() )
+		);
 
 		if ( $module ) {
 			$module_settings = isset( $db_settings[ $module ] ) ? (array) $db_settings[ $module ] : array();
@@ -540,9 +572,13 @@ final class Settings {
 	 *
 	 * @param false|array<string, array<string, mixed>> $settings The option value.
 	 *
-	 * @return array<string, array<string, mixed>>
+	 * @return false|array<string, array<string, mixed>>
 	 */
-	public function filter_settings_by_constants( $settings ): array {
+	public function filter_settings_by_constants( $settings ) {
+		if ( false === $settings ) {
+			return false;
+		}
+
 		if ( ! is_array( $settings ) ) {
 			return array();
 		}
@@ -598,14 +634,18 @@ final class Settings {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, array<string, mixed>> $settings The settings before saving.
+	 * @param false|array<string, array<string, mixed>> $settings The settings before saving.
 	 *
-	 * @return array<string, array<string, mixed>>
+	 * @return false|array<string, array<string, mixed>>
 	 *
 	 * @throws \Exception        If random bytes cannot be generated.
 	 * @throws \SodiumException  If encryption fails.
 	 */
-	public function encrypt_sensitive_settings_data( array $settings ): array {
+	public function encrypt_sensitive_settings_data( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return $settings;
+		}
+
 		foreach ( $settings as $module => $module_settings ) {
 			if ( ! is_array( $module_settings ) ) {
 				continue;
@@ -628,11 +668,16 @@ final class Settings {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array<string, array<string, mixed>> $settings The stored settings.
+	 * @param false|array<string, array<string, mixed>> $settings The stored settings,
+	 *        or `false` when the option does not exist.
 	 *
-	 * @return array<string, array<string, mixed>>
+	 * @return false|array<string, array<string, mixed>>
 	 */
-	public function decrypt_sensitive_settings_data( array $settings ): array {
+	public function decrypt_sensitive_settings_data( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return $settings;
+		}
+
 		foreach ( $settings as $module => $module_settings ) {
 			if ( ! is_array( $module_settings ) ) {
 				continue;
@@ -732,8 +777,15 @@ final class Settings {
 	public function backup( ?string $module = null ): void {
 		$current = $this->resolve( $module );
 
-		if ( $current ) {
-			set_transient( $this->option_name . '_backup', $current, 12 * HOUR_IN_SECONDS );
+		if ( ! $current ) {
+			return;
+		}
+
+		$key = $this->option_name . '_backup';
+		if ( $this->network ) {
+			set_site_transient( $key, $current, 12 * HOUR_IN_SECONDS );
+		} else {
+			set_transient( $key, $current, 12 * HOUR_IN_SECONDS );
 		}
 	}
 
@@ -745,7 +797,8 @@ final class Settings {
 	 * @return bool
 	 */
 	public function has_backup(): bool {
-		return (bool) get_transient( $this->option_name . '_backup' );
+		$key = $this->option_name . '_backup';
+		return (bool) ( $this->network ? get_site_transient( $key ) : get_transient( $key ) );
 	}
 
 	/**
@@ -758,14 +811,20 @@ final class Settings {
 	 * @return bool True if restored successfully.
 	 */
 	public function restore_backup(): bool {
-		$backup = get_transient( $this->option_name . '_backup' );
+		$key    = $this->option_name . '_backup';
+		$backup = $this->network ? get_site_transient( $key ) : get_transient( $key );
 
 		if ( ! $backup ) {
 			return false;
 		}
 
-		update_option( $this->option_name, $backup );
-		delete_transient( $this->option_name . '_backup' );
+		if ( $this->network ) {
+			update_site_option( $this->option_name, $backup );
+			delete_site_transient( $key );
+		} else {
+			update_option( $this->option_name, $backup );
+			delete_transient( $key );
+		}
 
 		return true;
 	}
@@ -795,17 +854,20 @@ final class Settings {
 	public function reset( ?string $module = null ): bool {
 		$this->resolved = array();
 
-		if ( null === $module ) {
-			return update_option( $this->option_name, $this->defaults() );
+		$value = null === $module ? $this->defaults() : null;
+
+		if ( null === $value ) {
+			$settings = $this->resolve( null, true );
+			$defaults = $this->get_default_settings( $module );
+			if ( isset( $defaults[ $module ] ) ) {
+				$settings[ $module ] = $defaults[ $module ];
+			}
+			$value = $settings;
 		}
 
-		$settings = $this->resolve( null, true );
-		$defaults = $this->get_default_settings( $module );
-		if ( isset( $defaults[ $module ] ) ) {
-			$settings[ $module ] = $defaults[ $module ];
-		}
-
-		return update_option( $this->option_name, $settings );
+		return $this->network
+			? (bool) update_site_option( $this->option_name, $value )
+			: update_option( $this->option_name, $value );
 	}
 
 	// ─── Import / Export ────────────────────────────────────────────────
@@ -1109,6 +1171,14 @@ final class Settings {
 	 * @return string
 	 */
 	private function resolve_domain(): string {
+		if ( $this->network ) {
+			// Network Settings.
+			$network_id = function_exists( 'get_current_network_id' )
+				? (int) get_current_network_id()
+				: 1;
+			return '_network-' . $network_id;
+		}
+
 		$host = '';
 		$path = '';
 		$mode = self::multisite_mode();

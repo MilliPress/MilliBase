@@ -135,7 +135,7 @@ final class Manager {
 	public function __construct(
 		string $slug,
 		\Closure $config,
-		$settings = null,
+		$settings = null
 	) {
 		$this->slug     = $slug;
 		$this->settings = $settings;
@@ -208,6 +208,13 @@ final class Manager {
 
 		$option_name = $this->config_string( 'option_name' );
 		$defaults    = $settings->get_default_settings();
+		$sanitize    = static fn( $values ) => $schema->sanitize( $values, $defaults );
+
+		// Network options bypass `register_setting()`. Sanitize, too.
+		if ( ! empty( $this->config['network'] ) ) {
+			add_filter( "pre_update_site_option_{$option_name}", $sanitize, -100 );
+			return;
+		}
 
 		register_setting(
 			'options',
@@ -215,7 +222,7 @@ final class Manager {
 			array(
 				'type'              => 'object',
 				'default'           => $defaults,
-				'sanitize_callback' => static fn( $values ) => $schema->sanitize( $values, $defaults ),
+				'sanitize_callback' => $sanitize,
 			)
 		);
 	}

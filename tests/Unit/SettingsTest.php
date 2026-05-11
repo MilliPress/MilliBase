@@ -212,10 +212,19 @@ it('merges defaults and removes obsolete keys and modules', function () {
     expect($result)->not->toHaveKey('obsolete_module');
 });
 
-it('returns empty array for non-array input', function () {
+it('passes false through unchanged to preserve "option does not exist" signal', function () {
     $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['enabled' => true]]]);
 
-    expect($settings->filter_settings_by_constants(false))->toBe([]);
+    // `update_network_option` relies on strict `=== false` to route to add_network_option;
+    // collapsing false to [] would mis-route writes for non-existent network options.
+    expect($settings->filter_settings_by_constants(false))->toBe(false);
+});
+
+it('returns empty array for non-array, non-false input', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['enabled' => true]]]);
+
+    expect($settings->filter_settings_by_constants('garbage'))->toBe([]);
+    expect($settings->filter_settings_by_constants(null))->toBe([]);
 });
 
 // ─── merge_defaults() ──────────────────────────────────────────────
