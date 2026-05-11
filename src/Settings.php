@@ -320,7 +320,9 @@ final class Settings {
 
 		$this->resolved = array();
 
-		return update_option( $this->option_name, $settings );
+		return $this->network
+			? update_site_option( $this->option_name, $settings )
+			: update_option( $this->option_name, $settings );
 	}
 
 	// ─── Settings resolution ────────────────────────────────────────────
