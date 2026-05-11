@@ -188,10 +188,11 @@ final class Manager {
 	}
 
 	/**
-	 * Register the option with WordPress for the REST API.
+	 * Register the option with WordPress.
 	 *
-	 * Uses the Settings' full defaults (including non-UI fields) so the REST
-	 * schema covers every setting key, not just those with UI fields.
+	 * Wires the default value and the Schema's sanitize callback. REST
+	 * exposure is intentionally NOT requested — settings are served via
+	 * the plugin's own namespaced endpoint (`/{namespace}/v1/settings`).
 	 *
 	 * @since 1.0.0
 	 *
@@ -215,9 +216,6 @@ final class Manager {
 				'type'              => 'object',
 				'default'           => $defaults,
 				'sanitize_callback' => static fn( $values ) => $schema->sanitize( $values, $defaults ),
-				'show_in_rest'      => array(
-					'schema' => $schema->get_rest_schema( $defaults ),
-				),
 			)
 		);
 	}

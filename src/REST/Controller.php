@@ -92,16 +92,36 @@ final class Controller {
 		$namespace  = $this->config_string( 'rest_namespace', 'millibase/v1' );
 		$capability = $this->config_string( 'capability', 'manage_options' );
 
-		// Built-in settings actions (reset, restore).
+		$permission = function () use ( $capability ) {
+			return current_user_can( $capability );
+		};
+
+		// Settings value: read full tree, write full tree.
 		register_rest_route(
 			$namespace,
 			'/settings',
 			array(
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_settings_value' ),
+					'permission_callback' => $permission,
+				),
+				array(
+					'methods'             => \WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'save_settings_value' ),
+					'permission_callback' => $permission,
+				),
+			)
+		);
+
+		// Built-in settings actions (reset, restore).
+		register_rest_route(
+			$namespace,
+			'/settings/actions',
+			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'perform_settings_action' ),
-				'permission_callback' => function () use ( $capability ) {
-					return current_user_can( $capability );
-				},
+				'permission_callback' => $permission,
 			)
 		);
 
@@ -113,9 +133,7 @@ final class Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_status' ),
-				'permission_callback' => function () use ( $capability ) {
-					return current_user_can( $capability );
-				},
+				'permission_callback' => $permission,
 			)
 		);
 
@@ -264,6 +282,50 @@ final class Controller {
 				'timestamp' => time(),
 			)
 		);
+	}
+
+	/**
+	 * Return the current settings value.
+	 *
+	 * Returns the full resolved settings tree (constants overlay applied,
+	 * encrypted fields decrypted) — the same view consumers see via
+	 * `Settings::get()`.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function get_settings_value(): \WP_REST_Response {
+		return rest_ensure_response( $this->settings->get() );
+	}
+
+	/**
+	 * Persist a complete settings tree submitted by the client.
+	 *
+	 * The body is the settings tree directly (no `option_name` wrapping).
+	 * Sanitization runs via the Schema's `sanitize_option_<name>` callback.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function save_settings_value( \WP_REST_Request $request ) {
+		$value = $request->get_json_params();
+
+		if ( ! is_array( $value ) ) {
+			return new \WP_Error(
+				'invalid_settings_payload',
+				__( 'Settings payload must be an object.', 'millibase' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$this->settings->update( $value );
+
+		return rest_ensure_response( $this->settings->get() );
 	}
 
 	/**

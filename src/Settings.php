@@ -237,6 +237,23 @@ final class Settings {
 	}
 
 	/**
+	 * Replace the stored settings with a complete new value.
+	 *
+	 * The Schema's sanitize callback runs automatically via WordPress's
+	 * `sanitize_option_<name>` filter chain. Clears the in-memory resolve
+	 * cache so subsequent reads reflect the new state.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param array<string, mixed> $value The full settings tree to store.
+	 * @return bool True on successful write, false if no change.
+	 */
+	public function update( array $value ): bool {
+		$this->resolved = array();
+		return update_option( $this->option_name, $value );
+	}
+
+	/**
 	 * Set a value using dot notation.
 	 *
 	 * @since 1.0.0
@@ -980,6 +997,8 @@ final class Settings {
 	 * @return void
 	 */
 	public function on_add_option( string $option, array $settings ): void {
+		$this->resolved = array();
+
 		if ( $this->config_file ) {
 			$this->config_file->write( $settings );
 		}
@@ -998,6 +1017,8 @@ final class Settings {
 	 * @return void
 	 */
 	public function on_update_option( array $old_settings, array $settings ): void {
+		$this->resolved = array();
+
 		if ( $this->config_file ) {
 			$this->config_file->write( $settings );
 		}
@@ -1015,11 +1036,15 @@ final class Settings {
 	 * @return void
 	 */
 	public function on_delete_option( string $option ): void {
-		if ( $option !== $this->option_name || ! $this->config_file ) {
+		if ( $option !== $this->option_name ) {
 			return;
 		}
 
-		$this->config_file->delete();
+		$this->resolved = array();
+
+		if ( $this->config_file ) {
+			$this->config_file->delete();
+		}
 	}
 
 	// ─── Setting change notifications ──────────────────────────────────

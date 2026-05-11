@@ -16,7 +16,7 @@ import { runActionChain } from './actionChain.js';
 const SettingsContext = createContext();
 
 export const SettingsProvider = ( { config, children } ) => {
-	const { optionName, restNamespace } = config;
+	const { restNamespace } = config;
 
 	const [ status, setStatus ] = useState( {} );
 	const [ settings, setSettings ] = useState( {} );
@@ -113,25 +113,12 @@ export const SettingsProvider = ( { config, children } ) => {
 
 	const fetchSettings = useCallback( async () => {
 		try {
-			const response = await apiRequest( { path: '/wp/v2/settings' } );
-			const optionValue = response?.[ optionName ];
+			const response = await apiRequest( {
+				path: `/${ restNamespace }/settings`,
+			} );
 
-			// `null` here means WP REST rejected the stored value against
-			// its registered schema (see WP_REST_Settings_Controller::prepare_value).
-			// Tracked in its own state so concurrent fetchStatus calls — which
-			// own the connection-level `error` — can't blank this message out.
-			if ( null === optionValue ) {
-				setSchemaError(
-					__(
-						'A stored value does not match the registered schema — typically a field with the wrong type (for example a string where a number is expected).',
-						'millibase'
-					)
-				);
-				return;
-			}
-
-			setSettings( optionValue ?? {} );
-			setInitialSettings( optionValue ?? {} );
+			setSettings( response ?? {} );
+			setInitialSettings( response ?? {} );
 			setSchemaError( null );
 			setError( null );
 		} catch ( fetchError ) {
@@ -139,7 +126,7 @@ export const SettingsProvider = ( { config, children } ) => {
 		} finally {
 			setIsLoadingSettings( false );
 		}
-	}, [ apiRequest, optionName ] );
+	}, [ apiRequest, restNamespace ] );
 
 	/**
 	 * Run an async callback while flagging `isLoadingAction` as true.
@@ -166,8 +153,8 @@ export const SettingsProvider = ( { config, children } ) => {
 	}, [] );
 
 	/**
-	 * Persist dirty settings against `/wp/v2/settings`. Shared by
-	 * `saveSettings` and the chain-mode `__save` step.
+	 * Persist dirty settings against the namespaced settings endpoint.
+	 * Shared by `saveSettings` and the chain-mode `__save` step.
 	 *
 	 * @return {Promise<boolean>} `true` if a POST happened, `false` when already clean.
 	 */
@@ -176,19 +163,19 @@ export const SettingsProvider = ( { config, children } ) => {
 			return false;
 		}
 		await apiRequest( {
-			path: '/wp/v2/settings',
+			path: `/${ restNamespace }/settings`,
 			method: 'POST',
-			data: { [ optionName ]: settingsRef.current },
+			data: settingsRef.current,
 		} );
 		setInitialSettings( settingsRef.current );
 		setHasChanges( false );
 		return true;
-	}, [ apiRequest, optionName ] );
+	}, [ apiRequest, restNamespace ] );
 
 	/**
 	 * Dispatch one action step. `__save` delegates to persistDirtySettings;
 	 * other names hit a custom-action endpoint or fall back to the
-	 * namespaced settings endpoint (built-in `__reset` / `__restore`).
+	 * settings actions endpoint (built-in `__reset` / `__restore`).
 	 *
 	 * @param {string} step The action name.
 	 * @param {Object} data Payload merged into every non-`__save` POST.
@@ -206,7 +193,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			);
 			const path = customAction
 				? `/${ restNamespace }/${ customAction.endpoint }`
-				: `/${ restNamespace }/settings`;
+				: `/${ restNamespace }/settings/actions`;
 
 			return await apiRequest( {
 				path,
