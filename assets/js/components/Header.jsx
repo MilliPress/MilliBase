@@ -77,6 +77,7 @@ const Header = () => {
 	return (
 		<>
 			<PanelBody className="millibase-header">
+				<hr className="wp-header-end" />
 				<Flex align="center">
 					<FlexItem>
 						<h1 style={ { padding: '0' } }>
