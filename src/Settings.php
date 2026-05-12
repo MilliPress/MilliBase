@@ -93,6 +93,17 @@ final class Settings {
 	private array $resolved = array();
 
 	/**
+	 * When true, `filter_settings_by_constants` returns its input
+	 * unchanged. Used internally by {@see self::read_raw()} to bypass
+	 * schema-level stripping for migration callbacks that need to see
+	 * legacy data the current schema would otherwise hide.
+	 *
+	 * @since 2.5.0
+	 * @var bool
+	 */
+	private bool $bypass_schema_filter = false;
+
+	/**
 	 * Create a new Settings instance.
 	 *
 	 * @since 1.0.0
@@ -325,10 +336,39 @@ final class Settings {
 			: update_option( $this->option_name, $settings );
 	}
 
+	// ─── Raw access (migration escape hatch) ────────────────────────────
+
+	/**
+	 * Read the stored row without the schema-strip filter.
+	 *
+	 * Decryption still runs. Reads from the current blog or network;
+	 * wrap with switch_to_blog() to target another blog.
+	 *
+	 * @since 2.5.0
+	 * @return array<string, mixed>
+	 */
+	public function read_raw(): array {
+		if ( $this->standalone || ! function_exists( 'get_option' ) ) {
+			return array();
+		}
+
+		$this->bypass_schema_filter = true;
+
+		try {
+			$value = $this->network
+				? get_site_option( $this->option_name, array() )
+				: get_option( $this->option_name, array() );
+		} finally {
+			$this->bypass_schema_filter = false;
+		}
+
+		return is_array( $value ) ? $value : array();
+	}
+
 	// ─── Settings resolution ────────────────────────────────────────────
 
 	/**
-	 * Resolve merged settings from all sources with priority hierarchy.
+	 * Resolve merged settings from all sources with a priority hierarchy.
 	 *
 	 * Priority: Constants > Config File > Database > Defaults.
 	 * Results are cached in memory for the current request.
@@ -577,6 +617,10 @@ final class Settings {
 	 * @return false|array<string, array<string, mixed>>
 	 */
 	public function filter_settings_by_constants( $settings ) {
+		if ( $this->bypass_schema_filter ) {
+			return $settings;
+		}
+
 		if ( false === $settings ) {
 			return false;
 		}
