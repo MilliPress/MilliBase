@@ -12,6 +12,28 @@ Every plugin built on MilliBase automatically gets a full set of WP-CLI commands
 wp <slug> config <subcommand> [options]
 ```
 
+## Configuration
+
+The `'cli'` key on the Manager config controls registration:
+
+| Value                 | Behaviour                                      |
+|-----------------------|------------------------------------------------|
+| `true` (or omitted)   | Register under `wp <slug> config <subcommand>` |
+| `false`               | Skip CLI registration entirely                 |
+| `['slug' => 'other']` | Register under `wp other config <subcommand>`  |
+
+```php
+$manager = new \MilliBase\Manager(
+    slug: 'my-plugin',
+    config: fn() => [
+        'tabs' => [ /* ... */ ],
+        'cli'  => [ 'slug' => 'mp' ],   // wp mp config get / set / ...
+    ],
+);
+```
+
+The explicit `cli.slug` form exists for two reasons: shorter operator-facing command names, and **auto-merge** across multiple Managers (see [below](#auto-merge)).
+
 ## Available Commands
 
 | Command   | Description                         |
@@ -194,6 +216,61 @@ wp myplugin config export --file=settings.json
 # On production:
 wp myplugin config import --file=settings.json
 ```
+
+## Auto-Merge
+
+When two Managers in the same plugin resolve to the **same CLI command name** — either by sharing a default slug or by setting an explicit `cli.slug` — MilliBase auto-merges them into a single command tree. Operators see one `wp <slug> config` command that transparently routes by module across both backends.
+
+The typical case is a plugin running per-site Settings and network-wide Settings side-by-side (see [Network Settings](./06-network-settings.md#the-two-manager-pattern)):
+
+```php
+new \MilliBase\Manager(
+    slug: 'my-plugin',
+    config: fn() => [
+        // network: false (default) — wp_options
+        'tabs' => [ /* cache, rules */ ],   // modules: 'cache', 'rules'
+    ],
+);
+
+new \MilliBase\Manager(
+    slug: 'my-plugin-network',
+    config: fn() => [
+        'network' => true,                    // wp_sitemeta
+        'tabs'    => [ /* storage, auth */ ], // modules: 'storage', 'auth'
+        'cli'     => [ 'slug' => 'my-plugin' ],
+    ],
+);
+```
+
+Operator UX:
+
+```bash
+wp my-plugin config get cache.ttl       # routes to the per-site Settings
+wp my-plugin config get storage.host    # routes to the network Settings
+wp my-plugin config get                 # merged tree from both
+wp my-plugin config set storage.host redis.internal
+wp my-plugin config reset --module=auth
+```
+
+### Routing Semantics
+
+Each Settings instance declares its modules via the schema defaults. The merged command (technically a `MilliBase\Settings\Group` wrapping both Settings) dispatches based on the leading module of a dot-notation key:
+
+| Subcommand | Behaviour |
+|---|---|
+| `get <module>.<key>` | Routes to the Settings that owns `<module>`. Falls back to the primary (first-registered) Settings if no owner. |
+| `get` (no key) | Merges full trees from every wrapped Settings. |
+| `set <module>.<key> <value>` | Routes to the owning Settings. Returns nothing-to-set if no Settings owns the module. |
+| `reset` (no module) | Resets every wrapped Settings. |
+| `reset --module=<module>` | Routes to the owner only. |
+| `backup` / `restore` | Fan-out across every wrapped Settings; restore succeeds if any wrapped Settings restored successfully. |
+| `export` / `import` | `export` merges across all; `import` buckets each top-level module by its owner. Unknown modules are silently skipped. |
+
+The first Manager to register the command wins the role of "primary" — subsequent Managers append into the existing group. Order of Manager construction is the order of `add()` calls.
+
+### When **Not** To Auto-Merge
+
+Each Settings backend has its own capability boundary (typically `manage_options` per-site vs `manage_network_options` network-wide), but a single WP-CLI command runs with the invoking user's capabilities. If you have differential trust requirements between the two backends, **don't share a `cli.slug`** — keep them as `wp my-plugin config` and `wp my-plugin-network config` so the command names reflect the capability boundary.
 
 ## Next Steps
 
