@@ -32,56 +32,59 @@ npm run build
 
 ## Your First Settings Page
 
-Create a settings page by passing a configuration array to `\MilliBase\Manager`:
+Create a settings page by passing a `slug` and a config `Closure` to `\MilliBase\Manager`. The closure is called on `init`, so translation calls like `__()` can run after textdomains are loaded:
 
 ```php
 <?php
 
 use MilliBase\Manager;
 
-$manager = new Manager([
-    'slug'       => 'my-plugin',
-    'page_title' => 'My Plugin',
-    'menu_title' => 'My Plugin',
+$manager = new Manager(
+    slug: 'my-plugin',
+    config: fn() => [
+        'page_title' => __( 'My Plugin', 'my-plugin' ),
+        'menu_title' => __( 'My Plugin', 'my-plugin' ),
 
-    'header' => [
-        'title' => 'My Plugin Settings',
-    ],
+        'header' => [
+            'title' => __( 'My Plugin Settings', 'my-plugin' ),
+        ],
 
-    'tabs' => [
-        [
-            'name'     => 'general',
-            'title'    => 'General',
-            'sections' => [
-                [
-                    'id'     => 'main',
-                    'title'  => 'Main Settings',
-                    'fields' => [
-                        [
-                            'key'     => 'general.enabled',
-                            'type'    => 'toggle',
-                            'label'   => 'Enable Feature',
-                            'default' => true,
-                        ],
-                        [
-                            'key'         => 'general.api_key',
-                            'type'        => 'text',
-                            'label'       => 'API Key',
-                            'default'     => '',
-                            'placeholder' => 'Enter your API key',
+        'tabs' => [
+            [
+                'name'     => 'general',
+                'title'    => __( 'General', 'my-plugin' ),
+                'sections' => [
+                    [
+                        'id'     => 'main',
+                        'title'  => __( 'Main Settings', 'my-plugin' ),
+                        'fields' => [
+                            [
+                                'key'     => 'general.enabled',
+                                'type'    => 'toggle',
+                                'label'   => __( 'Enable Feature', 'my-plugin' ),
+                                'default' => true,
+                            ],
+                            [
+                                'key'         => 'general.api_key',
+                                'type'        => 'text',
+                                'label'       => __( 'API Key', 'my-plugin' ),
+                                'default'     => '',
+                                'placeholder' => __( 'Enter your API key', 'my-plugin' ),
+                            ],
                         ],
                     ],
                 ],
             ],
         ],
     ],
-]);
+);
 ```
 
 This registers:
 - An admin submenu page under **Settings > My Plugin**
-- A REST endpoint at `POST /wp/v2/settings` for saving
-- Action endpoints at `POST /my-plugin/v1/settings` for `__reset` / `__restore`
+- REST endpoints at `GET/POST /my-plugin/v1/settings` for reading and saving
+- An action endpoint at `POST /my-plugin/v1/settings/actions` for `__reset` / `__restore`
+- WP-CLI commands at `wp my-plugin config <subcommand>`
 
 ## Verify
 
@@ -105,7 +108,7 @@ $api_key = $settings->get('general.api_key', 'fallback');
 $settings->set('general.api_key', 'sk-abc123');
 
 // Get all settings.
-$all = $settings->get_all();
+$all = $settings->get();
 ```
 
 ## Next Steps

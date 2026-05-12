@@ -133,12 +133,12 @@ When configured, settings are automatically synced to a PHP file on every save. 
 
 The filename is computed per-operation from the current blog (it follows `switch_to_blog()` correctly, so a single WP-CLI process iterating `get_sites()` writes to each subsite's own file):
 
-| Mode | Filename pattern |
-|---|---|
-| Single-site | `{host}.php` |
-| Subdomain multisite | `{host}.php` (per subdomain) |
-| Subdirectory multisite | `{host}_{blog_path}.php` |
-| Network mode (`'network' => true`) | `_network-{network_id}.php` |
+| Mode                               | Filename pattern             |
+|------------------------------------|------------------------------|
+| Single-site                        | `{host}.php`                 |
+| Subdomain multisite                | `{host}.php` (per subdomain) |
+| Subdirectory multisite             | `{host}_{blog_path}.php`     |
+| Network mode (`'network' => true`) | `_network-{network_id}.php`  |
 
 Non-alphanumeric characters in the resolved identifier are replaced with `_`. The leading underscore on `_network-*.php` is intentional — network-scoped config files sort to the top of a directory listing alongside per-site files.
 
@@ -178,11 +178,11 @@ See [Migrations](./05-migrations.md) for the full contract (identity, ordering, 
 
 Controls WP-CLI registration for this Manager:
 
-| Value | Behaviour |
-|---|---|
-| `true` (or omitted) | Register under `wp <slug> config <subcommand>` |
-| `false` | Skip CLI registration entirely |
-| `['slug' => 'other']` | Register under `wp other config <subcommand>` |
+| Value                 | Behaviour                                      |
+|-----------------------|------------------------------------------------|
+| `true` (or omitted)   | Register under `wp <slug> config <subcommand>` |
+| `false`               | Skip CLI registration entirely                 |
+| `['slug' => 'other']` | Register under `wp other config <subcommand>`  |
 
 When two Managers resolve to the same CLI command name (default slug, or the same explicit `cli.slug`), the second Manager's Settings is **auto-merged** into the first Manager's CLI tree via a `Settings\Group`. Operators see a single `wp <slug> config` command that transparently routes by module across both backends.
 

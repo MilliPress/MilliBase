@@ -48,25 +48,18 @@ $settings->merge_defaults([
 
 ## Reading
 
-### `get(string $key, mixed $default = null): mixed`
+### `get(?string $key = null, mixed $fallback = null): mixed`
 
-Get a value using dot notation.
-
-```php
-$settings->get('cache.ttl');              // 3600
-$settings->get('cache.ttl', 7200);        // 7200 if not set
-$settings->get('cache');                   // ['ttl' => 3600, ...]
-```
-
-### `get_all(?string $module = null, bool $skip_constants = false): array`
-
-Get merged settings from all sources. Priority: Constants > Config File > Database > Defaults.
+Get a value, a module, or the full merged settings tree. Sources are merged in priority order: Constants > Config File > Database > Defaults.
 
 ```php
-$settings->get_all();                     // All settings
-$settings->get_all('cache');              // ['cache' => [...]]
-$settings->get_all(null, true);           // All settings, skip constants
+$settings->get();                          // Everything (full merged tree)
+$settings->get('cache');                   // Module: ['ttl' => 3600, ...]
+$settings->get('cache.ttl');               // Single value: 3600
+$settings->get('cache.ttl', 7200);         // 7200 if not set
 ```
+
+To inspect which source provided a value (useful for "show editable vs read-only" UI logic), use `get_source()` instead — there's no public flag to skip a single source from the merged view.
 
 ### `get_default_settings(?string $module = null): array`
 

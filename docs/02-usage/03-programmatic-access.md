@@ -28,32 +28,31 @@ $host = $settings->get('storage.host', 'localhost');
 
 ```php
 // Get all settings (merged from all sources).
-$all = $settings->get_all();
+$all = $settings->get();
 
 // Get a specific module only.
-$cache = $settings->get_all('cache');
-// Returns: ['cache' => ['ttl' => 3600, 'enabled' => true]]
+$cache = $settings->get('cache');
+// Returns: ['ttl' => 3600, 'enabled' => true]
 ```
 
 ### Settings Priority
 
-`get_all()` merges settings from four sources in this priority order:
+`get()` merges settings from four sources in this priority order:
 
-| Priority | Source | Description |
-|----------|--------|-------------|
-| 1 (highest) | **Constants** | PHP constants from `wp-config.php` |
-| 2 | **Config File** | PHP config file (if configured) |
-| 3 | **Database** | WordPress `wp_options` table |
-| 4 (lowest) | **Defaults** | Schema-extracted defaults |
+| Priority    | Source          | Description                        |
+|-------------|-----------------|------------------------------------|
+| 1 (highest) | **Constants**   | PHP constants from `wp-config.php` |
+| 2           | **Config File** | PHP config file (if configured)    |
+| 3           | **Database**    | WordPress `wp_options` table       |
+| 4 (lowest)  | **Defaults**    | Schema-extracted defaults          |
 
 ```php
-// Skip constants to get the "editable" value.
-$editable = $settings->get_all(null, true);
-
 // Check where a specific setting comes from.
 $source = $settings->get_source('cache', 'ttl');
 // Returns: 'constant', 'file', 'db', or 'default'
 ```
+
+Use `get_source()` when you need to distinguish constant-defined values from editable ones (e.g. to render a field as read-only in a custom UI). On the network-mode side, the same `get_source()` call works against `wp_sitemeta` data transparently.
 
 ### Default Settings
 

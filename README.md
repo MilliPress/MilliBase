@@ -27,35 +27,34 @@ composer require millipress/millibase
 ```php
 use MilliBase\Manager;
 
-$manager = new Manager([
-    'slug'           => 'my-plugin',
-    'option_name'    => 'my_plugin_settings',
-    'page_title'     => 'My Plugin',
-    'menu_title'     => 'My Plugin',
-    'rest_namespace' => 'my-plugin/v1',
-    'basename'       => plugin_basename(__FILE__),
-    'header'         => ['title' => 'My Plugin Settings'],
-    'tabs'           => [
-        [
-            'name'     => 'general',
-            'title'    => 'General',
-            'sections' => [
-                [
-                    'id'     => 'main',
-                    'title'  => 'Main Settings',
-                    'fields' => [
-                        [
-                            'key'     => 'general.enabled',
-                            'type'    => 'toggle',
-                            'label'   => 'Enable Feature',
-                            'default' => true,
+$manager = new Manager(
+    slug: 'my-plugin',
+    config: fn() => [
+        'page_title' => __( 'My Plugin', 'my-plugin' ),
+        'menu_title' => __( 'My Plugin', 'my-plugin' ),
+        'header'     => [ 'title' => __( 'My Plugin Settings', 'my-plugin' ) ],
+        'tabs'       => [
+            [
+                'name'     => 'general',
+                'title'    => __( 'General', 'my-plugin' ),
+                'sections' => [
+                    [
+                        'id'     => 'main',
+                        'title'  => __( 'Main Settings', 'my-plugin' ),
+                        'fields' => [
+                            [
+                                'key'     => 'general.enabled',
+                                'type'    => 'toggle',
+                                'label'   => __( 'Enable Feature', 'my-plugin' ),
+                                'default' => true,
+                            ],
                         ],
                     ],
                 ],
             ],
         ],
     ],
-]);
+);
 
 // Programmatic access:
 $manager->settings()->get('general.enabled'); // true
