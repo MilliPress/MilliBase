@@ -70,11 +70,14 @@ $manager->settings()->get('general.enabled'); // true
 - **Conditional display** — show/hide fields based on other settings values
 - **Settings priority** — constants > config file > database > defaults
 - **Encryption** — automatic sodium encryption for sensitive fields (keys prefixed with `enc_`)
-- **Config file sync** — write settings to PHP files for pre-WordPress access
+- **Config file sync** — write settings to PHP files for pre-WordPress access (blog-aware per-operation; `_network-<id>.php` mirror for network-mode)
+- **Network mode** — `'network' => true` routes storage to `wp_sitemeta` and the admin page to Network Admin
+- **Migrations** — declarative `name@version` one-shot runner with per-scope state (site / network)
 - **Backup & restore** — transient-based backup with 12-hour expiry
 - **Import / export** — settings serialization with encryption handling
 - **Tab overrides** — add-on plugins can extend or replace tabs and sections via filters
-- **REST API** — save, reset, restore, status, and custom action endpoints
+- **REST API** — namespaced `GET/POST /{namespace}/v1/settings` + custom action endpoints
+- **WP-CLI** — auto-registered `wp <slug> config` commands; two Managers sharing a `cli.slug` auto-merge into one tree
 
 ## Documentation
 
@@ -85,6 +88,9 @@ Full documentation is in the [`docs/`](docs/) directory:
 - [Configuration](docs/02-usage/01-configuration.md)
 - [Schema Definition](docs/02-usage/02-schema-definition.md)
 - [Programmatic Access](docs/02-usage/03-programmatic-access.md)
+- [WP-CLI Commands](docs/02-usage/04-wp-cli.md)
+- [Migrations](docs/02-usage/05-migrations.md)
+- [Network Settings](docs/02-usage/06-network-settings.md)
 - [Custom Field Types](docs/03-customization/01-custom-field-types.md)
 - [Custom Tab Components](docs/03-customization/02-custom-tab-components.md)
 - [Extending with Filters](docs/03-customization/03-extending-with-filters.md)
