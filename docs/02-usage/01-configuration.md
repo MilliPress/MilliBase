@@ -23,6 +23,7 @@ $manager = new \MilliBase\Manager(
         'capability'     => 'manage_options',       // Required capability
         'menu_parent'    => 'options-general.php',  // Parent menu slug, or '' for top-level
         'menu_icon'      => 'dashicons-admin-generic', // Dashicon (top-level only)
+        'network'        => false,                  // Route storage to site-options and menu to Network Admin
 
         // ─── Storage ───────────────────────────────────────────
         'constant_prefix' => 'MP',                 // Prefix for wp-config.php constant overrides
@@ -33,6 +34,7 @@ $manager = new \MilliBase\Manager(
         'defaults'        => [                     // Non-UI defaults (merged with schema defaults)
             'advanced' => ['debug' => false],
         ],
+        'migrations'      => [ /* ... */ ],        // Declarative migrations (see Migrations)
 
         // ─── Header ────────────────────────────────────────────
         'header' => [
@@ -60,6 +62,7 @@ $manager = new \MilliBase\Manager(
 
         // ─── Advanced ──────────────────────────────────────────
         'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
+        'cli'       => true,                       // WP-CLI registration: true | false | ['slug' => '...']
     ],
     settings: $external_settings,  // Optional: pre-built Settings instance
 );
@@ -128,7 +131,62 @@ Constants take the highest priority and make the corresponding field read-only i
 
 When configured, settings are automatically synced to a PHP file on every save. This enables reading settings before WordPress loads (e.g. in `advanced-cache.php` or a `mu-plugin`).
 
-The file is named by the current domain: `{directory}/{sanitized_domain}.php`.
+The filename is computed per-operation from the current blog (it follows `switch_to_blog()` correctly, so a single WP-CLI process iterating `get_sites()` writes to each subsite's own file):
+
+| Mode | Filename pattern |
+|---|---|
+| Single-site | `{host}.php` |
+| Subdomain multisite | `{host}.php` (per subdomain) |
+| Subdirectory multisite | `{host}_{blog_path}.php` |
+| Network mode (`'network' => true`) | `_network-{network_id}.php` |
+
+Non-alphanumeric characters in the resolved identifier are replaced with `_`. The leading underscore on `_network-*.php` is intentional — network-scoped config files sort to the top of a directory listing alongside per-site files.
+
+### `network`
+
+Setting `'network' => true` on a Manager flips two things at once:
+
+- **Storage backend** — Settings reads and writes route through `get_site_option` / `update_site_option`, so the data lands in `wp_sitemeta` instead of `wp_options`. Backups use per-network site transients; the sanitize callback hooks `pre_update_site_option_<name>` at priority `-100`.
+- **Admin menu placement** — On multisite the page is registered via `network_admin_menu` and appears under Network Admin. On single-site the flag is silently ignored for the menu placement, so a stray `'network' => true` on a non-multisite install doesn't hide the page.
+
+A typical pattern is to run two Managers side-by-side: one with `'network' => false` for per-site settings (e.g. cache rules), one with `'network' => true` for network-wide settings (e.g. shared storage credentials). Both can share a single WP-CLI tree via `'cli' => ['slug' => 'shared-name']` — see [WP-CLI](./04-wp-cli.md).
+
+### `migrations`
+
+Declarative migrations that run once per `name@version` identity at `init` priority 5. State is recorded in `<slug>_migration_state` (`wp_options` for site-scope, `wp_sitemeta` for network-scope).
+
+```php
+'migrations' => [
+    [
+        'name'     => 'rename-cache-ttl-key',
+        'version'  => '2.5.0',
+        'scope'    => 'site',          // 'site' or 'network'
+        'callback' => function (\MilliBase\Manager $manager): void {
+            $settings = $manager->settings();
+            $legacy   = $settings->get('cache.legacy_ttl');
+            if ( null !== $legacy ) {
+                $settings->set('cache.ttl', (int) $legacy);
+            }
+        },
+    ],
+],
+```
+
+See [Migrations](./05-migrations.md) for the full contract (identity, ordering, failure recording, multisite behavior).
+
+### `cli`
+
+Controls WP-CLI registration for this Manager:
+
+| Value | Behaviour |
+|---|---|
+| `true` (or omitted) | Register under `wp <slug> config <subcommand>` |
+| `false` | Skip CLI registration entirely |
+| `['slug' => 'other']` | Register under `wp other config <subcommand>` |
+
+When two Managers resolve to the same CLI command name (default slug, or the same explicit `cli.slug`), the second Manager's Settings is **auto-merged** into the first Manager's CLI tree via a `Settings\Group`. Operators see a single `wp <slug> config` command that transparently routes by module across both backends.
+
+See [WP-CLI Commands](./04-wp-cli.md) for the routing semantics and a worked example.
 
 ### Build URL Resolution
 

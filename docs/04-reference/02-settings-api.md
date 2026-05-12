@@ -23,6 +23,9 @@ new Settings(array $config)
 | `defaults` | `array` | Default settings keyed by module |
 | `config_file` | `array\|false` | Config file settings with `directory` key, or `false` to disable |
 | `standalone` | `bool` | Standalone mode — no database access (default: `false`) |
+| `network` | `bool` | Route reads/writes through `get_site_option`/`update_site_option` (default: `false`) |
+
+When `network` is `true`, every storage-side hook swaps from the per-site chain to the per-network chain — `option_<name>` → `site_option_<name>`, `pre_update_option_<name>` → `pre_update_site_option_<name>`, `add_option_<name>` / `update_option_<name>` / `delete_option` likewise. Backup transients use `set_site_transient` / `get_site_transient`. The public Settings API surface is unchanged; callers don't need to branch.
 
 ## Static Factory
 
@@ -91,9 +94,22 @@ Get the WordPress option name.
 
 ## Writing
 
+### `update(array $value): bool`
+
+Replace the stored settings with a complete new tree. The Schema sanitize callback runs automatically (hooked on `pre_update_option_<name>` or `pre_update_site_option_<name>` depending on `network` mode). Clears the in-memory resolve cache so subsequent reads reflect the new state. Returns `false` if WordPress reports no change.
+
+```php
+$settings->update([
+    'cache'   => ['ttl' => 7200, 'enabled' => true],
+    'storage' => ['host' => 'redis.internal'],
+]);
+```
+
+This is what the REST `POST /{namespace}/v1/settings` endpoint calls under the hood.
+
 ### `set(string $key, mixed $value): bool`
 
-Set a value using dot notation. The key must have at least 2 levels (`module.key`).
+Set a single value using dot notation. The key must have at least 2 levels (`module.key`). Auto-routes to `update_site_option` when `network` mode is enabled.
 
 ```php
 $settings->set('cache.ttl', 7200);        // true
@@ -103,6 +119,10 @@ $settings->set('ttl', 7200);              // false (no module)
 ### `reset(?string $module = null): bool`
 
 Reset settings to defaults. Pass a module name to reset only that module.
+
+### `delete(): void`
+
+Delete the entire stored option. Routes to `delete_site_option` when `network` mode is enabled. The `delete_option` hook triggers config-file cleanup as a side effect.
 
 ### `import(array $settings, bool $merge = true): bool`
 
