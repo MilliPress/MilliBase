@@ -30,6 +30,7 @@ namespace MilliBase;
 use MilliBase\CLI\Controller as CliController;
 use MilliBase\Migration\Runner as MigrationRunner;
 use MilliBase\REST\Controller as RestController;
+use MilliBase\Settings\Group as SettingsGroup;
 
 /**
  * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller together.
@@ -118,6 +119,14 @@ final class Manager {
 	private bool $initialized = false;
 
 	/**
+	 * Auto-merge registry for CLI groups.
+	 *
+	 * @since 2.5.0
+	 * @var array<string, SettingsGroup>
+	 */
+	private static array $cli_groups = array();
+
+	/**
 	 * Create a new Manager instance.
 	 *
 	 * The config closure is called on `init` (or immediately if `init` has
@@ -178,16 +187,87 @@ final class Manager {
 
 		$this->register_settings();
 
+		$this->register_migrations();
+
+		$this->register_cli( $settings );
+
 		$this->admin_page = new AdminPage( $this->config, $schema );
 		$this->admin_page->register_hooks();
 
 		$this->rest_controller = new RestController( $this->config, $settings );
 		$this->rest_controller->register_hooks();
+	}
 
-		$this->cli_controller = new CliController( $this->config, $settings );
+	/**
+	 * Register the Schema sanitize callback on the writer-specific filter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public function register_settings(): void {
+		$schema   = $this->schema;
+		$settings = $this->settings;
+
+		if ( null === $settings || null === $schema ) {
+			return;
+		}
+
+		$option_name = $this->config_string( 'option_name' );
+		$defaults    = $settings->get_default_settings();
+		$sanitize    = static fn( $values ) => $schema->sanitize( $values, $defaults );
+
+		add_filter(
+			! empty( $this->config['network'] ) ? "pre_update_site_option_{$option_name}" : "pre_update_option_{$option_name}",
+			$sanitize,
+			-100
+		);
+	}
+
+	/**
+	 * Register the CLI controller for this Manager, with auto-merge.
+	 *
+	 * When the resolved CLI command (`<cli.slug|slug> config`) matches a
+	 * command another Manager already registered, this Manager's Settings
+	 * is appended to that command's `SettingsGroup` instead of attempting
+	 * a duplicate `WP_CLI::add_command` call. Operators see a single
+	 * `wp <slug> config <subcommand>` tree that transparently routes
+	 * across multiple Settings backends.
+	 *
+	 * Configurable shape:
+	 *   'cli' => false                       → skip CLI registration entirely
+	 *   'cli' => true | (omitted)            → register under `<slug> config`
+	 *   'cli' => array( 'slug' => 'other' )  → register under `other config`
+	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
+	 * @param Settings $settings This Manager's Settings instance.
+	 * @return void
+	 */
+	private function register_cli( $settings ): void {
+		$cli_config = $this->config['cli'] ?? true;
+		if ( false === $cli_config ) {
+			return;
+		}
+
+		$cli_slug = is_array( $cli_config ) && isset( $cli_config['slug'] ) && is_string( $cli_config['slug'] )
+			? $cli_config['slug']
+			: $this->slug;
+
+		$command = $cli_slug . ' config';
+
+		if ( isset( self::$cli_groups[ $command ] ) ) {
+			// Another Manager already registered this command; append into
+			// its Group, so all Settings are reachable from the shared CLI.
+			self::$cli_groups[ $command ]->add( $settings );
+			return;
+		}
+
+		$group                        = new SettingsGroup( $settings );
+		self::$cli_groups[ $command ] = $group;
+
+		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();
-
-		$this->register_migrations();
 	}
 
 	/**
@@ -222,32 +302,6 @@ final class Manager {
 		} else {
 			add_action( 'init', $run, 5 );
 		}
-	}
-
-	/**
-	 * Register the Schema sanitize callback on the writer-specific filter.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return void
-	 */
-	public function register_settings(): void {
-		$schema   = $this->schema;
-		$settings = $this->settings;
-
-		if ( null === $settings || null === $schema ) {
-			return;
-		}
-
-		$option_name = $this->config_string( 'option_name' );
-		$defaults    = $settings->get_default_settings();
-		$sanitize    = static fn( $values ) => $schema->sanitize( $values, $defaults );
-
-		add_filter(
-			! empty( $this->config['network'] ) ? "pre_update_site_option_{$option_name}" : "pre_update_option_{$option_name}",
-			$sanitize,
-			-100
-		);
 	}
 
 	/**
