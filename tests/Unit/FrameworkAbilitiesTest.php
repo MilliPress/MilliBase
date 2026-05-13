@@ -2,7 +2,6 @@
 
 use MilliBase\Abilities\FrameworkAbilities;
 
-// ─── Helpers ────────────────────────────────────────────────────────
 
 function make_settings_fake(array $stubs = []): object
 {
@@ -66,7 +65,6 @@ function ability_by_id(array $abilities, string $id): array
     throw new RuntimeException("Ability {$id} not found");
 }
 
-// ─── Shape ──────────────────────────────────────────────────────────
 
 it('returns four entries in the documented order', function () {
     $abilities = FrameworkAbilities::settings(make_settings_fake());
@@ -136,7 +134,6 @@ it('hardcodes an admin capability on every framework ability regardless of plugi
     }
 });
 
-// ─── Callback behaviour ─────────────────────────────────────────────
 
 it('forwards module and include_encrypted from input to Settings::export', function () {
     $fake     = make_settings_fake(['export' => ['ok' => true]]);

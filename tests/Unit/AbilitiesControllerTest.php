@@ -3,9 +3,6 @@
 use MilliBase\Abilities\Controller as AbilitiesController;
 use MilliBase\Settings;
 
-// Abilities-API stubs live in tests/bootstrap.php; recorder globals are
-// reset per-test in tests/Pest.php. This file only adds local helpers.
-
 function make_abilities_controller(array $config = [], ?Settings $settings = null): AbilitiesController
 {
     $config = array_merge(['slug' => 'test'], $config);
@@ -52,7 +49,6 @@ function valid_ability(array $overrides = []): array
     );
 }
 
-// ─── register_hooks() ───────────────────────────────────────────────
 
 it('hooks register_category to wp_abilities_api_categories_init and register_abilities to wp_abilities_api_init', function () {
     $controller = make_abilities_controller();
@@ -64,7 +60,6 @@ it('hooks register_category to wp_abilities_api_categories_init and register_abi
         ->toContain('register_abilities');
 });
 
-// ─── register_category() ────────────────────────────────────────────
 
 it('registers a category for the plugin slug with the menu_title as label', function () {
     make_abilities_controller(['menu_title' => 'My Plugin'])->register_category();
@@ -144,7 +139,6 @@ it('skips category registration when the category is already registered', functi
     expect(abilities_calls('wp_register_ability_category'))->toBe([]);
 });
 
-// ─── register_abilities(): bail-out paths ───────────────────────────
 
 it('registers nothing when the abilities config key is missing', function () {
     make_abilities_controller()->register_abilities();
@@ -286,7 +280,6 @@ it('accepts non-closure callables (e.g. global function names, method arrays)', 
     expect($wrapped(null))->toBe('global-fn-was-called');
 });
 
-// ─── register_abilities(): expose_settings_abilities flag ───────────
 
 it('does not prepend framework settings abilities by default', function () {
     $config = [
@@ -373,7 +366,6 @@ it('does not append framework settings abilities when expose_settings_abilities 
     expect($names)->toBe(['test/foo']);
 });
 
-// ─── register_abilities(): naming + prefixing ───────────────────────
 
 it('prefixes a bare id with the plugin slug', function () {
     $config = [
@@ -428,7 +420,6 @@ it('passes label and description through verbatim', function () {
     expect($args['description'])->toBe('Clears the cache for one or more targets.');
 });
 
-// ─── register_abilities(): permission callbacks ─────────────────────
 
 it('inherits the plugin-default capability when the ability has none', function () {
     $config = [
@@ -497,7 +488,6 @@ it('uses an explicit permission_callback when one is supplied', function () {
     expect(abilities_calls('wp_register_ability')[0]['args']['permission_callback'])->toBe($custom);
 });
 
-// ─── register_abilities(): pass-through ─────────────────────────────
 
 it('passes input_schema, output_schema, and meta through unchanged', function () {
     $meta   = ['show_in_rest' => true, 'annotations' => ['readonly' => true]];

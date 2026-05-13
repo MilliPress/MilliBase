@@ -259,12 +259,7 @@ if (! function_exists('rest_ensure_response')) {
     }
 }
 
-// ─── Abilities API stubs ────────────────────────────────────────────
-//
-// Centralised here (rather than at the top of any single test file) so
-// the global function definitions are visible to every test that loads
-// the bootstrap, not just the file that defined them. The recorder
-// globals are reset per test in tests/Pest.php.
+// Abilities-API stubs — global so every test that loads bootstrap sees them. Recorders reset per-test in tests/Pest.php.
 
 if (! function_exists('wp_register_ability_category')) {
     function wp_register_ability_category(string $slug, array $args)

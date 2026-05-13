@@ -358,8 +358,6 @@ final class Manager {
 		( new RestController( $config, $this->settings ) )->register_hooks();
 	}
 
-	// ─── Accessors ──────────────────────────────────────────────────────
-
 	/**
 	 * Get the Settings instance for programmatic settings access.
 	 *
@@ -414,8 +412,6 @@ final class Manager {
 		return function_exists( 'wp_register_ability' );
 	}
 
-	// ─── Private resolvers ──────────────────────────────────────────────
-
 	/**
 	 * Extract schema-derived defaults and merge them into the Settings instance.
 	 *
@@ -465,7 +461,6 @@ final class Manager {
 
 		$config['slug'] ??= $this->slug;
 
-		// Auto-derive defaults from slug.
 		if ( ! isset( $config['option_name'] ) ) {
 			$config['option_name'] = $this->slug;
 		}
@@ -518,7 +513,6 @@ final class Manager {
 		if ( null !== $existing ) {
 			$settings = $existing;
 		} else {
-			// Merge explicit defaults (non-UI fields) with schema-extracted defaults.
 			$defaults = array_replace_recursive(
 				(array) ( $config['defaults'] ?? array() ),
 				$schema->get_defaults()

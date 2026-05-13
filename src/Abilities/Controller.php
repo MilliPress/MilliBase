@@ -85,7 +85,7 @@ final class Controller {
 			return;
 		}
 
-		// Idempotency guard against duplicate-registration warnings.
+		// Idempotent — avoids core's duplicate-registration warning.
 		if ( function_exists( 'wp_has_ability_category' ) && wp_has_ability_category( $slug ) ) {
 			return;
 		}
@@ -134,7 +134,7 @@ final class Controller {
 
 		$abilities = is_array( $this->config['abilities'] ?? null ) ? $this->config['abilities'] : array();
 
-		// Append framework abilities so host overrides win via the duplicate-skip guard.
+		// Append, not prepend — host entries register first, framework duplicates skip via wp_has_ability().
 		if ( true === ( $this->config['expose_settings_abilities'] ?? false ) ) {
 			$abilities = array_merge( $abilities, FrameworkAbilities::settings( $this->settings ) );
 		}
@@ -168,7 +168,7 @@ final class Controller {
 				continue;
 			}
 
-			// Idempotency guard against duplicate-registration warnings.
+			// Idempotent — avoids core's duplicate-registration warning.
 			if ( function_exists( 'wp_has_ability' ) && wp_has_ability( $name ) ) {
 				continue;
 			}
@@ -213,10 +213,7 @@ final class Controller {
 			try {
 				return $callback( $input );
 			} catch ( \Throwable $e ) {
-				// Strip newlines from the exception message before logging so
-				// an attacker-controlled message (rare but possible when the
-				// callback derives it from request data) cannot inject fake
-				// log lines on file-backed log destinations.
+				// Strip newlines so an attacker-controlled exception message can't inject fake log lines.
 				$safe_message = str_replace( array( "\n", "\r" ), ' | ', $e->getMessage() );
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Server-side log only; user-facing response is sanitised below.
 				error_log( sprintf( '[MilliBase] Ability %s callback threw: %s in %s:%d', $name, $safe_message, $e->getFile(), $e->getLine() ) );

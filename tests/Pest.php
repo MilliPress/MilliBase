@@ -4,9 +4,7 @@ uses()->in('Unit');
 
 uses()
     ->beforeEach(function () {
-        // Reset the bootstrap stubs' shared call-recorders so cross-test
-        // accumulation cannot leak. Tests that read these globals will
-        // start from a known-empty state regardless of test order.
+        // Reset recorder globals so test order can't leak state.
         $GLOBALS['__milli_test_filters']           = [];
         $GLOBALS['__milli_test_actions']           = [];
         $GLOBALS['millibase_abilities_calls']      = [];
