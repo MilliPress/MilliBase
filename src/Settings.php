@@ -434,11 +434,6 @@ final class Settings {
 			}
 		}
 
-		// Inject the host module for full retrievals.
-		if ( null === $module ) {
-			$settings['host'] = array( 'domain' => $this->resolve_domain() );
-		}
-
 		$this->resolved[ $cache_key ] = $settings;
 
 		return $settings;
@@ -492,9 +487,6 @@ final class Settings {
 		if ( $module ) {
 			return isset( $defaults[ $module ] ) ? array( $module => $defaults[ $module ] ) : array();
 		}
-
-		// Inject the host module for full retrievals.
-		$defaults['host'] = array( 'domain' => $this->resolve_domain() );
 
 		return $defaults;
 	}
@@ -676,7 +668,7 @@ final class Settings {
 
 		// Remove obsolete modules.
 		foreach ( $settings as $mod => $mod_settings ) {
-			if ( ! isset( $default_settings[ $mod ] ) && 'host' !== $mod ) {
+			if ( ! isset( $default_settings[ $mod ] ) ) {
 				unset( $settings[ $mod ] );
 			}
 		}
@@ -953,7 +945,7 @@ final class Settings {
 	 * Export settings.
 	 *
 	 * Encrypted fields are either decrypted or stripped depending on
-	 * the `$include_encrypted` flag. The `host` module is always excluded.
+	 * the `$include_encrypted` flag.
 	 *
 	 * @since 1.0.0
 	 *
@@ -981,8 +973,6 @@ final class Settings {
 				}
 			}
 		}
-
-		unset( $settings['host'] );
 
 		return $settings;
 	}
