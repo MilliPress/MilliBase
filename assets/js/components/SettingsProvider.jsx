@@ -44,6 +44,7 @@ export const SettingsProvider = ( { config, children } ) => {
 	const initialSettingsRef = useRef( initialSettings );
 	const settingsRef = useRef( settings );
 	const statusRef = useRef( status );
+	const lastStatusFingerprintRef = useRef( null );
 	const hasChangesRef = useRef( hasChanges );
 	const hasStorageChangesRef = useRef( hasStorageChanges );
 	const { showSnackbar } = useSnackbar();
@@ -265,6 +266,25 @@ export const SettingsProvider = ( { config, children } ) => {
 	useEffect( () => {
 		statusRef.current = status;
 	}, [ status ] );
+
+	// Refetch settings when polled status signals an external mutation
+	// (CLI reset, other-tab save). Fingerprint covers the two flags the
+	// UI gates on; flipping either means the stored option diverged
+	// from this tab's view and fields need re-syncing.
+	useEffect( () => {
+		const settingsStatus = status?.settings;
+		if ( ! settingsStatus ) {
+			return;
+		}
+
+		const fingerprint = `${ settingsStatus.has_defaults }|${ settingsStatus.has_backup }`;
+		const previous = lastStatusFingerprintRef.current;
+		lastStatusFingerprintRef.current = fingerprint;
+
+		if ( previous !== null && previous !== fingerprint ) {
+			fetchSettings();
+		}
+	}, [ status, fetchSettings ] );
 	useEffect( () => {
 		hasChangesRef.current = hasChanges;
 	}, [ hasChanges ] );
