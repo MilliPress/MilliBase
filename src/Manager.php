@@ -28,7 +28,7 @@
 namespace MilliBase;
 
 use MilliBase\Abilities\Controller as AbilitiesController;
-use MilliBase\CLI\Controller as CliController;
+use MilliBase\CLI as CliController;
 use MilliBase\Concerns\HasConfig;
 use MilliBase\Migration\Runner as MigrationRunner;
 use MilliBase\REST\Controller as RestController;
