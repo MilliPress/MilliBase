@@ -150,7 +150,14 @@ These abilities are appended to the `'abilities'` array. The registration loop r
 
 `meta.show_in_rest` is intentionally left unset on the framework abilities — they register in PHP and CLI, but plugin authors must opt in per-ability to expose them under `/wp-abilities/v1/`.
 
-The framework abilities pin their capability to `manage_options` (`manage_network_options` on multisite), regardless of the host plugin's default `'capability'`. Settings-export with `include_encrypted=true` is a credential-disclosure path; reset/restore/backup are destructive over the host's settings store. A plugin that runs its admin UI on a lower cap (for example `'capability' => 'edit_posts'`) still gets admin-only framework abilities. Override only via the same-id host-wins mechanism above; the cap on a host override applies as written.
+The framework abilities pin their capability to `manage_options` (`manage_network_options` on multisite), regardless of the host plugin's default `'capability'`. Reset/restore/backup are destructive over the host's settings store. A plugin that runs its admin UI on a lower cap (for example `'capability' => 'edit_posts'`) still gets admin-only framework abilities. Override only via the same-id host-wins mechanism above; the cap on a host override applies as written.
+
+> [!WARNING]
+> **`settings-export` is a credential disclosure surface.** Opting it into REST (`meta.show_in_rest => true`) plus a call with `include_encrypted=true` returns every encrypted secret in plain text to any authenticated user holding `manage_options` — including anyone the admin has issued an Application Password to. If your plugin stores API keys, OAuth tokens, or any other credential in encrypted settings, leave `show_in_rest` off and run the ability from `wp ability` or PHP only. If you must expose `settings-export` over REST, override it with a host-defined version that rejects `include_encrypted` or audits the call.
+
+### Multi-Manager auto-merge
+
+When two or more `Manager` instances share the same plugin slug, they merge their `Settings` into a single `Settings\Group` for the abilities surface — same auto-merge as `wp <slug> config`. The four framework abilities register once against the Group; `settings-export` returns the modules from every backing `Settings`, and `settings-reset`/`settings-backup` fan out via the Group's per-module routing. Host plugins that split their state across (for example) a per-site option and a network option see one unified abilities surface instead of having the second Manager's Settings silently dropped via `wp_has_ability()`.
 
 ## Errors
 
