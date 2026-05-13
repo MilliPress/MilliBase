@@ -226,6 +226,17 @@ final class Settings {
 	}
 
 	/**
+	 * Whether this Settings instance reads/writes via network options.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return bool
+	 */
+	public function is_network(): bool {
+		return $this->network;
+	}
+
+	/**
 	 * Check whether a field key denotes an encrypted field.
 	 *
 	 * @since 1.1.0
@@ -812,7 +823,7 @@ final class Settings {
 	/**
 	 * Back up current settings to a transient.
 	 *
-	 * The backup expires after 12 hours.
+	 * The backup expires after 3 days.
 	 *
 	 * @since 1.0.0
 	 *
@@ -829,9 +840,9 @@ final class Settings {
 
 		$key = $this->option_name . '_backup';
 		if ( $this->network ) {
-			set_site_transient( $key, $current, 12 * HOUR_IN_SECONDS );
+			set_site_transient( $key, $current, 3 * DAY_IN_SECONDS );
 		} else {
-			set_transient( $key, $current, 12 * HOUR_IN_SECONDS );
+			set_transient( $key, $current, 3 * DAY_IN_SECONDS );
 		}
 	}
 
@@ -898,22 +909,29 @@ final class Settings {
 	 * @return bool True if reset successfully.
 	 */
 	public function reset( ?string $module = null ): bool {
+		// Snapshot current state before the destructive op so callers always
+		// have a restore path; reset() is the canonical user-facing entry.
+		$this->backup( $module );
+
 		$this->resolved = array();
 
-		$value = null === $module ? $this->defaults() : null;
+		// Full reset deletes the option so reads fall through to defaults
+		// (matches REST __reset, keeps has_default_settings() consistent
+		// and lets schema-supplied defaults stay live).
+		if ( null === $module ) {
+			$this->delete();
+			return true;
+		}
 
-		if ( null === $value ) {
-			$settings = $this->resolve( null, true );
-			$defaults = $this->get_default_settings( $module );
-			if ( isset( $defaults[ $module ] ) ) {
-				$settings[ $module ] = $defaults[ $module ];
-			}
-			$value = $settings;
+		$settings = $this->resolve( null, true );
+		$defaults = $this->get_default_settings( $module );
+		if ( isset( $defaults[ $module ] ) ) {
+			$settings[ $module ] = $defaults[ $module ];
 		}
 
 		return $this->network
-			? (bool) update_site_option( $this->option_name, $value )
-			: update_option( $this->option_name, $value );
+			? (bool) update_site_option( $this->option_name, $settings )
+			: update_option( $this->option_name, $settings );
 	}
 
 	/**

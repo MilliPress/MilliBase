@@ -2,24 +2,47 @@
 
 require_once __DIR__ . '/cli-stubs.php';
 
-use MilliBase\CLI\Controller as CliController;
+use MilliBase\CLI;
+use MilliBase\CLI\Backup;
+use MilliBase\CLI\Command;
+use MilliBase\CLI\Export;
+use MilliBase\CLI\Get;
+use MilliBase\CLI\Import;
+use MilliBase\CLI\Reset;
+use MilliBase\CLI\Restore;
+use MilliBase\CLI\Set;
 use MilliBase\Settings;
+use MilliBase\Settings\Group;
 
-// ─── Helpers ────────────────────────────────────────────────────────
-
-function make_cli(array $config = [], ?Settings $settings = null): CliController
+function default_test_settings(): Settings
 {
-    $settings = $settings ?? new Settings([
+    return new Settings([
         'slug'     => 'testcli',
         'defaults' => [
             'cache'   => ['enabled' => true, 'ttl' => 3600],
             'storage' => ['host' => 'localhost', 'port' => 6379],
         ],
     ]);
+}
 
-    return new CliController(
+function make_cli(array $config = [], ?Settings $settings = null): CLI
+{
+    return new CLI(
         array_merge(['slug' => 'testcli'], $config),
-        $settings,
+        new Group($settings ?? default_test_settings()),
+    );
+}
+
+/**
+ * @template T of Command
+ * @param class-string<T> $class
+ * @return T
+ */
+function make_command(string $class, array $config = [], ?Settings $settings = null): Command
+{
+    return new $class(
+        array_merge(['slug' => 'testcli'], $config),
+        new Group($settings ?? default_test_settings()),
     );
 }
 
@@ -27,43 +50,51 @@ beforeEach(function () {
     WP_CLI::reset();
 });
 
-// ─── register_hooks() ──────────────────────────────────────────────
+it('registers each subcommand under <slug> config', function () {
+    make_cli()->register_hooks();
 
-it('registers under the config sub-namespace', function () {
-    $cli = make_cli();
-    $cli->register_hooks();
+    $names = array_column(WP_CLI::$calls['add_command'], 0);
+    expect($names)->toBe([
+        'testcli config get',
+        'testcli config set',
+        'testcli config reset',
+        'testcli config backup',
+        'testcli config restore',
+        'testcli config export',
+        'testcli config import',
+    ]);
 
-    expect(WP_CLI::$calls['add_command'])->toHaveCount(1);
-    expect(WP_CLI::$calls['add_command'][0][0])->toBe('testcli config');
-    expect(WP_CLI::$calls['add_command'][0][1])->toBeInstanceOf(CliController::class);
+    // Each registration's second arg is the per-command class instance.
+    expect(WP_CLI::$calls['add_command'][0][1])->toBeInstanceOf(Get::class);
+    expect(WP_CLI::$calls['add_command'][1][1])->toBeInstanceOf(Set::class);
 });
 
 it('uses custom slug for command name', function () {
-    $cli = make_cli(['slug' => 'millicache']);
-    $cli->register_hooks();
+    make_cli(['slug' => 'millicache'])->register_hooks();
 
-    expect(WP_CLI::$calls['add_command'][0][0])->toBe('millicache config');
+    $names = array_column(WP_CLI::$calls['add_command'], 0);
+    expect($names[0])->toBe('millicache config get');
 });
 
 // ─── get: single dot-key ────────────────────────────────────────────
 
 it('outputs a single scalar value as raw text', function () {
-    $cli = make_cli();
-    $cli->get(['cache.ttl'], []);
+    $get = make_command(Get::class);
+    $get(['cache.ttl'], []);
 
     expect(WP_CLI::$calls['line'][0][0])->toBe('3600');
 });
 
 it('outputs a boolean value as raw text', function () {
-    $cli = make_cli();
-    $cli->get(['cache.enabled'], []);
+    $get = make_command(Get::class);
+    $get(['cache.enabled'], []);
 
     expect(WP_CLI::$calls['line'][0][0])->toBe('true');
 });
 
 it('outputs a single value via print_value with --format=json', function () {
-    $cli = make_cli();
-    $cli->get(['cache.ttl'], ['format' => 'json']);
+    $get = make_command(Get::class);
+    $get(['cache.ttl'], ['format' => 'json']);
 
     expect(WP_CLI::$calls['print_value'][0][0])->toBe(3600);
 });
@@ -71,8 +102,8 @@ it('outputs a single value via print_value with --format=json', function () {
 // ─── get: module name ───────────────────────────────────────────────
 
 it('outputs module settings as table when given a module name', function () {
-    $cli = make_cli();
-    $cli->get(['cache'], []);
+    $get = make_command(Get::class);
+    $get(['cache'], []);
 
     expect(WP_CLI::$calls)->toHaveKey('format_items');
     $rows = WP_CLI::$calls['format_items'][0][1];
@@ -83,16 +114,16 @@ it('outputs module settings as table when given a module name', function () {
 });
 
 it('shows only key and value columns by default', function () {
-    $cli = make_cli();
-    $cli->get(['cache'], []);
+    $get = make_command(Get::class);
+    $get(['cache'], []);
 
     $columns = WP_CLI::$calls['format_items'][0][2];
     expect($columns)->toBe(['key', 'value']);
 });
 
 it('includes source column with --show-source', function () {
-    $cli = make_cli();
-    $cli->get(['cache'], ['show-source' => '']);
+    $get = make_command(Get::class);
+    $get(['cache'], ['show-source' => '']);
 
     $columns = WP_CLI::$calls['format_items'][0][2];
     expect($columns)->toBe(['key', 'value', 'source']);
@@ -102,10 +133,9 @@ it('includes source column with --show-source', function () {
 });
 
 it('outputs raw nested JSON for module with --format=json', function () {
-    $cli = make_cli();
-    $cli->get(['cache'], ['format' => 'json']);
+    $get = make_command(Get::class);
+    $get(['cache'], ['format' => 'json']);
 
-    // Should output raw JSON via WP_CLI::line, not format_items.
     expect(WP_CLI::$calls)->toHaveKey('line');
     $json = json_decode(WP_CLI::$calls['line'][0][0], true);
     expect($json)->toHaveKey('cache');
@@ -115,8 +145,8 @@ it('outputs raw nested JSON for module with --format=json', function () {
 // ─── get: all settings ──────────────────────────────────────────────
 
 it('outputs all settings as table when no key given', function () {
-    $cli = make_cli();
-    $cli->get([], []);
+    $get = make_command(Get::class);
+    $get([], []);
 
     expect(WP_CLI::$calls)->toHaveKey('format_items');
     [$format, $rows, $columns] = WP_CLI::$calls['format_items'][0];
@@ -131,8 +161,8 @@ it('outputs all settings as table when no key given', function () {
 });
 
 it('outputs raw nested JSON for all settings with --format=json', function () {
-    $cli = make_cli();
-    $cli->get([], ['format' => 'json']);
+    $get = make_command(Get::class);
+    $get([], ['format' => 'json']);
 
     expect(WP_CLI::$calls)->toHaveKey('line');
     $json = json_decode(WP_CLI::$calls['line'][0][0], true);
@@ -141,8 +171,8 @@ it('outputs raw nested JSON for all settings with --format=json', function () {
 });
 
 it('shows source column for all settings with --show-source', function () {
-    $cli = make_cli();
-    $cli->get([], ['show-source' => '']);
+    $get = make_command(Get::class);
+    $get([], ['show-source' => '']);
 
     $columns = WP_CLI::$calls['format_items'][0][2];
     expect($columns)->toContain('source');
@@ -155,16 +185,16 @@ it('shows source column for all settings with --show-source', function () {
 // ─── get: error cases ───────────────────────────────────────────────
 
 it('errors on non-existent key', function () {
-    $cli = make_cli();
+    $get = make_command(Get::class);
 
-    expect(fn () => $cli->get(['nonexistent.key'], []))
+    expect(fn () => $get(['nonexistent.key'], []))
         ->toThrow(RuntimeException::class, 'not found');
 });
 
 it('errors on non-existent module', function () {
-    $cli = make_cli();
+    $get = make_command(Get::class);
 
-    expect(fn () => $cli->get(['nonexistent'], []))
+    expect(fn () => $get(['nonexistent'], []))
         ->toThrow(RuntimeException::class, 'not found');
 });
 
@@ -175,8 +205,8 @@ it('sets a value and reports success', function () {
         'slug'     => 'testcli',
         'defaults' => ['cache' => ['ttl' => 3600]],
     ]);
-    $cli = make_cli([], $settings);
-    $cli->set(['cache.ttl', '7200'], []);
+    $set = make_command(Set::class, [], $settings);
+    $set(['cache.ttl', '7200'], []);
 
     expect(WP_CLI::$calls['success'][0][0])->toContain('7200');
 });
@@ -186,16 +216,16 @@ it('coerces boolean string values on set', function () {
         'slug'     => 'testcli',
         'defaults' => ['cache' => ['enabled' => true]],
     ]);
-    $cli = make_cli([], $settings);
-    $cli->set(['cache.enabled', 'false'], []);
+    $set = make_command(Set::class, [], $settings);
+    $set(['cache.enabled', 'false'], []);
 
     expect(WP_CLI::$calls['success'][0][0])->toContain('false');
 });
 
 it('errors on invalid key format in set', function () {
-    $cli = make_cli();
+    $set = make_command(Set::class);
 
-    expect(fn () => $cli->set(['nomodule', 'value'], []))
+    expect(fn () => $set(['nomodule', 'value'], []))
         ->toThrow(RuntimeException::class, 'dot notation');
 });
 
@@ -209,9 +239,9 @@ it('errors when setting is overridden by constant', function () {
         'constant_prefix' => 'CLITEST',
         'defaults'        => ['cache' => ['ttl' => 3600]],
     ]);
-    $cli = make_cli([], $settings);
+    $set = make_command(Set::class, [], $settings);
 
-    expect(fn () => $cli->set(['cache.ttl', '5000'], []))
+    expect(fn () => $set(['cache.ttl', '5000'], []))
         ->toThrow(RuntimeException::class, 'constant');
 });
 
@@ -220,8 +250,8 @@ it('masks encrypted field values in set output', function () {
         'slug'     => 'testcli',
         'defaults' => ['storage' => ['enc_password' => '']],
     ]);
-    $cli = make_cli([], $settings);
-    $cli->set(['storage.enc_password', 'mysecret'], []);
+    $set = make_command(Set::class, [], $settings);
+    $set(['storage.enc_password', 'mysecret'], []);
 
     expect(WP_CLI::$calls['success'][0][0])->toContain('***');
     expect(WP_CLI::$calls['success'][0][0])->not->toContain('mysecret');
@@ -230,8 +260,8 @@ it('masks encrypted field values in set output', function () {
 // ─── reset ──────────────────────────────────────────────────────────
 
 it('resets settings and reports success', function () {
-    $cli = make_cli();
-    $cli->reset([], ['yes' => true]);
+    $reset = make_command(Reset::class);
+    $reset([], ['yes' => true]);
 
     expect(WP_CLI::$calls)->toHaveKey('confirm');
     expect(WP_CLI::$calls['success'][0][0])->toContain('all settings');
@@ -239,8 +269,8 @@ it('resets settings and reports success', function () {
 });
 
 it('resets a specific module', function () {
-    $cli = make_cli();
-    $cli->reset([], ['module' => 'cache', 'yes' => true]);
+    $reset = make_command(Reset::class);
+    $reset([], ['module' => 'cache', 'yes' => true]);
 
     expect(WP_CLI::$calls['confirm'][0][0])->toContain("module 'cache'");
     expect(WP_CLI::$calls['success'][0][0])->toContain("module 'cache'");
@@ -249,27 +279,27 @@ it('resets a specific module', function () {
 // ─── backup ─────────────────────────────────────────────────────────
 
 it('creates a backup', function () {
-    $cli = make_cli();
-    $cli->backup([], []);
+    $backup = make_command(Backup::class);
+    $backup([], []);
 
     expect(WP_CLI::$calls['success'][0][0])->toContain('Backup created');
-    expect(WP_CLI::$calls['success'][0][0])->toContain('12 hours');
+    expect(WP_CLI::$calls['success'][0][0])->toContain('3 days');
 });
 
 // ─── restore ────────────────────────────────────────────────────────
 
 it('errors when no backup exists', function () {
-    $cli = make_cli();
+    $restore = make_command(Restore::class);
 
-    expect(fn () => $cli->restore([], []))
+    expect(fn () => $restore([], []))
         ->toThrow(RuntimeException::class, 'No backup');
 });
 
 // ─── export ─────────────────────────────────────────────────────────
 
 it('exports settings as JSON to stdout', function () {
-    $cli = make_cli();
-    $cli->export([], []);
+    $export = make_command(Export::class);
+    $export([], []);
 
     expect(WP_CLI::$calls)->toHaveKey('line');
     $json = json_decode(WP_CLI::$calls['line'][0][0], true);
@@ -280,10 +310,10 @@ it('exports settings as JSON to stdout', function () {
 it('exports settings to a file with --file', function () {
     $tmpfile = tempnam(sys_get_temp_dir(), 'millibase_export_');
 
-    $cli = make_cli();
+    $export = make_command(Export::class);
 
     try {
-        $cli->export([], ['file' => $tmpfile]);
+        $export([], ['file' => $tmpfile]);
 
         expect(WP_CLI::$calls['success'][0][0])->toContain($tmpfile);
         expect(file_exists($tmpfile))->toBeTrue();
@@ -301,16 +331,16 @@ it('exports settings to a file with --file', function () {
 // ─── import ─────────────────────────────────────────────────────────
 
 it('errors when no --file is given', function () {
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
-    expect(fn () => $cli->import([], []))
+    expect(fn () => $import([], []))
         ->toThrow(RuntimeException::class, 'Usage');
 });
 
 it('errors on non-existent import file', function () {
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
-    expect(fn () => $cli->import([], ['file' => '/nonexistent/file.json']))
+    expect(fn () => $import([], ['file' => '/nonexistent/file.json']))
         ->toThrow(RuntimeException::class, 'not found');
 });
 
@@ -318,10 +348,10 @@ it('errors on invalid JSON', function () {
     $tmpfile = tempnam(sys_get_temp_dir(), 'millibase_test_');
     file_put_contents($tmpfile, 'not json');
 
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
     try {
-        expect(fn () => $cli->import([], ['file' => $tmpfile]))
+        expect(fn () => $import([], ['file' => $tmpfile]))
             ->toThrow(RuntimeException::class, 'Invalid JSON');
     } finally {
         unlink($tmpfile);
@@ -334,10 +364,10 @@ it('imports valid JSON file with auto-backup', function () {
         'cache' => ['ttl' => 9999, 'enabled' => false],
     ]));
 
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
     try {
-        $cli->import([], ['file' => $tmpfile]);
+        $import([], ['file' => $tmpfile]);
 
         expect(WP_CLI::$calls['success'][0][0])->toContain('1 module(s)');
         expect(WP_CLI::$calls['success'][0][0])->toContain('merged');
@@ -352,10 +382,10 @@ it('asks for confirmation on non-merge import', function () {
         'cache' => ['ttl' => 1234],
     ]));
 
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
     try {
-        $cli->import([], ['file' => $tmpfile, 'merge' => false]);
+        $import([], ['file' => $tmpfile, 'merge' => false]);
 
         expect(WP_CLI::$calls)->toHaveKey('confirm');
         expect(WP_CLI::$calls['confirm'][0][0])->toContain('replace');
@@ -370,10 +400,10 @@ it('rejects import with no valid modules', function () {
         'unknown_module' => ['key' => 'value'],
     ]));
 
-    $cli = make_cli();
+    $import = make_command(Import::class);
 
     try {
-        expect(fn () => $cli->import([], ['file' => $tmpfile]))
+        expect(fn () => $import([], ['file' => $tmpfile]))
             ->toThrow(RuntimeException::class, 'No valid modules');
     } finally {
         unlink($tmpfile);
@@ -387,8 +417,8 @@ it('formats null values as "null" string', function () {
         'slug'     => 'testcli',
         'defaults' => ['test' => ['key' => null]],
     ]);
-    $cli = make_cli([], $settings);
-    $cli->get([], []);
+    $get = make_command(Get::class, [], $settings);
+    $get([], []);
 
     $rows = WP_CLI::$calls['format_items'][0][1];
     $null_row = array_values(array_filter($rows, fn ($r) => $r['key'] === 'test.key'))[0];
@@ -396,8 +426,8 @@ it('formats null values as "null" string', function () {
 });
 
 it('formats boolean values as "true"/"false" strings', function () {
-    $cli = make_cli();
-    $cli->get([], []);
+    $get = make_command(Get::class);
+    $get([], []);
 
     $rows = WP_CLI::$calls['format_items'][0][1];
     $bool_row = array_values(array_filter($rows, fn ($r) => $r['key'] === 'cache.enabled'))[0];
@@ -409,10 +439,77 @@ it('formats arrays as JSON strings', function () {
         'slug'     => 'testcli',
         'defaults' => ['test' => ['list' => ['a', 'b']]],
     ]);
-    $cli = make_cli([], $settings);
-    $cli->get([], []);
+    $get = make_command(Get::class, [], $settings);
+    $get([], []);
 
     $rows = WP_CLI::$calls['format_items'][0][1];
     $arr_row = array_values(array_filter($rows, fn ($r) => $r['key'] === 'test.list'))[0];
     expect($arr_row['value'])->toBe('["a","b"]');
+});
+
+// ─── --network flag ─────────────────────────────────────────────────
+
+it('routes to the network Settings when --network is passed', function () {
+    $site    = new Settings([
+        'slug'     => 'testcli',
+        'network'  => false,
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'option_name' => 'testcli_network',
+        'defaults' => ['cache' => ['ttl' => 9999]],
+    ]);
+    $group = new Group($site);
+    $group->add($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], ['network' => true]);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('9999');
+});
+
+it('routes to the per-site Settings when --network is omitted', function () {
+    $site    = new Settings([
+        'slug'     => 'testcli',
+        'network'  => false,
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'option_name' => 'testcli_network',
+        'defaults' => ['cache' => ['ttl' => 9999]],
+    ]);
+    $group = new Group($site);
+    $group->add($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], []);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('3600');
+});
+
+it('errors when --network is passed but no network Settings is registered', function () {
+    $site  = new Settings(['slug' => 'testcli', 'network' => false, 'defaults' => []]);
+    $group = new Group($site);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    expect(fn () => $get([], ['network' => true]))
+        ->toThrow(RuntimeException::class, 'No network Settings');
+});
+
+it('falls back to network Settings when only network is registered and no flag is passed', function () {
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'defaults' => ['cache' => ['ttl' => 60]],
+    ]);
+    $group = new Group($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], []);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('60');
 });

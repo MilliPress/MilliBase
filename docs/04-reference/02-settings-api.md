@@ -129,7 +129,7 @@ Export settings. Encrypted fields are stripped unless `$include_encrypted` is `t
 
 ### `backup(?string $module = null): void`
 
-Save current settings to a transient (expires in 12 hours).
+Save current settings to a transient (expires in 3 days).
 
 ### `has_backup(): bool`
 

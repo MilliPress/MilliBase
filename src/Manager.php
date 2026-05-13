@@ -27,13 +27,15 @@
 
 namespace MilliBase;
 
-use MilliBase\CLI\Controller as CliController;
+use MilliBase\Abilities\Controller as AbilitiesController;
+use MilliBase\CLI as CliController;
+use MilliBase\Concerns\HasConfig;
 use MilliBase\Migration\Runner as MigrationRunner;
 use MilliBase\REST\Controller as RestController;
 use MilliBase\Settings\Group as SettingsGroup;
 
 /**
- * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller together.
+ * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller + Abilities\Controller together.
  *
  * Accepts a Closure that returns the full configuration array. The closure
  * is called on `init`, so translation functions like __() execute after the
@@ -47,6 +49,8 @@ use MilliBase\Settings\Group as SettingsGroup;
  * @since 2.0.0 Constructor accepts a Closure instead of an array.
  */
 final class Manager {
+
+	use HasConfig;
 
 	/**
 	 * The plugin slug, used for filters and auto-derived config keys.
@@ -111,6 +115,14 @@ final class Manager {
 	private ?CliController $cli_controller = null;
 
 	/**
+	 * The AbilitiesController instance.
+	 *
+	 * @since 2.5.0
+	 * @var AbilitiesController|null
+	 */
+	private ?AbilitiesController $abilities_controller = null;
+
+	/**
 	 * Whether initialize() has run.
 	 *
 	 * @since 2.0.0
@@ -125,6 +137,14 @@ final class Manager {
 	 * @var array<string, SettingsGroup>
 	 */
 	private static array $cli_groups = array();
+
+	/**
+	 * Registered Manager fingerprints — `<slug>:<network>` — for collision detection.
+	 *
+	 * @since 2.5.0
+	 * @var array<string, true>
+	 */
+	private static array $registered_fingerprints = array();
 
 	/**
 	 * Create a new Manager instance.
@@ -149,6 +169,20 @@ final class Manager {
 	) {
 		$this->slug     = $slug;
 		$this->settings = $settings;
+
+		// Empty slug breaks every downstream component (Settings throws,
+		// abilities-api regex fails, AdminPage cannot register). Bail
+		// out cleanly so the host site does not 500.
+		if ( '' === $slug ) {
+			if ( function_exists( '_doing_it_wrong' ) ) {
+				_doing_it_wrong(
+					__METHOD__,
+					esc_html__( 'MilliBase\\Manager requires a non-empty slug; nothing will be registered for this consumer.', 'millibase' ),
+					'2.5.0'
+				);
+			}
+			return;
+		}
 
 		$this->merge_early_defaults();
 
@@ -185,6 +219,8 @@ final class Manager {
 			return;
 		}
 
+		$this->guard_against_slug_collision();
+
 		$this->register_settings();
 
 		$this->register_migrations();
@@ -196,6 +232,8 @@ final class Manager {
 
 		$this->rest_controller = new RestController( $this->config, $settings );
 		$this->rest_controller->register_hooks();
+
+		$this->register_abilities( $settings );
 	}
 
 	/**
@@ -227,17 +265,15 @@ final class Manager {
 	/**
 	 * Register the CLI controller for this Manager, with auto-merge.
 	 *
-	 * When the resolved CLI command (`<cli.slug|slug> config`) matches a
-	 * command another Manager already registered, this Manager's Settings
-	 * is appended to that command's `SettingsGroup` instead of attempting
-	 * a duplicate `WP_CLI::add_command` call. Operators see a single
-	 * `wp <slug> config <subcommand>` tree that transparently routes
-	 * across multiple Settings backends.
+	 * When two Managers share the primary slug (typically a site + network
+	 * split), the second Manager's Settings appends to the existing Group
+	 * instead of attempting a duplicate `WP_CLI::add_command` call.
+	 * Operators get one `wp <slug> config` command tree; each subcommand's
+	 * `--network` flag picks the right Settings at call time.
 	 *
 	 * Configurable shape:
-	 *   'cli' => false                       → skip CLI registration entirely
-	 *   'cli' => true | (omitted)            → register under `<slug> config`
-	 *   'cli' => array( 'slug' => 'other' )  → register under `other config`
+	 *   'cli' => false              → skip CLI registration entirely
+	 *   'cli' => true | (omitted)   → register under `<slug> config`
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
@@ -245,29 +281,77 @@ final class Manager {
 	 * @return void
 	 */
 	private function register_cli( $settings ): void {
-		$cli_config = $this->config['cli'] ?? true;
-		if ( false === $cli_config ) {
+		if ( false === ( $this->config['cli'] ?? true ) ) {
 			return;
 		}
 
-		$cli_slug = is_array( $cli_config ) && isset( $cli_config['slug'] ) && is_string( $cli_config['slug'] )
-			? $cli_config['slug']
-			: $this->slug;
-
-		$command = $cli_slug . ' config';
-
-		if ( isset( self::$cli_groups[ $command ] ) ) {
-			// Another Manager already registered this command; append into
-			// its Group, so all Settings are reachable from the shared CLI.
-			self::$cli_groups[ $command ]->add( $settings );
+		// Multi-Manager auto-merge — when two Managers share the primary slug
+		// (typically a site + network split), their Settings end up in the
+		// same Group keyed by slug. Each CLI subcommand picks the right
+		// member at call time via `--network`.
+		if ( isset( self::$cli_groups[ $this->slug ] ) ) {
+			self::$cli_groups[ $this->slug ]->add( $settings );
 			return;
 		}
 
-		$group                        = new SettingsGroup( $settings );
-		self::$cli_groups[ $command ] = $group;
+		$group                           = new SettingsGroup( $settings );
+		self::$cli_groups[ $this->slug ] = $group;
 
 		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();
+	}
+
+	/**
+	 * Warn when a second Manager registers under the same slug + network combo.
+	 *
+	 * The intended multi-Manager pattern is one per-site + one network Manager
+	 * sharing a slug. Two per-site Managers (or two network Managers) sharing
+	 * a slug collide on `option_name`, `rest_namespace`, and AdminPage menu
+	 * slug — the host plugin almost certainly didn't mean that.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return void
+	 */
+	private function guard_against_slug_collision(): void {
+		$fingerprint = $this->slug . ':' . ( ! empty( $this->config['network'] ) ? '1' : '0' );
+
+		if ( isset( self::$registered_fingerprints[ $fingerprint ] ) && function_exists( '_doing_it_wrong' ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				esc_html(
+					sprintf(
+						/* translators: 1: slug, 2: network-mode value (true/false). */
+						__( 'A MilliBase Manager is already registered for slug "%1$s" with network=%2$s. Two Managers sharing a primary slug must differ in `network` mode (one per-site, one network). Use distinct slugs otherwise.', 'millibase' ),
+						$this->slug,
+						! empty( $this->config['network'] ) ? 'true' : 'false'
+					)
+				),
+				'2.5.0'
+			);
+		}
+
+		self::$registered_fingerprints[ $fingerprint ] = true;
+	}
+
+	/**
+	 * Register the abilities controller for this Manager.
+	 *
+	 * Per-Manager registration — each Manager registers its own framework
+	 * abilities scoped to its own Settings. The network Manager's ability
+	 * IDs are suffixed with `-network` by {@see Abilities\FrameworkAbilities}
+	 * so site and network surfaces never collide on the same ID.
+	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param Settings $settings This Manager's Settings instance.
+	 * @return void
+	 */
+	private function register_abilities( $settings ): void {
+		$this->abilities_controller = new AbilitiesController( $this->config, $settings );
+		$this->abilities_controller->register_hooks();
 	}
 
 	/**
@@ -329,8 +413,6 @@ final class Manager {
 		( new RestController( $config, $this->settings ) )->register_hooks();
 	}
 
-	// ─── Accessors ──────────────────────────────────────────────────────
-
 	/**
 	 * Get the Settings instance for programmatic settings access.
 	 *
@@ -369,22 +451,21 @@ final class Manager {
 		return $this->schema;
 	}
 
-	// ─── Helpers ────────────────────────────────────────────────────────
-
 	/**
-	 * Get a string value from the config array.
+	 * Whether the WordPress Abilities API is loaded on this site.
 	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
+	 * Mirrors the soft-detect check used internally by `Abilities\Controller`,
+	 * so consumer plugins can gate their own UI (admin pointers, MCP-related
+	 * settings) on the same condition without grepping for `wp_register_ability`
+	 * themselves.
 	 *
-	 * @return string
+	 * @since 2.5.0
+	 *
+	 * @return bool
 	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
+	public function abilities_active(): bool {
+		return function_exists( 'wp_register_ability' );
 	}
-
-	// ─── Private resolvers ──────────────────────────────────────────────
 
 	/**
 	 * Extract schema-derived defaults and merge them into the Settings instance.
@@ -404,7 +485,7 @@ final class Manager {
 		}
 
 		$config = function_exists( 'apply_filters' )
-			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ) )
+			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ), $this->settings->is_network() )
 			: array( 'tabs' => array() );
 
 		$defaults = ( new Schema( $config ) )->get_defaults();
@@ -435,7 +516,6 @@ final class Manager {
 
 		$config['slug'] ??= $this->slug;
 
-		// Auto-derive defaults from slug.
 		if ( ! isset( $config['option_name'] ) ) {
 			$config['option_name'] = $this->slug;
 		}
@@ -460,9 +540,14 @@ final class Manager {
 			/**
 			 * Filters the settings configuration before Schema initialization.
 			 *
-			 * @param array<string, mixed> $config The full settings configuration array.
+			 * @param array<string, mixed> $config     The full settings configuration array.
+			 * @param bool                 $is_network Whether this MilliBase Manager runs in network mode.
 			 */
-			$this->config = apply_filters( "{$this->slug}_settings_schema", $this->config );
+			$this->config = apply_filters(
+				"{$this->slug}_settings_schema",
+				$this->config,
+				! empty( $this->config['network'] )
+			);
 		}
 
 		return new Schema( $this->config );
@@ -488,7 +573,6 @@ final class Manager {
 		if ( null !== $existing ) {
 			$settings = $existing;
 		} else {
-			// Merge explicit defaults (non-UI fields) with schema-extracted defaults.
 			$defaults = array_replace_recursive(
 				(array) ( $config['defaults'] ?? array() ),
 				$schema->get_defaults()
@@ -501,6 +585,7 @@ final class Manager {
 					'constant_prefix' => $config['constant_prefix'] ?? '',
 					'encryption'      => $config['encryption'] ?? false,
 					'config_file'     => $config['config_file'] ?? false,
+					'network'         => ! empty( $config['network'] ),
 					'defaults'        => $defaults,
 				)
 			);

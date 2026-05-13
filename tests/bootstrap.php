@@ -110,16 +110,29 @@ if (! class_exists('WP_Error')) {
     {
         public string $code;
         public string $message;
+        /** @var array<string, mixed> */
+        public array $data;
 
-        public function __construct(string $code = '', string $message = '')
+        public function __construct(string $code = '', string $message = '', array $data = [])
         {
             $this->code    = $code;
             $this->message = $message;
+            $this->data    = $data;
         }
 
         public function get_error_code(): string
         {
             return $this->code;
+        }
+
+        public function get_error_message(): string
+        {
+            return $this->message;
+        }
+
+        public function get_error_data()
+        {
+            return $this->data;
         }
     }
 }
@@ -135,6 +148,7 @@ if (! function_exists('add_filter')) {
 if (! function_exists('add_action')) {
     function add_action(string $hook, callable $callback, int $priority = 10, int $accepted_args = 1): bool
     {
+        $GLOBALS['__milli_test_actions'][$hook][$priority][] = $callback;
         return true;
     }
 }
@@ -228,6 +242,27 @@ if (! function_exists('is_multisite')) {
     }
 }
 
+if (! function_exists('_doing_it_wrong')) {
+    function _doing_it_wrong(string $function, string $message, string $version): void
+    {
+        $GLOBALS['__milli_test_doing_it_wrong'][] = compact('function', 'message', 'version');
+    }
+}
+
+if (! function_exists('esc_html')) {
+    function esc_html(string $text): string
+    {
+        return $text;
+    }
+}
+
+if (! function_exists('esc_html__')) {
+    function esc_html__(string $text, string $domain = 'default'): string
+    {
+        return $text;
+    }
+}
+
 if (! function_exists('__')) {
     function __(string $text, string $domain = 'default'): string
     {
@@ -242,5 +277,54 @@ if (! function_exists('rest_ensure_response')) {
             return $response;
         }
         return new WP_REST_Response(is_array($response) ? $response : []);
+    }
+}
+
+// Abilities-API stubs — global so every test that loads bootstrap sees them. Recorders reset per-test in tests/Pest.php.
+
+if (! function_exists('wp_register_ability_category')) {
+    function wp_register_ability_category(string $slug, array $args)
+    {
+        $GLOBALS['millibase_abilities_calls'][] = [
+            'fn'   => 'wp_register_ability_category',
+            'slug' => $slug,
+            'args' => $args,
+        ];
+        $GLOBALS['millibase_abilities_categories'][$slug] = true;
+        return null;
+    }
+}
+
+if (! function_exists('wp_register_ability')) {
+    function wp_register_ability(string $name, array $args)
+    {
+        $GLOBALS['millibase_abilities_calls'][] = [
+            'fn'   => 'wp_register_ability',
+            'name' => $name,
+            'args' => $args,
+        ];
+        $GLOBALS['millibase_abilities_names'][$name] = true;
+        return null;
+    }
+}
+
+if (! function_exists('wp_has_ability_category')) {
+    function wp_has_ability_category(string $slug): bool
+    {
+        return isset($GLOBALS['millibase_abilities_categories'][$slug]);
+    }
+}
+
+if (! function_exists('wp_has_ability')) {
+    function wp_has_ability(string $name): bool
+    {
+        return isset($GLOBALS['millibase_abilities_names'][$name]);
+    }
+}
+
+if (! function_exists('current_user_can')) {
+    function current_user_can(string $cap): bool
+    {
+        return $GLOBALS['millibase_abilities_can'][$cap] ?? false;
     }
 }

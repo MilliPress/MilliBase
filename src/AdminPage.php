@@ -8,12 +8,16 @@
 
 namespace MilliBase;
 
+use MilliBase\Concerns\HasConfig;
+
 /**
  * Registers the admin menu page and enqueues the pre-built React JS bundle.
  *
  * @since 1.0.0
  */
 final class AdminPage {
+
+	use HasConfig;
 
 	/**
 	 * The full settings configuration array.
@@ -264,9 +268,12 @@ final class AdminPage {
 	 * @return void
 	 */
 	private function inject_config(): void {
-		$slug           = $this->config_string( 'slug', 'millibase' );
-		$option_name    = $this->config_string( 'option_name', 'millibase' );
-		$rest_namespace = $this->config_string( 'rest_namespace', 'millibase/v1' );
+		$slug        = $this->config_string( 'slug', 'millibase' );
+		$option_name = $this->config_string( 'option_name', 'millibase' );
+		// Fold the REST Controller's `/network` route prefix into the localized
+		// namespace so the React client fetches the right path on each page.
+		$route_prefix   = ! empty( $this->config['network'] ) ? '/network' : '';
+		$rest_namespace = $this->config_string( 'rest_namespace', 'millibase/v1' ) . $route_prefix;
 
 		// Build the client-safe actions list.
 		$client_actions = array();
@@ -344,18 +351,5 @@ final class AdminPage {
 		}
 
 		return '';
-	}
-
-	/**
-	 * Get a string value from the config array.
-	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
-	 *
-	 * @return string
-	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
 	}
 }

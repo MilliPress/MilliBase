@@ -396,3 +396,13 @@ it('invalidates resolved cache after merge_defaults', function () {
     $after = $settings->get_default_settings();
     expect($after['minify']['enabled'])->toBeTrue();
 });
+
+it('is_network() returns false by default', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => []]);
+    expect($settings->is_network())->toBeFalse();
+});
+
+it('is_network() returns true when constructed with network => true', function () {
+    $settings = new Settings(['slug' => 'test', 'network' => true, 'defaults' => []]);
+    expect($settings->is_network())->toBeTrue();
+});

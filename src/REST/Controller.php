@@ -8,6 +8,7 @@
 
 namespace MilliBase\REST;
 
+use MilliBase\Concerns\HasConfig;
 use MilliBase\ServerVars;
 use MilliBase\Settings;
 
@@ -18,6 +19,8 @@ use MilliBase\Settings;
  * @since 1.0.0
  */
 final class Controller {
+
+	use HasConfig;
 
 	/**
 	 * The settings configuration.
@@ -54,19 +57,6 @@ final class Controller {
 	}
 
 	/**
-	 * Get a string value from the config array.
-	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
-	 *
-	 * @return string
-	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
-	}
-
-	/**
 	 * Register WordPress hooks.
 	 *
 	 * @since 1.0.0
@@ -89,6 +79,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function register_routes(): void {
+		$prefix     = ! empty( $this->config['network'] ) ? '/network' : '';
 		$namespace  = $this->config_string( 'rest_namespace', 'millibase/v1' );
 		$capability = $this->config_string( 'capability', 'manage_options' );
 
@@ -99,7 +90,7 @@ final class Controller {
 		// Settings value: read full tree, write full tree.
 		register_rest_route(
 			$namespace,
-			'/settings',
+			$prefix . '/settings',
 			array(
 				array(
 					'methods'             => \WP_REST_Server::READABLE,
@@ -117,7 +108,7 @@ final class Controller {
 		// Built-in settings actions (reset, restore).
 		register_rest_route(
 			$namespace,
-			'/settings/actions',
+			$prefix . '/settings/actions',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'perform_settings_action' ),
@@ -129,7 +120,7 @@ final class Controller {
 		// optionally enriched by status.callback and/or status.data.
 		register_rest_route(
 			$namespace,
-			'/status',
+			$prefix . '/status',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_status' ),
@@ -149,7 +140,7 @@ final class Controller {
 
 			register_rest_route(
 				$namespace,
-				'/' . ltrim( is_string( $action['endpoint'] ) ? $action['endpoint'] : '', '/' ),
+				$prefix . '/' . ltrim( is_string( $action['endpoint'] ) ? $action['endpoint'] : '', '/' ),
 				array(
 					'methods'             => $action['method'] ?? \WP_REST_Server::CREATABLE,
 					'callback'            => $callback,
@@ -238,8 +229,7 @@ final class Controller {
 		try {
 			switch ( $action ) {
 				case '__reset':
-					$this->settings->backup();
-					$this->settings->delete();
+					$this->settings->reset();
 					$message = __( 'Settings reset successfully.', 'millibase' );
 					break;
 
