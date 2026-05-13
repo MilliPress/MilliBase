@@ -55,17 +55,17 @@ Registers as `my-plugin/cache-purge` under the `my-plugin` ability category. Inh
 
 ## Entry fields
 
-| Field                 | Required | Description |
-|-----------------------|----------|-------------|
-| `id`                  | yes      | Stable identifier. Auto-prefixed with the plugin slug to form `<slug>/<id>`. Lowercase alphanumeric and dashes only. |
-| `label`               | yes      | Human-readable name shown in command palettes and docs. Non-empty string. |
-| `description`         | yes      | What the ability does and when to use it. Non-empty string. AI clients read this to pick the right operation. |
-| `callback`            | yes      | The PHP callable that executes the ability. Receives the validated input directly (not a `WP_REST_Request`). Returns the result or a `WP_Error`. |
-| `capability`          | no       | Capability string for the auto-generated permission callback. Defaults to the plugin-default `capability`. |
-| `permission_callback` | no       | Callable that decides whether the current user may execute. Receives the same input as `callback`, returns `bool` or `WP_Error`. Overrides `capability` when set. |
+| Field                 | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                        |
+|-----------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`                  | yes      | Stable identifier. Auto-prefixed with the plugin slug to form `<slug>/<id>`. Lowercase alphanumeric and dashes only.                                                                                                                                                                                                                                                                                               |
+| `label`               | yes      | Human-readable name shown in command palettes and docs. Non-empty string.                                                                                                                                                                                                                                                                                                                                          |
+| `description`         | yes      | What the ability does and when to use it. Non-empty string. AI clients read this to pick the right operation.                                                                                                                                                                                                                                                                                                      |
+| `callback`            | yes      | The PHP callable that executes the ability. Receives the validated input directly (not a `WP_REST_Request`). Returns the result or a `WP_Error`.                                                                                                                                                                                                                                                                   |
+| `capability`          | no       | Capability string for the auto-generated permission callback. Defaults to the plugin-default `capability`.                                                                                                                                                                                                                                                                                                         |
+| `permission_callback` | no       | Callable that decides whether the current user may execute. Receives the same input as `callback`, returns `bool` or `WP_Error`. Overrides `capability` when set.                                                                                                                                                                                                                                                  |
 | `input_schema`        | no       | JSON Schema describing expected input. Core validates input against this schema *before* invoking the callback, and the callback only receives input when a schema is set — abilities that accept any input therefore must declare one. An empty array (`[]`) is treated as "omit"; pass the full empty-object schema (`['type' => 'object', 'additionalProperties' => false]`) when you want to forbid any input. |
-| `output_schema`       | no       | JSON Schema describing the return shape. When set, core validates the return value and emits `ability_invalid_output` on mismatch. Recommended for non-trivial outputs. |
-| `meta`                | no       | Pass-through metadata. Notable keys: `meta.show_in_rest` (bool, default false) controls visibility under `/wp-abilities/v1/`; `meta.annotations.{readonly,destructive,idempotent}` describe behaviour for tooling; `meta.mcp.public` is read by the [MCP adapter](https://github.com/WordPress/mcp-adapter) to decide MCP exposure. MilliBase passes the whole `meta` array through unchanged. |
+| `output_schema`       | no       | JSON Schema describing the return shape. When set, core validates the return value and emits `ability_invalid_output` on mismatch. Recommended for non-trivial outputs.                                                                                                                                                                                                                                            |
+| `meta`                | no       | Pass-through metadata. Notable keys: `meta.show_in_rest` (bool, default false) controls visibility under `/wp-abilities/v1/`; `meta.annotations.{readonly,destructive,idempotent}` describe behaviour for tooling; `meta.mcp.public` is read by the [MCP adapter](https://github.com/WordPress/mcp-adapter) to decide MCP exposure. MilliBase passes the whole `meta` array through unchanged.                     |
 
 ## ID prefixing
 
@@ -150,7 +150,21 @@ These abilities are appended to the `'abilities'` array. The registration loop r
 
 `meta.show_in_rest` is intentionally left unset on the framework abilities — they register in PHP and CLI, but plugin authors must opt in per-ability to expose them under `/wp-abilities/v1/`.
 
-The framework abilities pin their capability to `manage_options` (`manage_network_options` on multisite), regardless of the host plugin's default `'capability'`. Reset/restore/backup are destructive over the host's settings store. A plugin that runs its admin UI on a lower cap (for example `'capability' => 'edit_posts'`) still gets admin-only framework abilities. Override only via the same-id host-wins mechanism above; the cap on a host override applies as written.
+The framework abilities inherit the plugin's top-level `'capability'` — same cap used by the admin page and REST endpoints. The plugin author owns this choice: if `'capability' => 'edit_posts'`, editors can call `settings-reset` too (just as they can press "Reset to defaults" in the admin UI). To restrict the destructive ones (`settings-reset`, `settings-restore`) to admin while keeping the admin UI on a lower cap, override per-ability:
+
+```php
+'abilities' => [
+    [
+        'id'         => 'settings-reset',
+        'capability' => 'manage_options', // override the plugin default
+        // …
+    ],
+],
+'capability' => 'edit_posts',
+'expose_settings_abilities' => true,
+```
+
+On multisite, set `'capability' => 'manage_network_options'` at the plugin level when the bound Settings is network-scoped (`'network' => true`) — that's the appropriate cap for touching `site_options`.
 
 > [!WARNING]
 > **`settings-export` is a credential disclosure surface.** Opting it into REST (`meta.show_in_rest => true`) plus a call with `include_encrypted=true` returns every encrypted secret in plain text to any authenticated user holding `manage_options` — including anyone the admin has issued an Application Password to. If your plugin stores API keys, OAuth tokens, or any other credential in encrypted settings, leave `show_in_rest` off and run the ability from `wp ability` or PHP only. If you must expose `settings-export` over REST, override it with a host-defined version that rejects `include_encrypted` or audits the call.
@@ -229,13 +243,13 @@ JSON-Schema integer fields use the loose JSON-Schema definition: any number with
 
 For PHP-level checks (unit tests, conditional logic), the registry exposes:
 
-| Function                                 | Returns                            |
-|------------------------------------------|------------------------------------|
-| `wp_get_ability( 'my-plugin/foo' )`      | `WP_Ability` instance, or `null`   |
-| `wp_has_ability( 'my-plugin/foo' )`      | `bool`                             |
-| `wp_get_abilities()`                     | `WP_Ability[]`                     |
-| `wp_get_ability_category( 'my-plugin' )` | `WP_Ability_Category`, or `null`   |
-| `wp_has_ability_category( 'my-plugin' )` | `bool`                             |
+| Function                                 | Returns                                                                   |
+|------------------------------------------|---------------------------------------------------------------------------|
+| `wp_get_ability( 'my-plugin/foo' )`      | `WP_Ability` instance, or `null`                                          |
+| `wp_has_ability( 'my-plugin/foo' )`      | `bool`                                                                    |
+| `wp_get_abilities()`                     | `WP_Ability[]`                                                            |
+| `wp_get_ability_category( 'my-plugin' )` | `WP_Ability_Category`, or `null`                                          |
+| `wp_has_ability_category( 'my-plugin' )` | `bool`                                                                    |
 | `$manager->abilities_active()`           | `bool` — soft-detect from MilliBase, stable from `plugins_loaded` onwards |
 
 ## Site-level abilities (Acorn-based projects)

@@ -127,14 +127,6 @@ it('omits show_in_rest by default — plugins opt in per-ability', function () {
     }
 });
 
-it('hardcodes an admin capability on every framework ability regardless of plugin default', function () {
-    foreach (FrameworkAbilities::settings(make_settings_fake()) as $entry) {
-        // is_multisite() returns null/false in test bootstrap → manage_options branch
-        expect($entry['capability'])->toBe('manage_options');
-    }
-});
-
-
 it('forwards module and include_encrypted from input to Settings::export', function () {
     $fake     = make_settings_fake(['export' => ['ok' => true]]);
     $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];

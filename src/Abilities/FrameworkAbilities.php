@@ -30,27 +30,12 @@ final class FrameworkAbilities {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
-		$capability = self::admin_capability();
-
 		return array(
-			self::export( $settings, $capability ),
-			self::reset( $settings, $capability ),
-			self::backup( $settings, $capability ),
-			self::restore( $settings, $capability ),
+			self::export( $settings ),
+			self::reset( $settings ),
+			self::backup( $settings ),
+			self::restore( $settings ),
 		);
-	}
-
-	/**
-	 * Hardcoded admin capability for every framework settings ability — multisite-aware.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @return string
-	 */
-	private static function admin_capability(): string {
-		return function_exists( 'is_multisite' ) && is_multisite()
-			? 'manage_network_options'
-			: 'manage_options';
 	}
 
 	/**
@@ -61,15 +46,13 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to read from.
-	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
-	private static function export( $settings, string $capability ): array {
+	private static function export( $settings ): array {
 		return array(
 			'id'            => 'settings-export',
 			'label'         => __( 'Export settings', 'millibase' ),
 			'description'   => __( 'Export the plugin settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' ),
-			'capability'    => $capability,
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module            = self::input_string( $input, 'module' );
 				$include_encrypted = self::input_bool( $input, 'include_encrypted' );
@@ -105,15 +88,13 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to mutate.
-	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
-	private static function reset( $settings, string $capability ): array {
+	private static function reset( $settings ): array {
 		return array(
 			'id'            => 'settings-reset',
 			'label'         => __( 'Reset settings to defaults', 'millibase' ),
 			'description'   => __( 'Reset the plugin settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
-			'capability'    => $capability,
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
 				$settings->backup( $module );
@@ -148,15 +129,13 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to back up.
-	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
-	private static function backup( $settings, string $capability ): array {
+	private static function backup( $settings ): array {
 		return array(
 			'id'            => 'settings-backup',
 			'label'         => __( 'Back up settings', 'millibase' ),
 			'description'   => __( 'Take a backup of the current plugin settings. The backup expires after 12 hours.', 'millibase' ),
-			'capability'    => $capability,
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
 				$settings->backup( $module );
@@ -191,15 +170,13 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to restore into.
-	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
-	private static function restore( $settings, string $capability ): array {
+	private static function restore( $settings ): array {
 		return array(
 			'id'            => 'settings-restore',
 			'label'         => __( 'Restore settings from backup', 'millibase' ),
 			'description'   => __( 'Restore the most recent settings backup. Returns success: false when no backup is available.', 'millibase' ),
-			'capability'    => $capability,
 			'callback'      => static function () use ( $settings ): array {
 				return array( 'success' => $settings->restore_backup() );
 			},
