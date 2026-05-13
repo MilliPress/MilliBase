@@ -139,14 +139,6 @@ final class Manager {
 	private static array $cli_groups = array();
 
 	/**
-	 * Auto-merge registry for abilities groups, keyed by host slug.
-	 *
-	 * @since 2.5.0
-	 * @var array<string, SettingsGroup>
-	 */
-	private static array $abilities_groups = array();
-
-	/**
 	 * Registered Manager fingerprints — `<slug>:<network>` — for collision detection.
 	 *
 	 * @since 2.5.0
@@ -350,12 +342,12 @@ final class Manager {
 	}
 
 	/**
-	 * Register the abilities controller for this Manager, with auto-merge.
+	 * Register the abilities controller for this Manager.
 	 *
-	 * The Group registry is keyed by the Manager's primary slug. Two Managers
-	 * that share a slug — typically a site+network split — merge their
-	 * Settings into one Group so framework abilities operate across both
-	 * backings.
+	 * Per-Manager registration — each Manager registers its own framework
+	 * abilities scoped to its own Settings. The network Manager's ability
+	 * IDs are suffixed with `-network` by {@see Abilities\FrameworkAbilities}
+	 * so site and network surfaces never collide on the same ID.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
@@ -365,15 +357,7 @@ final class Manager {
 	 * @return void
 	 */
 	private function register_abilities( $settings ): void {
-		if ( isset( self::$abilities_groups[ $this->slug ] ) ) {
-			self::$abilities_groups[ $this->slug ]->add( $settings );
-			$group = self::$abilities_groups[ $this->slug ];
-		} else {
-			$group                                 = new SettingsGroup( $settings );
-			self::$abilities_groups[ $this->slug ] = $group;
-		}
-
-		$this->abilities_controller = new AbilitiesController( $this->config, $group );
+		$this->abilities_controller = new AbilitiesController( $this->config, $settings );
 		$this->abilities_controller->register_hooks();
 	}
 
@@ -608,6 +592,7 @@ final class Manager {
 					'constant_prefix' => $config['constant_prefix'] ?? '',
 					'encryption'      => $config['encryption'] ?? false,
 					'config_file'     => $config['config_file'] ?? false,
+					'network'         => ! empty( $config['network'] ),
 					'defaults'        => $defaults,
 				)
 			);

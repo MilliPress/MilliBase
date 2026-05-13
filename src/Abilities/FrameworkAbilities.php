@@ -22,6 +22,10 @@ final class FrameworkAbilities {
 	/**
 	 * Build the four standard settings abilities for a plugin.
 	 *
+	 * When the bound Settings is network-scoped, every ability id gets a
+	 * `-network` suffix so the network surface never collides with the
+	 * per-site surface on the same plugin slug.
+	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
 	 * @since 2.5.0
@@ -30,11 +34,13 @@ final class FrameworkAbilities {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
+		$suffix = ( method_exists( $settings, 'is_network' ) && $settings->is_network() ) ? '-network' : '';
+
 		return array(
-			self::export( $settings ),
-			self::reset( $settings ),
-			self::backup( $settings ),
-			self::restore( $settings ),
+			self::export( $settings, $suffix ),
+			self::reset( $settings, $suffix ),
+			self::backup( $settings, $suffix ),
+			self::restore( $settings, $suffix ),
 		);
 	}
 
@@ -46,11 +52,12 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to read from.
+	 * @param string         $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function export( $settings ): array {
+	private static function export( $settings, string $suffix ): array {
 		return array(
-			'id'            => 'settings-export',
+			'id'            => 'settings-export' . $suffix,
 			'label'         => __( 'Export settings', 'millibase' ),
 			'description'   => __( 'Export the plugin settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
@@ -88,11 +95,12 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to mutate.
+	 * @param string         $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function reset( $settings ): array {
+	private static function reset( $settings, string $suffix ): array {
 		return array(
-			'id'            => 'settings-reset',
+			'id'            => 'settings-reset' . $suffix,
 			'label'         => __( 'Reset settings to defaults', 'millibase' ),
 			'description'   => __( 'Reset the plugin settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
@@ -129,11 +137,12 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to back up.
+	 * @param string         $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function backup( $settings ): array {
+	private static function backup( $settings, string $suffix ): array {
 		return array(
-			'id'            => 'settings-backup',
+			'id'            => 'settings-backup' . $suffix,
 			'label'         => __( 'Back up settings', 'millibase' ),
 			'description'   => __( 'Take a backup of the current plugin settings. The backup expires after 12 hours.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
@@ -170,11 +179,12 @@ final class FrameworkAbilities {
 	 * @since 2.5.0
 	 *
 	 * @param Settings|Group $settings The Settings (or Group) to restore into.
+	 * @param string         $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function restore( $settings ): array {
+	private static function restore( $settings, string $suffix ): array {
 		return array(
-			'id'            => 'settings-restore',
+			'id'            => 'settings-restore' . $suffix,
 			'label'         => __( 'Restore settings from backup', 'millibase' ),
 			'description'   => __( 'Restore the most recent settings backup. Returns success: false when no backup is available.', 'millibase' ),
 			'callback'      => static function () use ( $settings ): array {

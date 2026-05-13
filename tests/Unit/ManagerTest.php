@@ -81,35 +81,52 @@ it('reports abilities-API availability via abilities_active()', function () {
     expect($manager->abilities_active())->toBeTrue();
 });
 
-it('merges two Managers sharing a slug into one abilities Settings\\Group', function () {
-    $reflection = new ReflectionClass(Manager::class);
-    $registry   = $reflection->getProperty('abilities_groups');
-    $registry->setAccessible(true);
-    $registry->setValue(null, []);
+it('registers framework abilities per-Manager when two Managers share a slug', function () {
+    $reflection   = new ReflectionClass(Manager::class);
     $fingerprints = $reflection->getProperty('registered_fingerprints');
     $fingerprints->setAccessible(true);
     $fingerprints->setValue(null, []);
+    $GLOBALS['millibase_abilities_calls'] = [];
+    $GLOBALS['millibase_abilities_names'] = [];
+    $GLOBALS['__milli_test_actions']      = [];
 
-    // Realistic shared-slug pattern: one per-site + one network Manager.
-    // Two per-site Managers sharing a slug would trigger the collision guard.
-    new Manager('shared-slug', static fn () => ['tabs' => []]);
-    new Manager('shared-slug', static fn () => ['tabs' => [], 'network' => true]);
+    // One per-site + one network Manager under the same slug.
+    new Manager('shared-slug', static fn () => [
+        'tabs'      => [],
+        'abilities' => ['expose' => true],
+    ]);
+    new Manager('shared-slug', static fn () => [
+        'tabs'      => [],
+        'network'   => true,
+        'abilities' => ['expose' => true],
+    ]);
 
     foreach ($GLOBALS['__milli_test_actions']['init'] ?? [] as $by_priority) {
         foreach ($by_priority as $cb) {
             $cb();
         }
     }
+    foreach ($GLOBALS['__milli_test_actions']['wp_abilities_api_init'] ?? [] as $by_priority) {
+        foreach ($by_priority as $cb) {
+            $cb();
+        }
+    }
 
-    $groups = $registry->getValue();
-    expect($groups)->toHaveKey('shared-slug');
-    expect($groups['shared-slug'])->toBeInstanceOf(Group::class);
+    // Each Manager registered its own framework abilities — the network
+    // Manager's IDs are suffixed with `-network`, so they coexist with the
+    // per-site Manager's bare IDs without colliding.
+    $names = array_column(
+        array_values(array_filter(
+            $GLOBALS['millibase_abilities_calls'],
+            fn ($call) => $call['fn'] === 'wp_register_ability',
+        )),
+        'name',
+    );
 
-    // Both Settings landed in the same Group — the second Manager appended
-    // rather than replacing or being silently dropped.
-    $listProp = (new ReflectionClass(Group::class))->getProperty('list');
-    $listProp->setAccessible(true);
-    expect($listProp->getValue($groups['shared-slug']))->toHaveCount(2);
+    expect($names)->toContain('shared-slug/settings-export');
+    expect($names)->toContain('shared-slug/settings-export-network');
+    expect($names)->toContain('shared-slug/settings-reset');
+    expect($names)->toContain('shared-slug/settings-reset-network');
 });
 
 it('warns via _doing_it_wrong when two Managers share slug and network mode', function () {
