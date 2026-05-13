@@ -75,13 +75,9 @@ Bare ids get the plugin slug prefixed automatically:
 'id' => 'cache-purge'  →  'my-plugin/cache-purge'
 ```
 
-An id that already contains a forward slash is registered verbatim, allowing deliberate cross-plugin contracts:
+Ids may not contain a forward slash. An id like `'other-plugin/something'` is skipped with a `_doing_it_wrong()` notice — a host plugin should not be able to shadow another plugin's namespace, which is what would happen by accident if MilliBase registered such ids verbatim and the foreign owner loaded later in the request.
 
-```
-'id' => 'other-plugin/something'  →  'other-plugin/something'
-```
-
-The verbatim form keeps the literal name, but the ability still belongs to the host plugin's category — MilliBase does not auto-register a `other-plugin` category just because an ability advertises that prefix. CLI category filters and command-palette grouping continue to use the host slug.
+If you genuinely need to register an ability under a different category (rare), declare that category explicitly via your own `add_action( 'wp_abilities_api_categories_init', ... )` and `wp_register_ability()` outside the MilliBase config.
 
 ## Validation rules
 
@@ -92,7 +88,7 @@ slug:  ^[a-z0-9]+(?:-[a-z0-9]+)*$
 name:  ^[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$
 ```
 
-No underscores, no dots, no uppercase, no multi-slash names like `foo/bar/baz`. MilliBase validates up-front: if the slug fails, no category or abilities are registered for that plugin (silent skip — the host site keeps working). Individual entries are skipped when their resolved name fails the two-segment regex, when the entry is not an array, when `id`, `label`, or `description` is missing or empty, or when `callback` is not a callable.
+No underscores, no dots, no uppercase. Multi-slash names like `foo/bar/baz` and foreign-namespace ids like `other-plugin/something` are both rejected up-front (see [ID prefixing](#id-prefixing) above). MilliBase validates the slug too: if the slug fails the single-segment shape, no category or abilities are registered for that plugin (silent skip — the host site keeps working). Individual entries are skipped when their resolved name fails the two-segment regex, when the entry is not an array, when `id`, `label`, or `description` is missing or empty, or when `callback` is not a callable.
 
 Idempotent guards: MilliBase consults `wp_has_ability_category()` and `wp_has_ability()` before registering, so a Manager constructed twice in one request (test harness, plugin reactivation) does not trigger core's duplicate-registration warning. The first Manager that registers a slug "owns" the category and any ability ids it claims; later Managers using the same slug can still add net-new ids to that namespace, but cannot overwrite the originals — relevant when two plugins on the same site share a slug by accident or by design.
 
@@ -160,7 +156,7 @@ The framework abilities pin their capability to `manage_options` (`manage_networ
 
 When the `callback` returns a `WP_Error`, core relays it to the caller using its standard REST translation: HTTP status from the error's `status` data (default 500), JSON body with `code`, `message`, and `data`. Returning `WP_Error` is the contracted failure path.
 
-Uncaught exceptions are wrapped. MilliBase catches any `Throwable` thrown by the callback and converts it to `WP_Error('ability_callback_exception', …, ['status' => 500])` so a stray `RuntimeException` cannot leak a stack trace through the REST surface — particularly relevant on Acorn/Roots stacks where the Laravel error renderer would otherwise emit absolute filesystem paths into HTML comments. The full trace is written to `error_log()` for server-side debugging.
+Uncaught exceptions are wrapped. MilliBase catches any `Throwable` thrown by either the `callback` *or* an explicit `permission_callback` and converts it to `WP_Error('ability_callback_exception', …, ['status' => 500])` so a stray `RuntimeException` cannot leak a stack trace through the REST surface — particularly relevant on Acorn/Roots stacks where the Laravel error renderer would otherwise emit absolute filesystem paths into HTML comments. The full trace is written to `error_log()` for server-side debugging.
 
 ## HTTP method via annotations
 

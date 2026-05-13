@@ -165,7 +165,27 @@ final class Controller {
 				continue;
 			}
 
-			$name = strpos( $id, '/' ) === false ? "{$slug}/{$id}" : $id;
+			// Bare ids only — foreign namespaces would let this Manager shadow
+			// another plugin that legitimately owns the prefix, depending on load order.
+			if ( strpos( $id, '/' ) !== false ) {
+				if ( function_exists( '_doing_it_wrong' ) ) {
+					_doing_it_wrong(
+						__METHOD__,
+						esc_html(
+							sprintf(
+								/* translators: 1: ability id as supplied; 2: host plugin slug. */
+								__( 'Ability id "%1$s" contains a forward slash. Use bare ids; MilliBase auto-prefixes them with "%2$s/".', 'millibase' ),
+								$id,
+								$slug
+							)
+						),
+						'2.5.0'
+					);
+				}
+				continue;
+			}
+
+			$name = "{$slug}/{$id}";
 			if ( ! self::is_valid_name( $name ) ) {
 				continue;
 			}
@@ -180,7 +200,7 @@ final class Controller {
 				'description'         => $description,
 				'category'            => $slug,
 				'execute_callback'    => self::wrap_callback( $ability['callback'], $name ),
-				'permission_callback' => $this->build_permission_callback( $ability, $default_capability ),
+				'permission_callback' => $this->build_permission_callback( $ability, $default_capability, $name ),
 			);
 
 			if ( is_array( $ability['input_schema'] ?? null ) && array() !== $ability['input_schema'] ) {
@@ -259,11 +279,14 @@ final class Controller {
 	 *
 	 * @param array<string, mixed> $ability            The ability config entry.
 	 * @param string               $default_capability The plugin-default capability.
+	 * @param string               $name               The fully qualified ability name, used for log context.
 	 * @return callable
 	 */
-	private function build_permission_callback( array $ability, string $default_capability ): callable {
+	private function build_permission_callback( array $ability, string $default_capability, string $name ): callable {
 		if ( is_callable( $ability['permission_callback'] ?? null ) ) {
-			return $ability['permission_callback'];
+			// Wrap host-supplied permission callbacks for the same reason as execute_callback:
+			// a thrown exception would otherwise leak a stack trace through the REST surface.
+			return self::wrap_callback( $ability['permission_callback'], $name );
 		}
 
 		$capability = is_string( $ability['capability'] ?? null ) ? $ability['capability'] : $default_capability;

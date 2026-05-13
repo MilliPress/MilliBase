@@ -381,16 +381,20 @@ it('prefixes a bare id with the plugin slug', function () {
     expect($calls[0]['name'])->toBe('test/cache-purge');
 });
 
-it('keeps an explicit namespace verbatim when the id contains a forward slash', function () {
+it('skips ability entries whose id contains a forward slash', function () {
+    // Foreign-namespace ids are rejected — they would let this Manager
+    // shadow another plugin that legitimately owns the prefix.
     $config = [
         'abilities' => [
             valid_ability(['id' => 'other-plugin/something']),
+            valid_ability(['id' => 'cache/purge']),
+            valid_ability(['id' => 'foo/bar/baz']),
         ],
     ];
 
     make_abilities_controller($config)->register_abilities();
 
-    expect(abilities_calls('wp_register_ability')[0]['name'])->toBe('other-plugin/something');
+    expect(abilities_calls('wp_register_ability'))->toBe([]);
 });
 
 it('uses the plugin slug as the category for each ability', function () {
@@ -475,7 +479,7 @@ it('wraps host-plugin callbacks so a thrown exception becomes a WP_Error instead
     expect($result->get_error_message())->not->toContain('hunter2');
 });
 
-it('uses an explicit permission_callback when one is supplied', function () {
+it('routes an explicit permission_callback through the wrapper', function () {
     $custom = fn (): bool => true;
     $config = [
         'abilities' => [
@@ -485,7 +489,33 @@ it('uses an explicit permission_callback when one is supplied', function () {
 
     make_abilities_controller($config)->register_abilities();
 
-    expect(abilities_calls('wp_register_ability')[0]['args']['permission_callback'])->toBe($custom);
+    // Wrapped, not pass-through — same Throwable-catching protection
+    // applies to permission_callback as to execute_callback.
+    $wrapped = abilities_calls('wp_register_ability')[0]['args']['permission_callback'];
+    expect($wrapped)->toBeCallable();
+    expect($wrapped)->not->toBe($custom);
+    expect($wrapped(null))->toBeTrue();
+});
+
+it('wraps host-plugin permission_callback so a thrown exception becomes a WP_Error', function () {
+    $config = [
+        'abilities' => [
+            valid_ability([
+                'permission_callback' => static function () {
+                    throw new \RuntimeException('sensitive: db_password=hunter2');
+                },
+            ]),
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    $wrapped = abilities_calls('wp_register_ability')[0]['args']['permission_callback'];
+
+    $result = $wrapped(null);
+
+    expect($result)->toBeInstanceOf(\WP_Error::class);
+    expect($result->get_error_code())->toBe('ability_callback_exception');
+    expect($result->get_error_message())->not->toContain('hunter2');
 });
 
 
