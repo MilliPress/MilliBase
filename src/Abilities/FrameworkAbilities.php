@@ -113,7 +113,6 @@ final class FrameworkAbilities {
 				: __( 'Reset the site settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
-				$settings->backup( $module );
 				return array( 'success' => $settings->reset( $module ) );
 			},
 			'input_schema'  => array(

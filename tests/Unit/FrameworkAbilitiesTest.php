@@ -189,14 +189,13 @@ it('treats non-array input to export as no input', function () {
     ]);
 });
 
-it('backs up before resetting and reports the reset result', function () {
+it('resets the requested module and reports the reset result', function () {
     $fake     = make_settings_fake(['reset' => true]);
     $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-reset')['callback'];
 
     $result = $callback(['module' => 'cache']);
 
-    expect($fake->calls[0])->toBe(['method' => 'backup', 'module' => 'cache']);
-    expect($fake->calls[1])->toBe(['method' => 'reset', 'module' => 'cache']);
+    expect($fake->calls[0])->toBe(['method' => 'reset', 'module' => 'cache']);
     expect($result)->toBe(['success' => true]);
 });
 

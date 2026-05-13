@@ -52,7 +52,6 @@ final class Reset extends Command {
 
 		WP_CLI::confirm( "Reset {$target} to defaults?", $assoc_args );
 
-		$settings->backup( $module );
 		$settings->reset( $module );
 
 		WP_CLI::success( "Reset {$target} to defaults. A backup was created automatically." );
