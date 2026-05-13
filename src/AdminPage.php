@@ -8,12 +8,16 @@
 
 namespace MilliBase;
 
+use MilliBase\Concerns\HasConfig;
+
 /**
  * Registers the admin menu page and enqueues the pre-built React JS bundle.
  *
  * @since 1.0.0
  */
 final class AdminPage {
+
+	use HasConfig;
 
 	/**
 	 * The full settings configuration array.
@@ -344,18 +348,5 @@ final class AdminPage {
 		}
 
 		return '';
-	}
-
-	/**
-	 * Get a string value from the config array.
-	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
-	 *
-	 * @return string
-	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
 	}
 }

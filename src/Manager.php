@@ -27,13 +27,15 @@
 
 namespace MilliBase;
 
+use MilliBase\Abilities\Controller as AbilitiesController;
 use MilliBase\CLI\Controller as CliController;
+use MilliBase\Concerns\HasConfig;
 use MilliBase\Migration\Runner as MigrationRunner;
 use MilliBase\REST\Controller as RestController;
 use MilliBase\Settings\Group as SettingsGroup;
 
 /**
- * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller together.
+ * Orchestrator that wires Settings + Schema + AdminPage + REST\Controller + CLI\Controller + Abilities\Controller together.
  *
  * Accepts a Closure that returns the full configuration array. The closure
  * is called on `init`, so translation functions like __() execute after the
@@ -47,6 +49,8 @@ use MilliBase\Settings\Group as SettingsGroup;
  * @since 2.0.0 Constructor accepts a Closure instead of an array.
  */
 final class Manager {
+
+	use HasConfig;
 
 	/**
 	 * The plugin slug, used for filters and auto-derived config keys.
@@ -111,6 +115,14 @@ final class Manager {
 	private ?CliController $cli_controller = null;
 
 	/**
+	 * The AbilitiesController instance.
+	 *
+	 * @since 2.5.0
+	 * @var AbilitiesController|null
+	 */
+	private ?AbilitiesController $abilities_controller = null;
+
+	/**
 	 * Whether initialize() has run.
 	 *
 	 * @since 2.0.0
@@ -149,6 +161,20 @@ final class Manager {
 	) {
 		$this->slug     = $slug;
 		$this->settings = $settings;
+
+		// Empty slug breaks every downstream component (Settings throws,
+		// abilities-api regex fails, AdminPage cannot register). Bail
+		// out cleanly so the host site does not 500.
+		if ( '' === $slug ) {
+			if ( function_exists( '_doing_it_wrong' ) ) {
+				_doing_it_wrong(
+					__METHOD__,
+					esc_html__( 'MilliBase\\Manager requires a non-empty slug; nothing will be registered for this consumer.', 'millibase' ),
+					'2.5.0'
+				);
+			}
+			return;
+		}
 
 		$this->merge_early_defaults();
 
@@ -196,6 +222,9 @@ final class Manager {
 
 		$this->rest_controller = new RestController( $this->config, $settings );
 		$this->rest_controller->register_hooks();
+
+		$this->abilities_controller = new AbilitiesController( $this->config, $settings );
+		$this->abilities_controller->register_hooks();
 	}
 
 	/**
@@ -369,19 +398,20 @@ final class Manager {
 		return $this->schema;
 	}
 
-	// ─── Helpers ────────────────────────────────────────────────────────
-
 	/**
-	 * Get a string value from the config array.
+	 * Whether the WordPress Abilities API is loaded on this site.
 	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
+	 * Mirrors the soft-detect check used internally by `Abilities\Controller`,
+	 * so consumer plugins can gate their own UI (admin pointers, MCP-related
+	 * settings) on the same condition without grepping for `wp_register_ability`
+	 * themselves.
 	 *
-	 * @return string
+	 * @since 2.5.0
+	 *
+	 * @return bool
 	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
+	public function abilities_active(): bool {
+		return function_exists( 'wp_register_ability' );
 	}
 
 	// ─── Private resolvers ──────────────────────────────────────────────

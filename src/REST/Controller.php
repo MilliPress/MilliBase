@@ -8,6 +8,7 @@
 
 namespace MilliBase\REST;
 
+use MilliBase\Concerns\HasConfig;
 use MilliBase\ServerVars;
 use MilliBase\Settings;
 
@@ -18,6 +19,8 @@ use MilliBase\Settings;
  * @since 1.0.0
  */
 final class Controller {
+
+	use HasConfig;
 
 	/**
 	 * The settings configuration.
@@ -51,19 +54,6 @@ final class Controller {
 	public function __construct( array $config, $settings ) {
 		$this->config   = $config;
 		$this->settings = $settings;
-	}
-
-	/**
-	 * Get a string value from the config array.
-	 *
-	 * @param string $key      The config key.
-	 * @param string $fallback The fallback value.
-	 *
-	 * @return string
-	 */
-	private function config_string( string $key, string $fallback = '' ): string {
-		$value = $this->config[ $key ] ?? $fallback;
-		return is_string( $value ) ? $value : $fallback;
 	}
 
 	/**
