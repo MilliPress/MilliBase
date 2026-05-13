@@ -205,6 +205,11 @@ final class Controller {
 
 			if ( is_array( $ability['input_schema'] ?? null ) && array() !== $ability['input_schema'] ) {
 				$args['input_schema'] = $ability['input_schema'];
+			} else {
+				$args['input_schema'] = array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+				);
 			}
 			if ( is_array( $ability['output_schema'] ?? null ) && array() !== $ability['output_schema'] ) {
 				$args['output_schema'] = $ability['output_schema'];

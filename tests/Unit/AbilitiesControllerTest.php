@@ -539,7 +539,11 @@ it('passes input_schema, output_schema, and meta through unchanged', function ()
     expect($args['meta'])->toBe($meta);
 });
 
-it('omits input_schema, output_schema, and meta when not configured', function () {
+it('defaults input_schema to the empty-object schema when the host omits it', function () {
+    // The Abilities API rejects any call with input when no schema is set,
+    // and `wp ability run` always supplies a payload — defaulting keeps
+    // input-less abilities callable from CLI without forcing the host to
+    // declare a schema for no reason.
     $config = [
         'abilities' => [valid_ability()],
     ];
@@ -547,7 +551,10 @@ it('omits input_schema, output_schema, and meta when not configured', function (
     make_abilities_controller($config)->register_abilities();
     $args = abilities_calls('wp_register_ability')[0]['args'];
 
-    expect($args)->not->toHaveKey('input_schema');
+    expect($args['input_schema'])->toBe([
+        'type'                 => 'object',
+        'additionalProperties' => false,
+    ]);
     expect($args)->not->toHaveKey('output_schema');
     expect($args)->not->toHaveKey('meta');
 });
