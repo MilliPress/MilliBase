@@ -13,9 +13,15 @@ use WP_CLI;
 /**
  * Restore settings from the most recent backup.
  *
+ * ## OPTIONS
+ *
+ * [--network]
+ * : Operate on network-scoped settings. Errors when no network Settings is registered.
+ *
  * ## EXAMPLES
  *
  *     wp myplugin config restore
+ *     wp myplugin config restore --network
  *
  * @since 2.5.0
  */
@@ -31,7 +37,9 @@ final class Restore extends Command {
 	 * @return void
 	 */
 	public function __invoke( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		if ( ! $this->settings->restore_backup() ) {
+		$settings = $this->resolve( $assoc_args );
+
+		if ( ! $settings->restore_backup() ) {
 			WP_CLI::error( 'No backup found or backup has expired.' );
 		}
 

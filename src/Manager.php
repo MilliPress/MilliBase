@@ -265,17 +265,15 @@ final class Manager {
 	/**
 	 * Register the CLI controller for this Manager, with auto-merge.
 	 *
-	 * When the resolved CLI command (`<cli.slug|slug> config`) matches a
-	 * command another Manager already registered, this Manager's Settings
-	 * is appended to that command's `SettingsGroup` instead of attempting
-	 * a duplicate `WP_CLI::add_command` call. Operators see a single
-	 * `wp <slug> config <subcommand>` tree that transparently routes
-	 * across multiple Settings backends.
+	 * When two Managers share the primary slug (typically a site + network
+	 * split), the second Manager's Settings appends to the existing Group
+	 * instead of attempting a duplicate `WP_CLI::add_command` call.
+	 * Operators get one `wp <slug> config` command tree; each subcommand's
+	 * `--network` flag picks the right Settings at call time.
 	 *
 	 * Configurable shape:
-	 *   'cli' => false                       → skip CLI registration entirely
-	 *   'cli' => true | (omitted)            → register under `<slug> config`
-	 *   'cli' => array( 'slug' => 'other' )  → register under `other config`
+	 *   'cli' => false              → skip CLI registration entirely
+	 *   'cli' => true | (omitted)   → register under `<slug> config`
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
@@ -283,26 +281,21 @@ final class Manager {
 	 * @return void
 	 */
 	private function register_cli( $settings ): void {
-		$cli_config = $this->config['cli'] ?? true;
-		if ( false === $cli_config ) {
+		if ( false === ( $this->config['cli'] ?? true ) ) {
 			return;
 		}
 
-		$cli_slug = is_array( $cli_config ) && isset( $cli_config['slug'] ) && is_string( $cli_config['slug'] )
-			? $cli_config['slug']
-			: $this->slug;
-
-		$command = $cli_slug . ' config';
-
-		if ( isset( self::$cli_groups[ $command ] ) ) {
-			// Another Manager already registered this command; append into
-			// its Group, so all Settings are reachable from the shared CLI.
-			self::$cli_groups[ $command ]->add( $settings );
+		// Multi-Manager auto-merge — when two Managers share the primary slug
+		// (typically a site + network split), their Settings end up in the
+		// same Group keyed by slug. Each CLI subcommand picks the right
+		// member at call time via `--network`.
+		if ( isset( self::$cli_groups[ $this->slug ] ) ) {
+			self::$cli_groups[ $this->slug ]->add( $settings );
 			return;
 		}
 
-		$group                        = new SettingsGroup( $settings );
-		self::$cli_groups[ $command ] = $group;
+		$group                           = new SettingsGroup( $settings );
+		self::$cli_groups[ $this->slug ] = $group;
 
 		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();

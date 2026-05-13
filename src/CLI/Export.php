@@ -26,6 +26,9 @@ use WP_CLI;
  * [--file=<path>]
  * : Write output to a file instead of stdout.
  *
+ * [--network]
+ * : Operate on network-scoped settings. Errors when no network Settings is registered.
+ *
  * ## EXAMPLES
  *
  *     # Export to stdout.
@@ -36,6 +39,9 @@ use WP_CLI;
  *
  *     # Export a single module.
  *     wp myplugin config export --module=cache
+ *
+ *     # Export the network scope.
+ *     wp myplugin config export --network
  *
  * @since 2.5.0
  */
@@ -51,11 +57,12 @@ final class Export extends Command {
 	 * @return void
 	 */
 	public function __invoke( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		$settings          = $this->resolve( $assoc_args );
 		$module            = $assoc_args['module'] ?? null;
 		$include_encrypted = isset( $assoc_args['include-encrypted'] );
 		$file              = $assoc_args['file'] ?? null;
 
-		$data = $this->settings->export( $module, $include_encrypted );
+		$data = $settings->export( $module, $include_encrypted );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 		$json = json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );

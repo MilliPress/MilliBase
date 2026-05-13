@@ -15,9 +15,15 @@ use WP_CLI;
  *
  * Backup expires after 12 hours.
  *
+ * ## OPTIONS
+ *
+ * [--network]
+ * : Operate on network-scoped settings. Errors when no network Settings is registered.
+ *
  * ## EXAMPLES
  *
  *     wp myplugin config backup
+ *     wp myplugin config backup --network
  *
  * @since 2.5.0
  */
@@ -33,7 +39,8 @@ final class Backup extends Command {
 	 * @return void
 	 */
 	public function __invoke( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$this->settings->backup();
+		$settings = $this->resolve( $assoc_args );
+		$settings->backup();
 		WP_CLI::success( 'Backup created. Expires in 12 hours.' );
 	}
 }

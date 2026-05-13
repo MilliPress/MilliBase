@@ -12,6 +12,7 @@ use MilliBase\CLI\Reset;
 use MilliBase\CLI\Restore;
 use MilliBase\CLI\Set;
 use MilliBase\Settings;
+use MilliBase\Settings\Group;
 
 function default_test_settings(): Settings
 {
@@ -28,7 +29,7 @@ function make_cli(array $config = [], ?Settings $settings = null): CLI
 {
     return new CLI(
         array_merge(['slug' => 'testcli'], $config),
-        $settings ?? default_test_settings(),
+        new Group($settings ?? default_test_settings()),
     );
 }
 
@@ -41,7 +42,7 @@ function make_command(string $class, array $config = [], ?Settings $settings = n
 {
     return new $class(
         array_merge(['slug' => 'testcli'], $config),
-        $settings ?? default_test_settings(),
+        new Group($settings ?? default_test_settings()),
     );
 }
 
@@ -444,4 +445,71 @@ it('formats arrays as JSON strings', function () {
     $rows = WP_CLI::$calls['format_items'][0][1];
     $arr_row = array_values(array_filter($rows, fn ($r) => $r['key'] === 'test.list'))[0];
     expect($arr_row['value'])->toBe('["a","b"]');
+});
+
+// ─── --network flag ─────────────────────────────────────────────────
+
+it('routes to the network Settings when --network is passed', function () {
+    $site    = new Settings([
+        'slug'     => 'testcli',
+        'network'  => false,
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'option_name' => 'testcli_network',
+        'defaults' => ['cache' => ['ttl' => 9999]],
+    ]);
+    $group = new Group($site);
+    $group->add($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], ['network' => true]);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('9999');
+});
+
+it('routes to the per-site Settings when --network is omitted', function () {
+    $site    = new Settings([
+        'slug'     => 'testcli',
+        'network'  => false,
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'option_name' => 'testcli_network',
+        'defaults' => ['cache' => ['ttl' => 9999]],
+    ]);
+    $group = new Group($site);
+    $group->add($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], []);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('3600');
+});
+
+it('errors when --network is passed but no network Settings is registered', function () {
+    $site  = new Settings(['slug' => 'testcli', 'network' => false, 'defaults' => []]);
+    $group = new Group($site);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    expect(fn () => $get([], ['network' => true]))
+        ->toThrow(RuntimeException::class, 'No network Settings');
+});
+
+it('falls back to network Settings when only network is registered and no flag is passed', function () {
+    $network = new Settings([
+        'slug'     => 'testcli',
+        'network'  => true,
+        'defaults' => ['cache' => ['ttl' => 60]],
+    ]);
+    $group = new Group($network);
+
+    $get = new Get(['slug' => 'testcli'], $group);
+    $get(['cache.ttl'], []);
+
+    expect(WP_CLI::$calls['line'][0][0])->toBe('60');
 });

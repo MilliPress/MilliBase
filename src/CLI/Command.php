@@ -14,9 +14,13 @@ use MilliBase\Settings\Group;
 use WP_CLI;
 
 /**
- * Shared state (config, Settings/Group) and helpers for every subcommand
- * under `wp <slug> config`. Concrete subcommands extend this class and
- * implement `__invoke( array $args, array $assoc_args )`.
+ * Shared state and helpers for every subcommand under `wp <slug> config`.
+ *
+ * Concrete subcommands extend this class and implement
+ * `__invoke( array $args, array $assoc_args )`. The base provides the
+ * Settings\Group registry (constructed by `Manager::register_cli()` and
+ * passed in by `MilliBase\CLI`), and {@see self::resolve()} to pick the
+ * right Settings for the current call based on the `--network` flag.
  *
  * @since 2.5.0
  */
@@ -33,16 +37,16 @@ abstract class Command {
 	protected array $config;
 
 	/**
-	 * Settings (or `Settings\Group`) backing this subcommand.
+	 * The Settings registry — one or more members, picked at call time.
 	 * Cross-prefix tolerant; do not add a native type.
 	 * See docs/04-reference/04-namespace-prefixing.md.
 	 *
 	 * @noinspection PhpMissingFieldTypeInspection
 	 *
 	 * @since 2.5.0
-	 * @var Settings|Group
+	 * @var Group
 	 */
-	protected $settings;
+	protected $group;
 
 	/**
 	 * Construct the subcommand.
@@ -51,12 +55,41 @@ abstract class Command {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param array<string, mixed> $config   The plugin configuration.
-	 * @param Settings|Group       $settings Cross-prefix tolerant; see {@see self::$settings}.
+	 * @param array<string, mixed> $config The plugin configuration.
+	 * @param Group                $group  Cross-prefix tolerant; see {@see self::$group}.
 	 */
-	public function __construct( array $config, $settings ) {
-		$this->config   = $config;
-		$this->settings = $settings;
+	public function __construct( array $config, $group ) {
+		$this->config = $config;
+		$this->group  = $group;
+	}
+
+	/**
+	 * Pick the Settings to operate on for this call.
+	 *
+	 * Reads `--network` from `$assoc_args`. Errors out if the requested
+	 * scope has no matching Settings (e.g. `--network` against a
+	 * site-only plugin).
+	 *
+	 * @noinspection PhpMissingReturnTypeInspection
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param array<string, string> $assoc_args Named arguments from the wp-cli call.
+	 * @return Settings
+	 */
+	protected function resolve( array $assoc_args ) {
+		$wants_network = isset( $assoc_args['network'] );
+		$settings      = $this->group->resolve( $wants_network );
+
+		if ( null === $settings ) {
+			WP_CLI::error(
+				$wants_network
+					? 'No network Settings registered for this plugin. Drop `--network` to operate on the available scope.'
+					: 'No per-site Settings registered for this plugin. Pass `--network` to operate on network settings.'
+			);
+		}
+
+		return $settings;
 	}
 
 	/**
@@ -87,13 +120,16 @@ abstract class Command {
 	/**
 	 * Flatten nested settings into dot-notation rows for display.
 	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
 	 * @since 2.5.0
 	 *
 	 * @param array<string, mixed> $data        Nested settings array.
 	 * @param bool                 $show_source Whether to include a source column.
+	 * @param Settings             $settings    Source of get_source() lookups.
 	 * @return array<int, array<string, string>>
 	 */
-	protected function flatten_settings( array $data, bool $show_source ): array {
+	protected function flatten_settings( array $data, bool $show_source, $settings ): array {
 		$rows = array();
 
 		foreach ( $data as $module => $module_settings ) {
@@ -107,7 +143,7 @@ abstract class Command {
 				);
 
 				if ( $show_source ) {
-					$row['source'] = $this->settings->get_source( (string) $module, (string) $key );
+					$row['source'] = $settings->get_source( (string) $module, (string) $key );
 				}
 
 				$rows[] = $row;

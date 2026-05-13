@@ -10,7 +10,6 @@ namespace MilliBase\Abilities;
 
 use MilliBase\Concerns\HasConfig;
 use MilliBase\Settings;
-use MilliBase\Settings\Group;
 
 /**
  * Registers the plugin's ability category and abilities with the
@@ -32,14 +31,14 @@ final class Controller {
 	private array $config;
 
 	/**
-	 * The Settings (or Settings\Group) backing this controller.
+	 * The Settings backing this controller.
 	 * Cross-prefix tolerant; do not add a native type.
 	 * See docs/04-reference/04-namespace-prefixing.md.
 	 *
 	 * @noinspection PhpMissingFieldTypeInspection
 	 *
 	 * @since 2.5.0
-	 * @var Settings|Group
+	 * @var Settings
 	 */
 	private $settings;
 
@@ -51,7 +50,7 @@ final class Controller {
 	 * @since 2.5.0
 	 *
 	 * @param array<string, mixed> $config   The plugin configuration.
-	 * @param Settings|Group       $settings Cross-prefix tolerant; see {@see self::$settings}.
+	 * @param Settings             $settings Cross-prefix tolerant; see {@see self::$settings}.
 	 */
 	public function __construct( array $config, $settings ) {
 		$this->config   = $config;

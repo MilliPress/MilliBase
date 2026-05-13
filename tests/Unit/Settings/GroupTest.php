@@ -3,137 +3,67 @@
 use MilliBase\Settings;
 use MilliBase\Settings\Group;
 
-function group_settings(string $slug, array $defaults): Settings
+function group_settings(string $slug, bool $network = false): Settings
 {
     return new Settings([
         'slug'     => $slug,
-        'defaults' => $defaults,
+        'network'  => $network,
+        'defaults' => [],
     ]);
 }
 
-// ─── Routing helpers ────────────────────────────────────────────────
+it('resolve(false) returns the first per-site member', function () {
+    $site    = group_settings('a', false);
+    $network = group_settings('b', true);
 
-it('get(key) routes to the owning Settings', function () {
-    $cache   = group_settings('cache', ['cache' => ['ttl' => 60]]);
-    $storage = group_settings('storage', ['storage' => ['host' => 'localhost']]);
+    $group = new Group($site);
+    $group->add($network);
 
-    $group = new Group($cache);
-    $group->add($storage);
-
-    expect($group->get('storage.host'))->toBe('localhost');
-    expect($group->get('cache.ttl'))->toBe(60);
+    expect($group->resolve(false))->toBe($site);
 });
 
-it('get() with no key merges trees from every Settings', function () {
-    $cache   = group_settings('cache', ['cache' => ['ttl' => 60]]);
-    $storage = group_settings('storage', ['storage' => ['host' => 'localhost']]);
+it('resolve(true) returns the first network-scoped member', function () {
+    $site    = group_settings('a', false);
+    $network = group_settings('b', true);
 
-    $group = new Group($cache);
-    $group->add($storage);
+    $group = new Group($site);
+    $group->add($network);
 
-    $merged = $group->get();
-    expect($merged)->toHaveKey('cache');
-    expect($merged)->toHaveKey('storage');
-    expect($merged['cache']['ttl'])->toBe(60);
-    expect($merged['storage']['host'])->toBe('localhost');
+    expect($group->resolve(true))->toBe($network);
 });
 
-it('get(key) falls back to primary when no Settings owns the module', function () {
-    $primary = group_settings('a', ['cache' => ['ttl' => 60]]);
-    $group   = new Group($primary);
+it('resolve(false) falls through to a network member when no per-site exists', function () {
+    // Single network-only Manager — operators omitting --network still get
+    // the only available Settings instead of an error.
+    $network = group_settings('only', true);
+    $group   = new Group($network);
 
-    expect($group->get('unknown.key'))->toBeNull();
+    expect($group->resolve(false))->toBe($network);
 });
 
-it('set routes to the owning Settings and returns true', function () {
-    $cache   = group_settings('cache-w', ['cache' => ['ttl' => 60]]);
-    $storage = group_settings('storage-w', ['storage' => ['host' => 'localhost']]);
+it('resolve(true) returns null when no network member exists', function () {
+    // Site-only plugin + operator passed --network — caller surfaces the
+    // null as a wp-cli error.
+    $site  = group_settings('a', false);
+    $group = new Group($site);
 
-    $group = new Group($cache);
-    $group->add($storage);
-
-    expect($group->set('storage.host', '1.2.3.4'))->toBeTrue();
-    expect($group->get('storage.host'))->toBe('1.2.3.4');
-    expect($group->get('cache.ttl'))->toBe(60);
+    expect($group->resolve(true))->toBeNull();
 });
 
-it('set returns false for an unknown module', function () {
-    $group = new Group(group_settings('o', ['cache' => ['ttl' => 60]]));
+it('resolve(true) on a network-only registry returns the network member', function () {
+    $network = group_settings('only', true);
+    $group   = new Group($network);
 
-    expect($group->set('unknown.key', 'x'))->toBeFalse();
+    expect($group->resolve(true))->toBe($network);
 });
 
-// ─── reset routing ──────────────────────────────────────────────────
+it('add() appends additional members so resolve() can find them', function () {
+    $primary = group_settings('a', false);
+    $extra   = group_settings('b', true);
 
-it('reset(null) resets every wrapped Settings', function () {
-    $a = group_settings('reset-a', ['cache' => ['ttl' => 60]]);
-    $b = group_settings('reset-b', ['storage' => ['host' => 'localhost']]);
+    $group = new Group($primary);
+    $group->add($extra);
 
-    $a->set('cache.ttl', 9999);
-    $b->set('storage.host', 'changed');
-
-    $group = new Group($a);
-    $group->add($b);
-    expect($group->reset())->toBeTrue();
-
-    expect($a->get('cache.ttl'))->toBe(60);
-    expect($b->get('storage.host'))->toBe('localhost');
-});
-
-it('reset(module) routes to owning Settings only', function () {
-    $a = group_settings('reset-c', ['cache' => ['ttl' => 60]]);
-    $b = group_settings('reset-d', ['storage' => ['host' => 'localhost']]);
-
-    $a->set('cache.ttl', 9999);
-    $b->set('storage.host', 'changed');
-
-    $group = new Group($a);
-    $group->add($b);
-    expect($group->reset('storage'))->toBeTrue();
-
-    expect($a->get('cache.ttl'))->toBe(9999);   // untouched
-    expect($b->get('storage.host'))->toBe('localhost');
-});
-
-it('reset(unknown_module) returns false', function () {
-    $group = new Group(group_settings('o2', ['cache' => ['ttl' => 60]]));
-    expect($group->reset('unknown'))->toBeFalse();
-});
-
-// ─── Defaults & sources ─────────────────────────────────────────────
-
-it('get_default_settings() merges defaults from all wrapped Settings', function () {
-    $a = group_settings('defs-a', ['cache' => ['ttl' => 60]]);
-    $b = group_settings('defs-b', ['storage' => ['host' => 'localhost']]);
-
-    $group = new Group($a);
-    $group->add($b);
-    $merged = $group->get_default_settings();
-
-    expect($merged)->toHaveKey('cache');
-    expect($merged)->toHaveKey('storage');
-});
-
-it('get_default_settings(module) routes to the owner', function () {
-    $a = group_settings('defs-c', ['cache' => ['ttl' => 60]]);
-    $b = group_settings('defs-d', ['storage' => ['host' => 'localhost']]);
-
-    $group = new Group($a);
-    $group->add($b);
-
-    $cache_defaults = $group->get_default_settings('cache');
-    expect($cache_defaults)->toHaveKey('cache');
-    expect($cache_defaults)->not->toHaveKey('storage');
-});
-
-it('get_source routes to the owning Settings', function () {
-    $a = group_settings('src-a', ['cache' => ['ttl' => 60]]);
-    $b = group_settings('src-b', ['storage' => ['host' => 'localhost']]);
-
-    $group = new Group($a);
-    $group->add($b);
-
-    expect($group->get_source('cache', 'ttl'))->toBe('default');
-    expect($group->get_source('storage', 'host'))->toBe('default');
-    expect($group->get_source('unknown', 'x'))->toBe('default');
+    expect($group->resolve(false))->toBe($primary);
+    expect($group->resolve(true))->toBe($extra);
 });

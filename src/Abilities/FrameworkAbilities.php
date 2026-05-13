@@ -9,7 +9,6 @@
 namespace MilliBase\Abilities;
 
 use MilliBase\Settings;
-use MilliBase\Settings\Group;
 
 /**
  * Builds ability config entries that wrap the built-in Settings
@@ -30,7 +29,7 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings|Group $settings Cross-prefix tolerant; bound into closures.
+	 * @param Settings $settings Cross-prefix tolerant; bound into closures.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
@@ -51,8 +50,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings|Group $settings The Settings (or Group) to read from.
-	 * @param string         $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings The Settings to read from.
+	 * @param string   $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
 	private static function export( $settings, string $suffix ): array {
@@ -94,8 +93,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings|Group $settings The Settings (or Group) to mutate.
-	 * @param string         $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings The Settings to mutate.
+	 * @param string   $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
 	private static function reset( $settings, string $suffix ): array {
@@ -136,8 +135,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings|Group $settings The Settings (or Group) to back up.
-	 * @param string         $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings The Settings to back up.
+	 * @param string   $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
 	private static function backup( $settings, string $suffix ): array {
@@ -178,8 +177,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings|Group $settings The Settings (or Group) to restore into.
-	 * @param string         $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings The Settings to restore into.
+	 * @param string   $suffix   Appended to the ability id when network-scoped.
 	 * @return array<string, mixed>
 	 */
 	private static function restore( $settings, string $suffix ): array {

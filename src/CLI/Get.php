@@ -18,6 +18,9 @@ use WP_CLI;
  * [<key>]
  * : Setting key in dot notation (e.g. cache.ttl) or module name (e.g. cache).
  *
+ * [--network]
+ * : Operate on network-scoped settings. Errors when no network Settings is registered.
+ *
  * [--show-source]
  * : Show where each value comes from (constant, file, db, default).
  *
@@ -34,11 +37,11 @@ use WP_CLI;
  *
  * ## EXAMPLES
  *
- *     # Get all settings.
+ *     # Get all settings (per-site by default).
  *     wp myplugin config get
  *
- *     # Get all settings for a module.
- *     wp myplugin config get cache
+ *     # Get all settings from the network scope.
+ *     wp myplugin config get --network
  *
  *     # Get a specific value.
  *     wp myplugin config get cache.ttl
@@ -63,12 +66,13 @@ final class Get extends Command {
 	 * @return void
 	 */
 	public function __invoke( array $args, array $assoc_args ): void {
+		$settings    = $this->resolve( $assoc_args );
 		$key         = $args[0] ?? null;
 		$format      = $assoc_args['format'] ?? 'table';
 		$show_source = isset( $assoc_args['show-source'] );
 
 		if ( null !== $key ) {
-			$value = $this->settings->get( $key );
+			$value = $settings->get( $key );
 
 			if ( null === $value ) {
 				WP_CLI::error( "Setting '{$key}' not found." );
@@ -76,7 +80,6 @@ final class Get extends Command {
 
 			$has_dot = strpos( $key, '.' ) !== false;
 
-			// Single scalar value via dot-key — output raw value.
 			if ( $has_dot || ! is_array( $value ) ) {
 				if ( 'table' === $format ) {
 					WP_CLI::line( $this->stringify( $value ) );
@@ -86,22 +89,20 @@ final class Get extends Command {
 				return;
 			}
 
-			// Module key (e.g. "cache") — flatten to table rows.
-			$rows    = $this->flatten_settings( array( $key => $value ), $show_source );
+			$rows    = $this->flatten_settings( array( $key => $value ), $show_source, $settings );
 			$columns = $show_source ? array( 'key', 'value', 'source' ) : array( 'key', 'value' );
 
 			$this->output_items( $rows, array( $key => $value ), $format, $columns );
 			return;
 		}
 
-		// All settings — output as table.
-		$all = $this->settings->get();
+		$all = $settings->get();
 
 		if ( ! is_array( $all ) ) {
 			WP_CLI::error( 'No settings found.' );
 		}
 
-		$rows    = $this->flatten_settings( $all, $show_source );
+		$rows    = $this->flatten_settings( $all, $show_source, $settings );
 		$columns = $show_source ? array( 'key', 'value', 'source' ) : array( 'key', 'value' );
 
 		$this->output_items( $rows, $all, $format, $columns );

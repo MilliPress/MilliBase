@@ -26,6 +26,9 @@ use WP_CLI;
  * default: true
  * ---
  *
+ * [--network]
+ * : Operate on network-scoped settings. Errors when no network Settings is registered.
+ *
  * [--yes]
  * : Skip the confirmation prompt.
  *
@@ -33,6 +36,7 @@ use WP_CLI;
  *
  *     wp myplugin config import --file=settings.json
  *     wp myplugin config import --file=settings.json --no-merge --yes
+ *     wp myplugin config import --file=network.json --network
  *
  * @since 2.5.0
  */
@@ -48,7 +52,8 @@ final class Import extends Command {
 	 * @return void
 	 */
 	public function __invoke( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$file = $assoc_args['file'] ?? null;
+		$settings = $this->resolve( $assoc_args );
+		$file     = $assoc_args['file'] ?? null;
 		/** Merge flag: true = merge into existing, false = overwrite.  @var bool $merge */
 		$merge = WP_CLI\Utils\get_flag_value( $assoc_args, 'merge', true );
 
@@ -76,9 +81,9 @@ final class Import extends Command {
 			WP_CLI::confirm( 'Import will replace all existing settings. Continue?', $assoc_args );
 		}
 
-		$this->settings->backup();
+		$settings->backup();
 
-		if ( ! $this->settings->import( $data, (bool) $merge ) ) {
+		if ( ! $settings->import( $data, (bool) $merge ) ) {
 			WP_CLI::error( 'Import failed. No valid modules found in the provided data.' );
 		}
 

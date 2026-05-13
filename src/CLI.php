@@ -9,7 +9,6 @@
 namespace MilliBase;
 
 use MilliBase\Concerns\HasConfig;
-use MilliBase\Settings;
 use MilliBase\Settings\Group;
 use WP_CLI;
 
@@ -36,16 +35,16 @@ final class CLI {
 	private array $config;
 
 	/**
-	 * Settings (or `Settings\Group`) backing every subcommand.
+	 * Settings registry shared by every subcommand.
 	 * Cross-prefix tolerant; do not add a native type.
 	 * See docs/04-reference/04-namespace-prefixing.md.
 	 *
 	 * @noinspection PhpMissingFieldTypeInspection
 	 *
 	 * @since 2.5.0
-	 * @var Settings|Group
+	 * @var Group
 	 */
-	private $settings;
+	private $group;
 
 	/**
 	 * Construct the CLI orchestrator.
@@ -54,12 +53,12 @@ final class CLI {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param array<string, mixed> $config   The plugin configuration.
-	 * @param Settings|Group       $settings Cross-prefix tolerant; see {@see self::$settings}.
+	 * @param array<string, mixed> $config The plugin configuration.
+	 * @param Group                $group  Cross-prefix tolerant; see {@see self::$group}.
 	 */
-	public function __construct( array $config, $settings ) {
-		$this->config   = $config;
-		$this->settings = $settings;
+	public function __construct( array $config, $group ) {
+		$this->config = $config;
+		$this->group  = $group;
 	}
 
 	/**
@@ -74,19 +73,14 @@ final class CLI {
 			return;
 		}
 
-		$cli  = $this->config['cli'] ?? array();
-		$slug = is_array( $cli ) && isset( $cli['slug'] ) && is_string( $cli['slug'] )
-			? $cli['slug']
-			: $this->config_string( 'slug', 'millibase' );
+		$root = $this->config_string( 'slug', 'millibase' ) . ' config';
 
-		$root = "{$slug} config";
-
-		WP_CLI::add_command( "{$root} get", new CLI\Get( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} set", new CLI\Set( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} reset", new CLI\Reset( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} backup", new CLI\Backup( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} restore", new CLI\Restore( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} export", new CLI\Export( $this->config, $this->settings ) );
-		WP_CLI::add_command( "{$root} import", new CLI\Import( $this->config, $this->settings ) );
+		WP_CLI::add_command( "{$root} get", new CLI\Get( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} set", new CLI\Set( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} reset", new CLI\Reset( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} backup", new CLI\Backup( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} restore", new CLI\Restore( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} export", new CLI\Export( $this->config, $this->group ) );
+		WP_CLI::add_command( "{$root} import", new CLI\Import( $this->config, $this->group ) );
 	}
 }
