@@ -189,7 +189,7 @@ On multisite, set `'capability' => 'manage_network_options'` at the plugin level
 
 ### Multi-Manager network scope
 
-When two `Manager` instances share a primary slug — the standard site + network split — each Manager registers its own framework abilities scoped to its own `Settings`. The network Manager's ability ids are suffixed with `-network`, so site and network surfaces never collide.
+When two `Manager` instances share a primary slug — the standard site + network split — each Manager registers its own framework abilities scoped to its own `Settings`. The network Manager's ability ids are prefixed with `network-`, and the labels/descriptions name the network scope explicitly, so site and network surfaces never collide and consumers can tell the two apart.
 
 ```php
 // Per-site Manager
@@ -211,9 +211,9 @@ Result:
 | Caller | Visible abilities |
 |---|---|
 | Site admin (`manage_options`) | `millicache/settings-export`, `-reset`, `-backup`, `-restore` |
-| Network admin (`manage_network_options`) | The four above, plus `millicache/settings-export-network`, `-reset-network`, `-backup-network`, `-restore-network` |
+| Network admin (`manage_network_options`) | The four above, plus `millicache/network-settings-export`, `network-settings-reset`, `network-settings-backup`, `network-settings-restore` |
 
-The cap-to-data mapping is structural — set once at registration, never resolved at call time. AI agents see two distinct tools when both Managers are registered; a plugin with a single Manager (either per-site or network-only) sees one set, with or without the `-network` suffix matching that Manager's scope.
+The cap-to-data mapping is structural — set once at registration, never resolved at call time. AI agents see two distinct tools when both Managers are registered; a plugin with a single Manager (either per-site or network-only) sees one set, with or without the `network-` prefix matching that Manager's scope.
 
 A plugin with a single Manager doesn't need to do anything special — only one set of framework abilities registers.
 

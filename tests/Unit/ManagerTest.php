@@ -124,9 +124,9 @@ it('registers framework abilities per-Manager when two Managers share a slug', f
     );
 
     expect($names)->toContain('shared-slug/settings-export');
-    expect($names)->toContain('shared-slug/settings-export-network');
+    expect($names)->toContain('shared-slug/network-settings-export');
     expect($names)->toContain('shared-slug/settings-reset');
-    expect($names)->toContain('shared-slug/settings-reset-network');
+    expect($names)->toContain('shared-slug/network-settings-reset');
 });
 
 it('warns via _doing_it_wrong when two Managers share slug and network mode', function () {

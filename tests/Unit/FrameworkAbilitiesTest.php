@@ -17,7 +17,13 @@ function make_settings_fake(array $stubs = []): object
                 'reset'          => true,
                 'restore_backup' => true,
                 'export'         => ['cache' => ['ttl' => 3600]],
+                'is_network'     => false,
             ], $stubs);
+        }
+
+        public function is_network(): bool
+        {
+            return (bool) $this->stubs['is_network'];
         }
 
         public function backup(?string $module = null): void
@@ -74,6 +80,20 @@ it('returns four entries in the documented order', function () {
     expect($abilities[1]['id'])->toBe('settings-reset');
     expect($abilities[2]['id'])->toBe('settings-backup');
     expect($abilities[3]['id'])->toBe('settings-restore');
+});
+
+it('prefixes ids with network- and names the scope explicitly when network-scoped', function () {
+    $abilities = FrameworkAbilities::settings(make_settings_fake(['is_network' => true]));
+
+    expect($abilities[0]['id'])->toBe('network-settings-export');
+    expect($abilities[1]['id'])->toBe('network-settings-reset');
+    expect($abilities[2]['id'])->toBe('network-settings-backup');
+    expect($abilities[3]['id'])->toBe('network-settings-restore');
+
+    foreach ($abilities as $entry) {
+        expect(strtolower($entry['label']))->toContain('network');
+        expect(strtolower($entry['description']))->toContain('network');
+    }
 });
 
 it('gives every entry a non-empty label and description', function () {

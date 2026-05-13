@@ -57,10 +57,10 @@ The two Managers share the same primary slug. MilliBase auto-disambiguates them 
 | Settings storage | `wp_options[my-plugin]` | `wp_sitemeta[my-plugin]` (different table — no row collision) |
 | Admin menu | `admin_menu` hook | `network_admin_menu` hook (separate menu trees in WP core) |
 | REST routes | `/wp-json/my-plugin/v1/…` | `/wp-json/my-plugin/v1/network/…` (route prefix) |
-| Abilities | `my-plugin/settings-export`, `-reset`, `-backup`, `-restore` | `my-plugin/settings-export-network`, `-reset-network`, `-backup-network`, `-restore-network` (id suffix) |
+| Abilities | `my-plugin/settings-export`, `-reset`, `-backup`, `-restore` | `my-plugin/network-settings-export`, `network-settings-reset`, `network-settings-backup`, `network-settings-restore` (id prefix) |
 | WP-CLI | `wp my-plugin config …` (single tree) | `wp my-plugin config … --network` (same tree, `--network` flag) |
 
-One principle (`network=true` is the disambiguator), three idiomatic mechanisms (route prefix for REST, id suffix for abilities, flag for CLI). See [WP-CLI Commands](./04-wp-cli.md#network-scope) and [Abilities API](./05-abilities.md#multi-manager-network-scope) for the surface-specific details.
+One principle (`network=true` is the disambiguator) consistently expressed across surfaces: a `network-` qualifier comes first in the path (REST), ability id (Abilities), or as an explicit `--network` flag (CLI). See [WP-CLI Commands](./04-wp-cli.md#network-scope) and [Abilities API](./05-abilities.md#multi-manager-network-scope) for the surface-specific details.
 
 > **Why two Managers and not one?** The original temptation is a single Manager with mixed-scope modules. That conflicts with WordPress: an option lives in exactly one table (`wp_options` or `wp_sitemeta`), and the sanitize / filter / cap-check chains differ per table. Splitting into two Managers keeps each option's lifecycle clean and makes capability boundaries explicit (typically `manage_options` for per-site, `manage_network_options` for network).
 

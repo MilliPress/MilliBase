@@ -22,8 +22,9 @@ final class FrameworkAbilities {
 	 * Build the four standard settings abilities for a plugin.
 	 *
 	 * When the bound Settings is network-scoped, every ability id gets a
-	 * `-network` suffix so the network surface never collides with the
-	 * per-site surface on the same plugin slug.
+	 * `network-` prefix and the label/description name the scope explicitly
+	 * so the network surface never collides with the per-site surface on
+	 * the same plugin slug and consumers can tell the two apart.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
@@ -33,13 +34,13 @@ final class FrameworkAbilities {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
-		$suffix = ( method_exists( $settings, 'is_network' ) && $settings->is_network() ) ? '-network' : '';
+		$is_network = method_exists( $settings, 'is_network' ) && $settings->is_network();
 
 		return array(
-			self::export( $settings, $suffix ),
-			self::reset( $settings, $suffix ),
-			self::backup( $settings, $suffix ),
-			self::restore( $settings, $suffix ),
+			self::export( $settings, $is_network ),
+			self::reset( $settings, $is_network ),
+			self::backup( $settings, $is_network ),
+			self::restore( $settings, $is_network ),
 		);
 	}
 
@@ -50,15 +51,19 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings The Settings to read from.
-	 * @param string   $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings   The Settings to read from.
+	 * @param bool     $is_network Whether the bound Settings is network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function export( $settings, string $suffix ): array {
+	private static function export( $settings, bool $is_network ): array {
 		return array(
-			'id'            => 'settings-export' . $suffix,
-			'label'         => __( 'Export settings', 'millibase' ),
-			'description'   => __( 'Export the plugin settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' ),
+			'id'            => ( $is_network ? 'network-' : '' ) . 'settings-export',
+			'label'         => $is_network
+				? __( 'Export Network Settings', 'millibase' )
+				: __( 'Export Settings', 'millibase' ),
+			'description'   => $is_network
+				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' )
+				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module            = self::input_string( $input, 'module' );
 				$include_encrypted = self::input_bool( $input, 'include_encrypted' );
@@ -93,15 +98,19 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings The Settings to mutate.
-	 * @param string   $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings   The Settings to mutate.
+	 * @param bool     $is_network Whether the bound Settings is network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function reset( $settings, string $suffix ): array {
+	private static function reset( $settings, bool $is_network ): array {
 		return array(
-			'id'            => 'settings-reset' . $suffix,
-			'label'         => __( 'Reset settings to defaults', 'millibase' ),
-			'description'   => __( 'Reset the plugin settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
+			'id'            => ( $is_network ? 'network-' : '' ) . 'settings-reset',
+			'label'         => $is_network
+				? __( 'Reset Network Settings to Defaults', 'millibase' )
+				: __( 'Reset Settings to Defaults', 'millibase' ),
+			'description'   => $is_network
+				? __( 'Reset the network settings to their defaults (site settings are not affected). An automatic backup is created before the reset.', 'millibase' )
+				: __( 'Reset the site settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
 				$settings->backup( $module );
@@ -135,15 +144,19 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings The Settings to back up.
-	 * @param string   $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings   The Settings to back up.
+	 * @param bool     $is_network Whether the bound Settings is network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function backup( $settings, string $suffix ): array {
+	private static function backup( $settings, bool $is_network ): array {
 		return array(
-			'id'            => 'settings-backup' . $suffix,
-			'label'         => __( 'Back up settings', 'millibase' ),
-			'description'   => __( 'Take a backup of the current plugin settings. The backup expires after 12 hours.', 'millibase' ),
+			'id'            => ( $is_network ? 'network-' : '' ) . 'settings-backup',
+			'label'         => $is_network
+				? __( 'Back Up Network Settings', 'millibase' )
+				: __( 'Back Up Settings', 'millibase' ),
+			'description'   => $is_network
+				? __( 'Take a backup of the current network settings (site settings are not included). The backup expires after 12 hours.', 'millibase' )
+				: __( 'Take a backup of the current site settings. The backup expires after 12 hours.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
 				$settings->backup( $module );
@@ -177,15 +190,19 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings The Settings to restore into.
-	 * @param string   $suffix   Appended to the ability id when network-scoped.
+	 * @param Settings $settings   The Settings to restore into.
+	 * @param bool     $is_network Whether the bound Settings is network-scoped.
 	 * @return array<string, mixed>
 	 */
-	private static function restore( $settings, string $suffix ): array {
+	private static function restore( $settings, bool $is_network ): array {
 		return array(
-			'id'            => 'settings-restore' . $suffix,
-			'label'         => __( 'Restore settings from backup', 'millibase' ),
-			'description'   => __( 'Restore the most recent settings backup. Returns success: false when no backup is available.', 'millibase' ),
+			'id'            => ( $is_network ? 'network-' : '' ) . 'settings-restore',
+			'label'         => $is_network
+				? __( 'Restore Network Settings from Backup', 'millibase' )
+				: __( 'Restore Settings from Backup', 'millibase' ),
+			'description'   => $is_network
+				? __( 'Restore the most recent network settings backup (site settings are not affected). Returns success: false when no backup is available.', 'millibase' )
+				: __( 'Restore the most recent site settings backup. Returns success: false when no backup is available.', 'millibase' ),
 			'callback'      => static function () use ( $settings ): array {
 				return array( 'success' => $settings->restore_backup() );
 			},
