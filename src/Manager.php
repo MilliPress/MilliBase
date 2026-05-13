@@ -139,6 +139,14 @@ final class Manager {
 	private static array $cli_groups = array();
 
 	/**
+	 * Auto-merge registry for abilities groups, keyed by host slug.
+	 *
+	 * @since 2.5.0
+	 * @var array<string, SettingsGroup>
+	 */
+	private static array $abilities_groups = array();
+
+	/**
 	 * Create a new Manager instance.
 	 *
 	 * The config closure is called on `init` (or immediately if `init` has
@@ -223,8 +231,7 @@ final class Manager {
 		$this->rest_controller = new RestController( $this->config, $settings );
 		$this->rest_controller->register_hooks();
 
-		$this->abilities_controller = new AbilitiesController( $this->config, $settings );
-		$this->abilities_controller->register_hooks();
+		$this->register_abilities( $settings );
 	}
 
 	/**
@@ -297,6 +304,36 @@ final class Manager {
 
 		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();
+	}
+
+	/**
+	 * Register the abilities controller for this Manager, with auto-merge.
+	 *
+	 * Mirrors `register_cli()`: when another Manager has already registered
+	 * abilities under this host slug, this Manager's Settings is appended
+	 * to the existing `SettingsGroup` instead of overwriting. Framework
+	 * abilities (`settings-export` etc.) are registered once against the
+	 * Group, so they expose the merged view across every backing Settings
+	 * — same mental model as `wp <slug> config`.
+	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param Settings $settings This Manager's Settings instance.
+	 * @return void
+	 */
+	private function register_abilities( $settings ): void {
+		if ( isset( self::$abilities_groups[ $this->slug ] ) ) {
+			self::$abilities_groups[ $this->slug ]->add( $settings );
+			$group = self::$abilities_groups[ $this->slug ];
+		} else {
+			$group                                 = new SettingsGroup( $settings );
+			self::$abilities_groups[ $this->slug ] = $group;
+		}
+
+		$this->abilities_controller = new AbilitiesController( $this->config, $group );
+		$this->abilities_controller->register_hooks();
 	}
 
 	/**

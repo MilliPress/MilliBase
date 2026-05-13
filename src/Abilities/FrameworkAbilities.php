@@ -9,6 +9,7 @@
 namespace MilliBase\Abilities;
 
 use MilliBase\Settings;
+use MilliBase\Settings\Group;
 
 /**
  * Builds ability config entries that wrap the built-in Settings
@@ -25,7 +26,7 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings Cross-prefix tolerant; bound into closures.
+	 * @param Settings|Group $settings Cross-prefix tolerant; bound into closures.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
@@ -59,8 +60,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings   The Settings instance to read from.
-	 * @param string   $capability The admin capability required to invoke.
+	 * @param Settings|Group $settings The Settings (or Group) to read from.
+	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
 	private static function export( $settings, string $capability ): array {
@@ -103,8 +104,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings   The Settings instance to mutate.
-	 * @param string   $capability The admin capability required to invoke.
+	 * @param Settings|Group $settings The Settings (or Group) to mutate.
+	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
 	private static function reset( $settings, string $capability ): array {
@@ -146,8 +147,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings   The Settings instance to back up.
-	 * @param string   $capability The admin capability required to invoke.
+	 * @param Settings|Group $settings The Settings (or Group) to back up.
+	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
 	private static function backup( $settings, string $capability ): array {
@@ -189,8 +190,8 @@ final class FrameworkAbilities {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param Settings $settings   The Settings instance to restore into.
-	 * @param string   $capability The admin capability required to invoke.
+	 * @param Settings|Group $settings The Settings (or Group) to restore into.
+	 * @param string         $capability The admin capability required to invoke.
 	 * @return array<string, mixed>
 	 */
 	private static function restore( $settings, string $capability ): array {
