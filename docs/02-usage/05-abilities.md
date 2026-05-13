@@ -187,9 +187,9 @@ On multisite, set `'capability' => 'manage_network_options'` at the plugin level
 > [!WARNING]
 > **`settings-export` is a credential disclosure surface.** Opting it into REST (`meta.show_in_rest => true`) plus a call with `include_encrypted=true` returns every encrypted secret in plain text to any authenticated user holding `manage_options` — including anyone the admin has issued an Application Password to. If your plugin stores API keys, OAuth tokens, or any other credential in encrypted settings, leave `show_in_rest` off and run the ability from `wp ability` or PHP only. If you must expose `settings-export` over REST, override it with a host-defined version that rejects `include_encrypted` or audits the call.
 
-### Multi-Manager auto-merge
+### Multi-Manager network scope
 
-When two `Manager` instances share a primary slug — the standard site + network split — they merge their `Settings` into one `Settings\Group` for the abilities surface, same as `wp <slug> config`. The framework abilities register once against the Group; `settings-export` returns the merged modules from every backing `Settings`, and `settings-reset`/`settings-backup` fan out via the Group's per-module routing.
+When two `Manager` instances share a primary slug — the standard site + network split — each Manager registers its own framework abilities scoped to its own `Settings`. The network Manager's ability ids are suffixed with `-network`, so site and network surfaces never collide.
 
 ```php
 // Per-site Manager
@@ -206,7 +206,16 @@ new \MilliBase\Manager( 'millicache', static fn () => [
 ] );
 ```
 
-A plugin with a single Manager doesn't need to do anything special — the primary slug is the merge key and the Group has one member.
+Result:
+
+| Caller | Visible abilities |
+|---|---|
+| Site admin (`manage_options`) | `millicache/settings-export`, `-reset`, `-backup`, `-restore` |
+| Network admin (`manage_network_options`) | The four above, plus `millicache/settings-export-network`, `-reset-network`, `-backup-network`, `-restore-network` |
+
+The cap-to-data mapping is structural — set once at registration, never resolved at call time. AI agents see two distinct tools when both Managers are registered; a plugin with a single Manager (either per-site or network-only) sees one set, with or without the `-network` suffix matching that Manager's scope.
+
+A plugin with a single Manager doesn't need to do anything special — only one set of framework abilities registers.
 
 ## Errors
 

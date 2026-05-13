@@ -16,23 +16,22 @@ wp <slug> config <subcommand> [options]
 
 The `'cli'` key on the Manager config controls registration:
 
-| Value                 | Behaviour                                      |
-|-----------------------|------------------------------------------------|
-| `true` (or omitted)   | Register under `wp <slug> config <subcommand>` |
-| `false`               | Skip CLI registration entirely                 |
-| `['slug' => 'other']` | Register under `wp other config <subcommand>`  |
+| Value               | Behaviour                                      |
+|---------------------|------------------------------------------------|
+| `true` (or omitted) | Register under `wp <slug> config <subcommand>` |
+| `false`             | Skip CLI registration entirely                 |
 
 ```php
 $manager = new \MilliBase\Manager(
     slug: 'my-plugin',
     config: fn() => [
         'tabs' => [ /* ... */ ],
-        'cli'  => [ 'slug' => 'mp' ],   // wp mp config get / set / ...
+        'cli'  => false,   // disable WP-CLI registration for this Manager
     ],
 );
 ```
 
-The explicit `cli.slug` form exists for two reasons: shorter operator-facing command names, and **auto-merge** across multiple Managers (see [below](#auto-merge)).
+When two Managers share the same plugin slug — the standard site + network split — they auto-merge into one command tree (see [Network scope](#network-scope) below).
 
 ## Available Commands
 
@@ -217,9 +216,22 @@ wp myplugin config export --file=settings.json
 wp myplugin config import --file=settings.json
 ```
 
-## Auto-Merge
+## Network scope
 
-When two Managers in the same plugin resolve to the **same CLI command name** — either by sharing a default slug or by setting an explicit `cli.slug` — MilliBase auto-merges them into a single command tree. Operators see one `wp <slug> config` command that transparently routes by module across both backends.
+Every subcommand accepts `[--network]`. The flag picks which Settings instance the call operates on when a plugin runs both per-site and network Managers under the same primary slug:
+
+```bash
+# Default: operate on the per-site Settings.
+wp myplugin config get rules
+
+# With --network: operate on the network-scoped Settings.
+wp myplugin config get rules --network
+
+# Same for every other subcommand.
+wp myplugin config set rules.exclude /admin --network
+wp myplugin config reset --network --yes
+wp myplugin config export --network --file=network.json
+```
 
 The typical case is a plugin running per-site Settings and network-wide Settings side-by-side (see [Network Settings](./06-network-settings.md#the-two-manager-pattern)):
 
@@ -227,50 +239,37 @@ The typical case is a plugin running per-site Settings and network-wide Settings
 new \MilliBase\Manager(
     slug: 'my-plugin',
     config: fn() => [
-        // network: false (default) — wp_options
-        'tabs' => [ /* cache, rules */ ],   // modules: 'cache', 'rules'
+        'tabs' => [ /* … */ ],         // per-site Settings — modules: 'cache', 'rules'
     ],
 );
 
 new \MilliBase\Manager(
-    slug: 'my-plugin-network',
+    slug: 'my-plugin',                  // ← same primary slug
     config: fn() => [
-        'network' => true,                    // wp_sitemeta
-        'tabs'    => [ /* storage, auth */ ], // modules: 'storage', 'auth'
-        'cli'     => [ 'slug' => 'my-plugin' ],
+        'network' => true,              // ← network-scoped storage
+        'tabs'    => [ /* … */ ],       // network Settings — modules: 'storage', 'auth'
     ],
 );
 ```
 
-Operator UX:
+Both Managers register `wp my-plugin config …` against the same command tree; each subcommand picks the right Settings via `--network` at call time. There's no shared-module routing magic — the operator picks the scope explicitly, so `--module=rules` on a plugin where both Settings declare a `rules` module reads or writes exactly the scope the flag selects.
 
-```bash
-wp my-plugin config get cache.ttl       # routes to the per-site Settings
-wp my-plugin config get storage.host    # routes to the network Settings
-wp my-plugin config get                 # merged tree from both
-wp my-plugin config set storage.host redis.internal
-wp my-plugin config reset --module=auth
-```
+### Resolution rules
 
-### Routing Semantics
+The flag's behaviour depends on what the plugin actually registered:
 
-Each Settings instance declares its modules via the schema defaults. The merged command (technically a `MilliBase\Settings\Group` wrapping both Settings) dispatches based on the leading module of a dot-notation key:
+| Plugin config | Default (no `--network`) | `--network` |
+|---|---|---|
+| Per-site only Manager | Per-site Settings | **Error** — no network Settings registered |
+| Network-only Manager | Network Settings (fall-through) | Network Settings (redundant but works) |
+| Both (site + network) | Per-site Settings | Network Settings |
+| Single-site WordPress | Per-site Settings | **Error** — same path as "Per-site only" |
 
-| Subcommand | Behaviour |
-|---|---|
-| `get <module>.<key>` | Routes to the Settings that owns `<module>`. Falls back to the primary (first-registered) Settings if no owner. |
-| `get` (no key) | Merges full trees from every wrapped Settings. |
-| `set <module>.<key> <value>` | Routes to the owning Settings. Returns nothing-to-set if no Settings owns the module. |
-| `reset` (no module) | Resets every wrapped Settings. |
-| `reset --module=<module>` | Routes to the owner only. |
-| `backup` / `restore` | Fan-out across every wrapped Settings; restore succeeds if any wrapped Settings restored successfully. |
-| `export` / `import` | `export` merges across all; `import` buckets each top-level module by its owner. Unknown modules are silently skipped. |
+The `--network` flag is always declared in every subcommand's synopsis, regardless of what the plugin registered. Operators see it in `--help` and learn one pattern across every MilliBase-based plugin.
 
-The first Manager to register the command wins the role of "primary" — subsequent Managers append into the existing group. Order of Manager construction is the order of `add()` calls.
+### Capability boundary
 
-### When **Not** To Auto-Merge
-
-Each Settings backend has its own capability boundary (typically `manage_options` per-site vs `manage_network_options` network-wide), but a single WP-CLI command runs with the invoking user's capabilities. If you have differential trust requirements between the two backends, **don't share a `cli.slug`** — keep them as `wp my-plugin config` and `wp my-plugin-network config` so the command names reflect the capability boundary.
+WP-CLI runs as the invoking user (set via `--user=<id>`), but the regular `wp <slug> config …` commands are operator-level — they don't enforce caps the way REST/abilities surfaces do. If you have differential trust requirements between site and network operators, the CLI is not your gate; rely on filesystem/SSH access control instead.
 
 ## Next Steps
 

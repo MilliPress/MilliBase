@@ -67,7 +67,7 @@ $manager = new \MilliBase\Manager(
 
         // ─── Advanced ──────────────────────────────────────────
         'build_url' => 'https://...',              // Optional: explicit URL to the build/ directory
-        'cli'       => true,                       // WP-CLI registration: true | false | ['slug' => '...']
+        'cli'       => true,                       // WP-CLI registration: true | false
     ],
     settings: $external_settings,  // Optional: pre-built Settings instance
 );
@@ -195,15 +195,14 @@ See [Migrations](./05-migrations.md) for the full contract (identity, ordering, 
 
 Controls WP-CLI registration for this Manager:
 
-| Value                 | Behaviour                                      |
-|-----------------------|------------------------------------------------|
-| `true` (or omitted)   | Register under `wp <slug> config <subcommand>` |
-| `false`               | Skip CLI registration entirely                 |
-| `['slug' => 'other']` | Register under `wp other config <subcommand>`  |
+| Value               | Behaviour                                      |
+|---------------------|------------------------------------------------|
+| `true` (or omitted) | Register under `wp <slug> config <subcommand>` |
+| `false`             | Skip CLI registration entirely                 |
 
-When two Managers resolve to the same CLI command name (default slug, or the same explicit `cli.slug`), the second Manager's Settings is **auto-merged** into the first Manager's CLI tree via a `Settings\Group`. Operators see a single `wp <slug> config` command that transparently routes by module across both backends.
+When two Managers share the same primary slug (typically a site + network split), they coexist under one `wp <slug> config` command tree. Each subcommand accepts `[--network]`; operators pick the scope per call.
 
-See [WP-CLI Commands](./04-wp-cli.md) for the routing semantics and a worked example.
+See [WP-CLI Commands](./04-wp-cli.md) for the full command reference and the `--network` flag semantics.
 
 ### Build URL Resolution
 
