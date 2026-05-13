@@ -154,8 +154,8 @@ final class FrameworkAbilities {
 				? __( 'Back Up Network Settings', 'millibase' )
 				: __( 'Back Up Settings', 'millibase' ),
 			'description'   => $is_network
-				? __( 'Take a backup of the current network settings (site settings are not included). The backup expires after 12 hours.', 'millibase' )
-				: __( 'Take a backup of the current site settings. The backup expires after 12 hours.', 'millibase' ),
+				? __( 'Take a backup of the current network settings (site settings are not included). The backup expires after 3 days.', 'millibase' )
+				: __( 'Take a backup of the current site settings. The backup expires after 3 days.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
 				$settings->backup( $module );

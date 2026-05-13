@@ -283,7 +283,7 @@ it('creates a backup', function () {
     $backup([], []);
 
     expect(WP_CLI::$calls['success'][0][0])->toContain('Backup created');
-    expect(WP_CLI::$calls['success'][0][0])->toContain('12 hours');
+    expect(WP_CLI::$calls['success'][0][0])->toContain('3 days');
 });
 
 // ─── restore ────────────────────────────────────────────────────────

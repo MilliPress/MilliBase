@@ -13,7 +13,7 @@ use WP_CLI;
 /**
  * Create a backup of current settings.
  *
- * Backup expires after 12 hours.
+ * Backup expires after 3 days.
  *
  * ## OPTIONS
  *
@@ -41,6 +41,6 @@ final class Backup extends Command {
 	public function __invoke( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$settings = $this->resolve( $assoc_args );
 		$settings->backup();
-		WP_CLI::success( 'Backup created. Expires in 12 hours.' );
+		WP_CLI::success( 'Backup created. Expires in 3 days.' );
 	}
 }

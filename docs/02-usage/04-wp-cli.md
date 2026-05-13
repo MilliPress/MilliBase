@@ -169,7 +169,7 @@ wp myplugin config reset --yes
 ## Backup and Restore
 
 ```bash
-# Create a backup (expires in 12 hours).
+# Create a backup (expires in 3 days).
 wp myplugin config backup
 
 # Restore from the most recent backup.

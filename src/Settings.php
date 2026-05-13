@@ -823,7 +823,7 @@ final class Settings {
 	/**
 	 * Back up current settings to a transient.
 	 *
-	 * The backup expires after 12 hours.
+	 * The backup expires after 3 days.
 	 *
 	 * @since 1.0.0
 	 *
@@ -840,9 +840,9 @@ final class Settings {
 
 		$key = $this->option_name . '_backup';
 		if ( $this->network ) {
-			set_site_transient( $key, $current, 12 * HOUR_IN_SECONDS );
+			set_site_transient( $key, $current, 3 * DAY_IN_SECONDS );
 		} else {
-			set_transient( $key, $current, 12 * HOUR_IN_SECONDS );
+			set_transient( $key, $current, 3 * DAY_IN_SECONDS );
 		}
 	}
 

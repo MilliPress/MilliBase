@@ -107,7 +107,7 @@ $settings->import($data, false);
 ## Backup and Restore
 
 ```php
-// Create a backup (stored as a transient, expires in 12 hours).
+// Create a backup (stored as a transient, expires in 3 days).
 $settings->backup();
 
 // Check if a backup exists.
