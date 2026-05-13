@@ -226,6 +226,17 @@ final class Settings {
 	}
 
 	/**
+	 * Whether this Settings instance reads/writes via network options.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return bool
+	 */
+	public function is_network(): bool {
+		return $this->network;
+	}
+
+	/**
 	 * Check whether a field key denotes an encrypted field.
 	 *
 	 * @since 1.1.0

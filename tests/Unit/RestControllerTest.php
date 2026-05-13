@@ -42,6 +42,26 @@ if (! function_exists('apply_filters')) {
     }
 }
 
+if (! function_exists('register_rest_route')) {
+    function register_rest_route(string $namespace, string $route, array $args = []): bool
+    {
+        $GLOBALS['__milli_test_rest_routes'][] = [
+            'namespace' => $namespace,
+            'route'     => $route,
+            'args'      => $args,
+        ];
+        return true;
+    }
+}
+
+if (! class_exists('WP_REST_Server')) {
+    class WP_REST_Server
+    {
+        public const READABLE  = 'GET';
+        public const CREATABLE = 'POST';
+    }
+}
+
 if (! function_exists('get_transient')) {
     function get_transient(string $key)
     {
@@ -204,4 +224,49 @@ it('returns error response when callback throws', function () {
     expect($response->get_status())->toBe(500);
     expect($response->get_data()['success'])->toBeFalse();
     expect($response->get_data()['message'])->toBe('Connection failed');
+});
+
+it('registers REST routes without a prefix in default (per-site) mode', function () {
+    $GLOBALS['__milli_test_rest_routes'] = [];
+    make_controller(['rest_namespace' => 'millicache/v1'])->register_routes();
+
+    $paths = array_column($GLOBALS['__milli_test_rest_routes'], 'route');
+    expect($paths)->toContain('/settings');
+    expect($paths)->toContain('/settings/actions');
+    expect($paths)->toContain('/status');
+});
+
+it('prefixes REST routes with /network when the Manager runs in network mode', function () {
+    $GLOBALS['__milli_test_rest_routes'] = [];
+    make_controller([
+        'rest_namespace' => 'millicache/v1',
+        'network'        => true,
+    ])->register_routes();
+
+    $paths = array_column($GLOBALS['__milli_test_rest_routes'], 'route');
+    expect($paths)->toContain('/network/settings');
+    expect($paths)->toContain('/network/settings/actions');
+    expect($paths)->toContain('/network/status');
+
+    // Same namespace is reused — only the route path differs from the site Manager.
+    $namespaces = array_unique(array_column($GLOBALS['__milli_test_rest_routes'], 'namespace'));
+    expect($namespaces)->toBe(['millicache/v1']);
+});
+
+it('applies the /network prefix to custom action routes too', function () {
+    $GLOBALS['__milli_test_rest_routes'] = [];
+    make_controller([
+        'rest_namespace' => 'millicache/v1',
+        'network'        => true,
+        'actions'        => [
+            [
+                'name'     => 'purge',
+                'endpoint' => '/purge',
+                'callback' => static fn () => true,
+            ],
+        ],
+    ])->register_routes();
+
+    $paths = array_column($GLOBALS['__milli_test_rest_routes'], 'route');
+    expect($paths)->toContain('/network/purge');
 });

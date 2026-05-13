@@ -79,6 +79,7 @@ final class Controller {
 	 * @return void
 	 */
 	public function register_routes(): void {
+		$prefix     = ! empty( $this->config['network'] ) ? '/network' : '';
 		$namespace  = $this->config_string( 'rest_namespace', 'millibase/v1' );
 		$capability = $this->config_string( 'capability', 'manage_options' );
 
@@ -89,7 +90,7 @@ final class Controller {
 		// Settings value: read full tree, write full tree.
 		register_rest_route(
 			$namespace,
-			'/settings',
+			$prefix . '/settings',
 			array(
 				array(
 					'methods'             => \WP_REST_Server::READABLE,
@@ -107,7 +108,7 @@ final class Controller {
 		// Built-in settings actions (reset, restore).
 		register_rest_route(
 			$namespace,
-			'/settings/actions',
+			$prefix . '/settings/actions',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'perform_settings_action' ),
@@ -119,7 +120,7 @@ final class Controller {
 		// optionally enriched by status.callback and/or status.data.
 		register_rest_route(
 			$namespace,
-			'/status',
+			$prefix . '/status',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'get_status' ),
@@ -139,7 +140,7 @@ final class Controller {
 
 			register_rest_route(
 				$namespace,
-				'/' . ltrim( is_string( $action['endpoint'] ) ? $action['endpoint'] : '', '/' ),
+				$prefix . '/' . ltrim( is_string( $action['endpoint'] ) ? $action['endpoint'] : '', '/' ),
 				array(
 					'methods'             => $action['method'] ?? \WP_REST_Server::CREATABLE,
 					'callback'            => $callback,

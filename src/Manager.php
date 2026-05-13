@@ -147,6 +147,14 @@ final class Manager {
 	private static array $abilities_groups = array();
 
 	/**
+	 * Registered Manager fingerprints — `<slug>:<network>` — for collision detection.
+	 *
+	 * @since 2.5.0
+	 * @var array<string, true>
+	 */
+	private static array $registered_fingerprints = array();
+
+	/**
 	 * Create a new Manager instance.
 	 *
 	 * The config closure is called on `init` (or immediately if `init` has
@@ -218,6 +226,8 @@ final class Manager {
 		if ( ! function_exists( 'add_action' ) || null === $schema || null === $settings ) {
 			return;
 		}
+
+		$this->guard_against_slug_collision();
 
 		$this->register_settings();
 
@@ -304,6 +314,39 @@ final class Manager {
 
 		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();
+	}
+
+	/**
+	 * Warn when a second Manager registers under the same slug + network combo.
+	 *
+	 * The intended multi-Manager pattern is one per-site + one network Manager
+	 * sharing a slug. Two per-site Managers (or two network Managers) sharing
+	 * a slug collide on `option_name`, `rest_namespace`, and AdminPage menu
+	 * slug — the host plugin almost certainly didn't mean that.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return void
+	 */
+	private function guard_against_slug_collision(): void {
+		$fingerprint = $this->slug . ':' . ( ! empty( $this->config['network'] ) ? '1' : '0' );
+
+		if ( isset( self::$registered_fingerprints[ $fingerprint ] ) && function_exists( '_doing_it_wrong' ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				esc_html(
+					sprintf(
+						/* translators: 1: slug, 2: network-mode value (true/false). */
+						__( 'A MilliBase Manager is already registered for slug "%1$s" with network=%2$s. Two Managers sharing a primary slug must differ in `network` mode (one per-site, one network). Use distinct slugs otherwise.', 'millibase' ),
+						$this->slug,
+						! empty( $this->config['network'] ) ? 'true' : 'false'
+					)
+				),
+				'2.5.0'
+			);
+		}
+
+		self::$registered_fingerprints[ $fingerprint ] = true;
 	}
 
 	/**
@@ -467,7 +510,7 @@ final class Manager {
 		}
 
 		$config = function_exists( 'apply_filters' )
-			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ) )
+			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ), $this->settings->is_network() )
 			: array( 'tabs' => array() );
 
 		$defaults = ( new Schema( $config ) )->get_defaults();
@@ -522,9 +565,14 @@ final class Manager {
 			/**
 			 * Filters the settings configuration before Schema initialization.
 			 *
-			 * @param array<string, mixed> $config The full settings configuration array.
+			 * @param array<string, mixed> $config     The full settings configuration array.
+			 * @param bool                 $is_network Whether this MilliBase Manager runs in network mode.
 			 */
-			$this->config = apply_filters( "{$this->slug}_settings_schema", $this->config );
+			$this->config = apply_filters(
+				"{$this->slug}_settings_schema",
+				$this->config,
+				! empty( $this->config['network'] )
+			);
 		}
 
 		return new Schema( $this->config );

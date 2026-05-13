@@ -147,12 +147,24 @@ Non-alphanumeric characters in the resolved identifier are replaced with `_`. Th
 
 ### `network`
 
-Setting `'network' => true` on a Manager flips two things at once:
+Setting `'network' => true` on a Manager flips a few things at once:
 
 - **Storage backend** — Settings reads and writes route through `get_site_option` / `update_site_option`, so the data lands in `wp_sitemeta` instead of `wp_options`. Backups use per-network site transients; the sanitize callback hooks `pre_update_site_option_<name>` at priority `-100`.
 - **Admin menu placement** — On multisite the page is registered via `network_admin_menu` and appears under Network Admin. On single-site the flag is silently ignored for the menu placement, so a stray `'network' => true` on a non-multisite install doesn't hide the page.
+- **REST route prefix** — All routes registered by this Manager are prefixed with `/network` inside the shared namespace. A network Manager exposes `/<rest_namespace>/network/settings`, `/<rest_namespace>/network/status`, etc. The site Manager (same plugin, same `rest_namespace`) keeps the unprefixed paths. This lets two Managers coexist on a shared namespace without overwriting each other's route handlers.
+- **Schema filter context** — The `{slug}_settings_schema` filter receives a second argument `$is_network` (bool) so hooks can branch on which Manager fired:
+  ```php
+  add_filter( 'my-plugin_settings_schema', function ( $config, $is_network ) {
+      if ( $is_network ) {
+          $config['tabs'][] = [ /* network-only tab */ ];
+      }
+      return $config;
+  }, 10, 2 );
+  ```
 
-A typical pattern is to run two Managers side-by-side: one with `'network' => false` for per-site settings (e.g. cache rules), one with `'network' => true` for network-wide settings (e.g. shared storage credentials). Both can share a single WP-CLI tree via `'cli' => ['slug' => 'shared-name']` — see [WP-CLI](./04-wp-cli.md).
+A typical pattern is to run two Managers side-by-side under the same plugin slug — one with `'network' => false` for per-site settings (e.g. cache rules), one with `'network' => true` for network-wide settings (e.g. shared storage credentials). They share `option_name`-key strings safely (different DB tables) and share the REST namespace via the `/network` route prefix. CLI commands and abilities auto-merge across them.
+
+MilliBase emits a `_doing_it_wrong()` notice when two Managers register the same slug + network combination (i.e. two per-site Managers or two network Managers under one slug) — that case collides on the option key, the REST routes, and the admin menu slug. Either use distinct slugs or distinguish them by `network` mode.
 
 ### `migrations`
 

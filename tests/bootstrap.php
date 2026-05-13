@@ -242,6 +242,27 @@ if (! function_exists('is_multisite')) {
     }
 }
 
+if (! function_exists('_doing_it_wrong')) {
+    function _doing_it_wrong(string $function, string $message, string $version): void
+    {
+        $GLOBALS['__milli_test_doing_it_wrong'][] = compact('function', 'message', 'version');
+    }
+}
+
+if (! function_exists('esc_html')) {
+    function esc_html(string $text): string
+    {
+        return $text;
+    }
+}
+
+if (! function_exists('esc_html__')) {
+    function esc_html__(string $text, string $domain = 'default'): string
+    {
+        return $text;
+    }
+}
+
 if (! function_exists('__')) {
     function __(string $text, string $domain = 'default'): string
     {
