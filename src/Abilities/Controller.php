@@ -92,7 +92,8 @@ final class Controller {
 			return;
 		}
 
-		$category = is_array( $this->config['abilities_category'] ?? null ) ? $this->config['abilities_category'] : array();
+		$abilities = is_array( $this->config['abilities'] ?? null ) ? $this->config['abilities'] : array();
+		$category  = is_array( $abilities['category'] ?? null ) ? $abilities['category'] : array();
 
 		$override_label = is_string( $category['label'] ?? null ) ? $category['label'] : '';
 		$label          = '' !== $override_label
@@ -134,20 +135,21 @@ final class Controller {
 			return;
 		}
 
-		$abilities = is_array( $this->config['abilities'] ?? null ) ? $this->config['abilities'] : array();
+		$config  = is_array( $this->config['abilities'] ?? null ) ? $this->config['abilities'] : array();
+		$entries = is_array( $config['extend'] ?? null ) ? array_values( $config['extend'] ) : array();
 
 		// Append, not prepend — host entries register first, framework duplicates skip via wp_has_ability().
-		if ( true === ( $this->config['expose_settings_abilities'] ?? false ) ) {
-			$abilities = array_merge( $abilities, FrameworkAbilities::settings( $this->settings ) );
+		if ( self::should_expose_preset( $config['expose'] ?? false, 'settings' ) ) {
+			$entries = array_merge( $entries, FrameworkAbilities::settings( $this->settings ) );
 		}
 
-		if ( array() === $abilities ) {
+		if ( array() === $entries ) {
 			return;
 		}
 
 		$default_capability = $this->config_string( 'capability', 'manage_options' );
 
-		foreach ( $abilities as $ability ) {
+		foreach ( $entries as $ability ) {
 			if ( ! is_array( $ability ) ) {
 				continue;
 			}
@@ -220,6 +222,28 @@ final class Controller {
 
 			wp_register_ability( $name, $args );
 		}
+	}
+
+	/**
+	 * Whether the given framework preset should be exposed.
+	 *
+	 * `true` exposes every built-in preset (including ones added in future
+	 * MilliBase releases). An array of names exposes only those listed. Any
+	 * other value (false, null, omitted) exposes nothing.
+	 *
+	 * @noinspection PhpMissingParamTypeInspection
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param mixed  $expose The `abilities.expose` config value.
+	 * @param string $preset The preset name to test for.
+	 * @return bool
+	 */
+	private static function should_expose_preset( $expose, string $preset ): bool {
+		if ( true === $expose ) {
+			return true;
+		}
+		return is_array( $expose ) && in_array( $preset, $expose, true );
 	}
 
 	/**

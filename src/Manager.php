@@ -352,12 +352,10 @@ final class Manager {
 	/**
 	 * Register the abilities controller for this Manager, with auto-merge.
 	 *
-	 * Mirrors `register_cli()`: when another Manager has already registered
-	 * abilities under this host slug, this Manager's Settings is appended
-	 * to the existing `SettingsGroup` instead of overwriting. Framework
-	 * abilities (`settings-export` etc.) are registered once against the
-	 * Group, so they expose the merged view across every backing Settings
-	 * — same mental model as `wp <slug> config`.
+	 * The Group registry is keyed by the Manager's primary slug. Two Managers
+	 * that share a slug — typically a site+network split — merge their
+	 * Settings into one Group so framework abilities operate across both
+	 * backings.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *

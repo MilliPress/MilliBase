@@ -87,12 +87,14 @@ it('always passes a non-empty description to the category registration', functio
     expect($description)->toContain('My Plugin');
 });
 
-it('honours the abilities_category override for label and description', function () {
+it('honours the abilities.category override for label and description', function () {
     $config = [
-        'menu_title'         => 'My Plugin',
-        'abilities_category' => [
-            'label'       => 'Custom Label',
-            'description' => 'Custom description for AI agents.',
+        'menu_title' => 'My Plugin',
+        'abilities'  => [
+            'category' => [
+                'label'       => 'Custom Label',
+                'description' => 'Custom description for AI agents.',
+            ],
         ],
     ];
 
@@ -105,8 +107,10 @@ it('honours the abilities_category override for label and description', function
 
 it('falls back per-field when only one of label/description is overridden', function () {
     $config = [
-        'menu_title'         => 'My Plugin',
-        'abilities_category' => ['description' => 'Only description overridden.'],
+        'menu_title' => 'My Plugin',
+        'abilities'  => [
+            'category' => ['description' => 'Only description overridden.'],
+        ],
     ];
 
     make_abilities_controller($config)->register_category();
@@ -160,10 +164,10 @@ it('treats a non-array abilities config as empty', function () {
 
 it('skips non-array entries inside the abilities list', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             'not-an-array',
             valid_ability(),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -173,9 +177,9 @@ it('skips non-array entries inside the abilities list', function () {
 
 it('skips entries without id', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['id' => null]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -185,9 +189,9 @@ it('skips entries without id', function () {
 
 it('skips entries with an empty label', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['label' => '']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -197,9 +201,9 @@ it('skips entries with an empty label', function () {
 
 it('skips entries with an empty description', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['description' => '']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -209,9 +213,9 @@ it('skips entries with an empty description', function () {
 
 it('skips entries without a callable callback', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['callback' => 'not_a_function']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -221,13 +225,13 @@ it('skips entries without a callable callback', function () {
 
 it('skips ability entries whose resolved name fails the abilities-api regex', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['id' => 'Cache_Purge']),               // uppercase + underscore
             valid_ability(['id' => 'cache.stats']),               // dot
             valid_ability(['id' => '-leading']),                  // leading dash
             valid_ability(['id' => 'foo/bar/baz']),               // multi-slash (more than two segments)
             valid_ability(['id' => 'other-plugin/Bad_Id']),       // explicit namespace, invalid second segment
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -238,7 +242,7 @@ it('skips ability entries whose resolved name fails the abilities-api regex', fu
 it('skips ability registration entirely when the slug fails the abilities-api regex', function () {
     $config = [
         'slug'      => 'my_plugin',
-        'abilities' => [valid_ability()],
+        'abilities' => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -250,7 +254,7 @@ it('skips abilities that are already registered', function () {
     $GLOBALS['millibase_abilities_names']['test/foo'] = true;
 
     $config = [
-        'abilities' => [valid_ability()],
+        'abilities' => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -267,9 +271,9 @@ it('accepts non-closure callables (e.g. global function names, method arrays)', 
     }
 
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['callback' => 'millibase_test_ability_callback']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -283,7 +287,7 @@ it('accepts non-closure callables (e.g. global function names, method arrays)', 
 
 it('does not prepend framework settings abilities by default', function () {
     $config = [
-        'abilities' => [valid_ability()],
+        'abilities' => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -292,10 +296,9 @@ it('does not prepend framework settings abilities by default', function () {
     expect($names)->toBe(['test/foo']);
 });
 
-it('appends framework settings abilities when expose_settings_abilities is true', function () {
+it('appends framework settings abilities when abilities.expose is true', function () {
     $config = [
-        'expose_settings_abilities' => true,
-        'abilities' => [valid_ability()],
+        'abilities' => ['expose' => true, 'extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -310,20 +313,47 @@ it('appends framework settings abilities when expose_settings_abilities is true'
     ]);
 });
 
+it('appends framework settings abilities when abilities.expose is an array containing "settings"', function () {
+    $config = [
+        'abilities' => ['expose' => ['settings'], 'extend' => [valid_ability()]],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    $names = array_column(abilities_calls('wp_register_ability'), 'name');
+
+    expect($names)->toBe([
+        'test/foo',
+        'test/settings-export',
+        'test/settings-reset',
+        'test/settings-backup',
+        'test/settings-restore',
+    ]);
+});
+
+it('does not append framework settings abilities when array does not include "settings"', function () {
+    $config = [
+        'abilities' => ['expose' => ['something-else'], 'extend' => [valid_ability()]],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    $names = array_column(abilities_calls('wp_register_ability'), 'name');
+
+    expect($names)->toBe(['test/foo']);
+});
+
 it('lets a host-plugin ability override a framework ability with the same id', function () {
     $custom = static function () {
         return ['custom' => true];
     };
     $config = [
-        'expose_settings_abilities' => true,
-        'abilities' => [
+        'abilities' => ['expose' => true, 'extend' => [
             valid_ability([
                 'id'          => 'settings-export',
                 'label'       => 'Custom export',
                 'description' => 'Plugin-specific export.',
                 'callback'    => $custom,
             ]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -337,14 +367,13 @@ it('lets a host-plugin ability override a framework ability with the same id', f
     expect($by_name['test/settings-export']['args']['label'])->toBe('Custom export');
 });
 
-it('does not prepend framework settings abilities for non-strict-true values', function () {
-    foreach ([1, '1', 'true', 'yes', [], false] as $non_strict_true) {
+it('does not prepend framework settings abilities for non-true / non-array values', function () {
+    foreach ([1, '1', 'true', 'yes', false] as $non_strict_true) {
         $GLOBALS['millibase_abilities_calls'] = [];
         $GLOBALS['millibase_abilities_names'] = [];
 
         $config = [
-            'expose_settings_abilities' => $non_strict_true,
-            'abilities' => [valid_ability()],
+            'abilities' => ['expose' => $non_strict_true, 'extend' => [valid_ability()]],
         ];
 
         make_abilities_controller($config)->register_abilities();
@@ -354,10 +383,9 @@ it('does not prepend framework settings abilities for non-strict-true values', f
     }
 });
 
-it('does not append framework settings abilities when expose_settings_abilities is explicitly false', function () {
+it('does not append framework settings abilities when abilities.expose is explicitly false', function () {
     $config = [
-        'expose_settings_abilities' => false,
-        'abilities' => [valid_ability()],
+        'abilities' => ['expose' => false, 'extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -369,9 +397,9 @@ it('does not append framework settings abilities when expose_settings_abilities 
 
 it('prefixes a bare id with the plugin slug', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['id' => 'cache-purge']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -385,11 +413,11 @@ it('skips ability entries whose id contains a forward slash', function () {
     // Foreign-namespace ids are rejected — they would let this Manager
     // shadow another plugin that legitimately owns the prefix.
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['id' => 'other-plugin/something']),
             valid_ability(['id' => 'cache/purge']),
             valid_ability(['id' => 'foo/bar/baz']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -399,7 +427,7 @@ it('skips ability entries whose id contains a forward slash', function () {
 
 it('uses the plugin slug as the category for each ability', function () {
     $config = [
-        'abilities' => [valid_ability()],
+        'abilities' => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -409,12 +437,12 @@ it('uses the plugin slug as the category for each ability', function () {
 
 it('passes label and description through verbatim', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability([
                 'label'       => 'Purge Cache',
                 'description' => 'Clears the cache for one or more targets.',
             ]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -428,7 +456,7 @@ it('passes label and description through verbatim', function () {
 it('inherits the plugin-default capability when the ability has none', function () {
     $config = [
         'capability' => 'manage_options',
-        'abilities'  => [valid_ability()],
+        'abilities'  => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -444,9 +472,9 @@ it('inherits the plugin-default capability when the ability has none', function 
 it('uses a per-ability capability string when provided', function () {
     $config = [
         'capability' => 'manage_options',
-        'abilities'  => [
+        'abilities'  => ['extend' => [
             valid_ability(['capability' => 'edit_posts']),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -460,13 +488,13 @@ it('uses a per-ability capability string when provided', function () {
 
 it('wraps host-plugin callbacks so a thrown exception becomes a WP_Error instead of bubbling out', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability([
                 'callback' => static function () {
                     throw new \RuntimeException('sensitive: db_password=hunter2');
                 },
             ]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -482,9 +510,9 @@ it('wraps host-plugin callbacks so a thrown exception becomes a WP_Error instead
 it('routes an explicit permission_callback through the wrapper', function () {
     $custom = fn (): bool => true;
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability(['permission_callback' => $custom]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -499,13 +527,13 @@ it('routes an explicit permission_callback through the wrapper', function () {
 
 it('wraps host-plugin permission_callback so a thrown exception becomes a WP_Error', function () {
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability([
                 'permission_callback' => static function () {
                     throw new \RuntimeException('sensitive: db_password=hunter2');
                 },
             ]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -522,13 +550,13 @@ it('wraps host-plugin permission_callback so a thrown exception becomes a WP_Err
 it('passes input_schema, output_schema, and meta through unchanged', function () {
     $meta   = ['show_in_rest' => true, 'annotations' => ['readonly' => true]];
     $config = [
-        'abilities' => [
+        'abilities' => ['extend' => [
             valid_ability([
                 'input_schema'  => ['type' => 'string'],
                 'output_schema' => ['type' => 'object'],
                 'meta'          => $meta,
             ]),
-        ],
+        ]],
     ];
 
     make_abilities_controller($config)->register_abilities();
@@ -545,7 +573,7 @@ it('defaults input_schema to the empty-object schema when the host omits it', fu
     // input-less abilities callable from CLI without forcing the host to
     // declare a schema for no reason.
     $config = [
-        'abilities' => [valid_ability()],
+        'abilities' => ['extend' => [valid_ability()]],
     ];
 
     make_abilities_controller($config)->register_abilities();

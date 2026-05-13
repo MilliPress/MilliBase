@@ -48,9 +48,11 @@ $manager = new \MilliBase\Manager(
 
         // ─── Actions ───────────────────────────────────────────
         'actions'         => [ /* ... */ ],        // Custom REST action endpoints
-        'abilities'       => [ /* ... */ ],        // WP Abilities API entries — see 05-abilities.md
-        'abilities_category' => [ /* ... */ ],     // Optional override for the auto-registered ability category
-        'expose_settings_abilities' => true,       // Opt-in: framework wraps Settings export/reset/backup/restore as abilities
+        'abilities'       => [                     // WP Abilities API config — see 05-abilities.md
+            'expose' => true,                    // Opt-in: MilliBase wraps Settings export/reset/backup/restore as abilities.
+            'category' => [ /* ... */ ],           // Optional override for the auto-registered ability category.
+            'extend'   => [ /* ... */ ],           // Plugin-defined ability entries.
+        ],
         'status' => [                            // Optional status endpoint data
             'data'     => ['version' => '1.0'],  // Static data (merged first)
             'callback' => function ($request) {  // Dynamic data (merged on top)

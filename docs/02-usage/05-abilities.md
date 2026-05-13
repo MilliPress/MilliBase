@@ -28,30 +28,42 @@ The constructor takes a slug string and a closure returning the config array. Th
 
 ```php
 'abilities' => [
-    [
-        'id'          => 'cache-purge',
-        'label'       => __( 'Purge Cache', 'my-plugin' ),
-        'description' => __( 'Clears the cache for one or more targets.', 'my-plugin' ),
-        'callback'    => [ $cache, 'purge' ],
-        'input_schema'  => [
-            'type'       => 'object',
-            'properties' => [
-                'target' => [ 'type' => 'string' ],
+    'extend' => [
+        [
+            'id'          => 'cache-purge',
+            'label'       => __( 'Purge Cache', 'my-plugin' ),
+            'description' => __( 'Clears the cache for one or more targets.', 'my-plugin' ),
+            'callback'    => [ $cache, 'purge' ],
+            'input_schema'  => [
+                'type'       => 'object',
+                'properties' => [
+                    'target' => [ 'type' => 'string' ],
+                ],
             ],
-        ],
-        'output_schema' => [
-            'type'       => 'object',
-            'properties' => [
-                'success' => [ 'type' => 'boolean' ],
-                'count'   => [ 'type' => 'integer' ],
+            'output_schema' => [
+                'type'       => 'object',
+                'properties' => [
+                    'success' => [ 'type' => 'boolean' ],
+                    'count'   => [ 'type' => 'integer' ],
+                ],
+                'required' => [ 'success' ],
             ],
-            'required' => [ 'success' ],
         ],
     ],
 ],
 ```
 
 Registers as `my-plugin/cache-purge` under the `my-plugin` ability category. Inherits `manage_options` from the plugin-default `capability` for its permission check.
+
+## `abilities` config shape
+
+`abilities` is an associative array of named configuration blocks:
+
+| Key | Type | Description |
+|---|---|---|
+| `extend` | array | Plugin-defined ability entries — see "Entry fields" below. |
+| `expose` | bool \| string[] | Optional. Opt-in to framework presets. `true` exposes every built-in preset (today: `settings`); a list of names like `['settings']` is explicit and upgrade-safe (a future MilliBase release adding a new preset doesn't silently auto-expose it). See "Built-in settings abilities" below. |
+| `category` | array | Optional override for the auto-registered ability category's `label` and `description`. See "Ability category" below. |
 
 ## Entry fields
 
@@ -112,18 +124,20 @@ Every plugin registers exactly one ability category. Slug = plugin slug. By defa
 "Operations exposed by {label}."
 ```
 
-Override either or both via the optional `'abilities_category'` config sub-array:
+Override either or both via the optional `abilities.category` block:
 
 ```php
-'abilities_category' => [
-    'label'       => __( 'My Plugin', 'my-plugin' ),
-    'description' => __( 'Cache, preload, and diagnostic operations exposed by My Plugin.', 'my-plugin' ),
+'abilities' => [
+    'category' => [
+        'label'       => __( 'My Plugin', 'my-plugin' ),
+        'description' => __( 'Cache, preload, and diagnostic operations exposed by My Plugin.', 'my-plugin' ),
+    ],
 ],
 ```
 
 ## Built-in settings abilities
 
-Set `'expose_settings_abilities' => true` to have MilliBase auto-register four abilities that wrap the built-in Settings operations:
+Set `'abilities' => [ 'expose' => true, ... ]` (or the upgrade-safe explicit form `['settings']`) to have MilliBase auto-register four abilities that wrap the built-in Settings operations:
 
 | Ability id          | Operation                                    | Annotations         |
 |---------------------|----------------------------------------------|---------------------|
@@ -132,20 +146,22 @@ Set `'expose_settings_abilities' => true` to have MilliBase auto-register four a
 | `settings-backup`   | Take a 12-hour backup of current settings    | `idempotent`        |
 | `settings-restore`  | Restore from the most recent backup          | `destructive`       |
 
-These abilities are appended to the `'abilities'` array. The registration loop runs in order, so a host-plugin entry registers first; the framework duplicate that follows is then skipped via `wp_has_ability()`. Net effect: a host plugin can override any framework ability by declaring its own entry with the same id:
+These abilities are appended to `abilities.extend`. The registration loop runs in order, so a host-plugin entry registers first; the framework duplicate that follows is then skipped via `wp_has_ability()`. Net effect: a host plugin can override any framework ability by declaring its own entry with the same id:
 
 ```php
 'abilities' => [
-    // Custom export with project-specific behaviour — wins over the framework version.
-    [
-        'id'          => 'settings-export',
-        'label'       => __( 'Export with audit log', 'my-plugin' ),
-        'description' => __( 'Exports settings AND records the export in the audit log.', 'my-plugin' ),
-        'callback'    => [ $exporter, 'export_with_audit' ],
-        'output_schema' => [ /* ... */ ],
+    'expose' => true,
+    'extend'    => [
+        // Custom export with project-specific behaviour — wins over the framework version.
+        [
+            'id'            => 'settings-export',
+            'label'         => __( 'Export with audit log', 'my-plugin' ),
+            'description'   => __( 'Exports settings AND records the export in the audit log.', 'my-plugin' ),
+            'callback'      => [ $exporter, 'export_with_audit' ],
+            'output_schema' => [ /* ... */ ],
+        ],
     ],
 ],
-'expose_settings_abilities' => true,
 ```
 
 `meta.show_in_rest` is intentionally left unset on the framework abilities — they register in PHP and CLI, but plugin authors must opt in per-ability to expose them under `/wp-abilities/v1/`.
@@ -153,15 +169,17 @@ These abilities are appended to the `'abilities'` array. The registration loop r
 The framework abilities inherit the plugin's top-level `'capability'` — same cap used by the admin page and REST endpoints. The plugin author owns this choice: if `'capability' => 'edit_posts'`, editors can call `settings-reset` too (just as they can press "Reset to defaults" in the admin UI). To restrict the destructive ones (`settings-reset`, `settings-restore`) to admin while keeping the admin UI on a lower cap, override per-ability:
 
 ```php
-'abilities' => [
-    [
-        'id'         => 'settings-reset',
-        'capability' => 'manage_options', // override the plugin default
-        // …
+'capability' => 'edit_posts',
+'abilities'  => [
+    'expose' => true,
+    'extend'    => [
+        [
+            'id'         => 'settings-reset',
+            'capability' => 'manage_options', // override the plugin default
+            // …
+        ],
     ],
 ],
-'capability' => 'edit_posts',
-'expose_settings_abilities' => true,
 ```
 
 On multisite, set `'capability' => 'manage_network_options'` at the plugin level when the bound Settings is network-scoped (`'network' => true`) — that's the appropriate cap for touching `site_options`.
@@ -171,7 +189,24 @@ On multisite, set `'capability' => 'manage_network_options'` at the plugin level
 
 ### Multi-Manager auto-merge
 
-When two or more `Manager` instances share the same plugin slug, they merge their `Settings` into a single `Settings\Group` for the abilities surface — same auto-merge as `wp <slug> config`. The four framework abilities register once against the Group; `settings-export` returns the modules from every backing `Settings`, and `settings-reset`/`settings-backup` fan out via the Group's per-module routing. Host plugins that split their state across (for example) a per-site option and a network option see one unified abilities surface instead of having the second Manager's Settings silently dropped via `wp_has_ability()`.
+When two `Manager` instances share a primary slug — the standard site + network split — they merge their `Settings` into one `Settings\Group` for the abilities surface, same as `wp <slug> config`. The framework abilities register once against the Group; `settings-export` returns the merged modules from every backing `Settings`, and `settings-reset`/`settings-backup` fan out via the Group's per-module routing.
+
+```php
+// Per-site Manager
+new \MilliBase\Manager( 'millicache', static fn () => [
+    'tabs'      => [ /* … */ ],
+    'abilities' => [ 'expose' => true ],
+] );
+
+// Network Manager — same primary slug; the `network` flag is what distinguishes them.
+new \MilliBase\Manager( 'millicache', static fn () => [
+    'tabs'      => [ /* … */ ],
+    'network'   => true,
+    'abilities' => [ 'expose' => true ],
+] );
+```
+
+A plugin with a single Manager doesn't need to do anything special — the primary slug is the merge key and the Group has one member.
 
 ## Errors
 
