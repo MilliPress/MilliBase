@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.5.0](https://github.com/MilliPress/MilliBase/compare/v2.4.2...v2.5.0) (2026-05-13)
+
+
+### Features
+
+* **abilities:** add WordPress Abilities API support ([#43](https://github.com/MilliPress/MilliBase/issues/43)) ([b24e5d1](https://github.com/MilliPress/MilliBase/commit/b24e5d1469be1e4369e781f7a288d4b1b3da4823))
+* **admin-page:** add network admin menu, use return value for hook suffix ([c9a3411](https://github.com/MilliPress/MilliBase/commit/c9a3411c3b8ad6495aff73653b8f87eca9975822))
+* **cli:** auto-merge Managers sharing cli.slug into one Settings\Group ([b365ed1](https://github.com/MilliPress/MilliBase/commit/b365ed1087b3ff342ddc74b49dac5f7e1cfd2371))
+* **manager:** add base add_page() for secondary admin pages ([2530d71](https://github.com/MilliPress/MilliBase/commit/2530d71a662ba3fa87179d7470af62e86ab59dda))
+* **migration:** declarative migration runner on Manager ([b749573](https://github.com/MilliPress/MilliBase/commit/b74957305ff78fc69689e4b5a97e767ec787263f))
+* **rest:** namespaced settings endpoints, drop /wp/v2/settings exposure ([66c5957](https://github.com/MilliPress/MilliBase/commit/66c5957db3941e0a0651063b89a3a0abe45c628b))
+* **settings:** add read_raw() escape hatch for migrations ([45a1627](https://github.com/MilliPress/MilliBase/commit/45a16278cc3b2a9f0e61cde41712af2b0c4b3118))
+* **settings:** network mode for site-options storage backend ([83fc011](https://github.com/MilliPress/MilliBase/commit/83fc0118bec4dfaba5b077827738c036704c20c6))
+
+
+### Bug Fixes
+
+* **fields:** Rename month duration constant to support lowercase requirement ([2f20b78](https://github.com/MilliPress/MilliBase/commit/2f20b786559b77b25ee52aed0cb26cd06f377f5d))
+* **header:** anchor admin notices via wp-header-end ([dfcfef4](https://github.com/MilliPress/MilliBase/commit/dfcfef421c15cea89bf1bb1b664c74993d50b7fa))
+* **settings,rest:** network-mode polish for resolve_domain and __reset ([fcce754](https://github.com/MilliPress/MilliBase/commit/fcce7549c2239cd8aef34c45d31d51f4470a7629))
+* **settings:** branch set() on network mode ([a46b359](https://github.com/MilliPress/MilliBase/commit/a46b35954cb3877b20e9b3dae1ec6a735e7d9fde))
+* **settings:** include blog path in subdirectory multisite filenames ([85aba71](https://github.com/MilliPress/MilliBase/commit/85aba710f1c0827e3be641e26276a06febf081f6))
+* **settings:** resolve config file domain per operation ([76a0795](https://github.com/MilliPress/MilliBase/commit/76a0795edaf98056540c7827c71ce8ffe2d9be22))
+
+
+### Refactoring
+
+* **admin-page:** drop network_admin config in favor of network ([906e08f](https://github.com/MilliPress/MilliBase/commit/906e08f8f53ba625001aa0aa48ede4463b363159))
+* **settings:** remove undocumented host pseudo-module from retrievals ([023af70](https://github.com/MilliPress/MilliBase/commit/023af702aa82207b533b600af43ee8b2390108a2))
+
 ## [2.4.2](https://github.com/MilliPress/MilliBase/compare/v2.4.1...v2.4.2) (2026-05-08)
 
 
