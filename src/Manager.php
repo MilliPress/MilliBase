@@ -131,12 +131,12 @@ final class Manager {
 	private bool $initialized = false;
 
 	/**
-	 * Auto-merge registry for CLI groups.
+	 * Slug-keyed registry of Settings\Group instances.
 	 *
 	 * @since 2.5.0
 	 * @var array<string, SettingsGroup>
 	 */
-	private static array $cli_groups = array();
+	private static array $settings_groups = array();
 
 	/**
 	 * Registered Manager fingerprints — `<slug>:<network>` — for collision detection.
@@ -285,20 +285,35 @@ final class Manager {
 			return;
 		}
 
-		// Multi-Manager auto-merge — when two Managers share the primary slug
-		// (typically a site + network split), their Settings end up in the
-		// same Group keyed by slug. Each CLI subcommand picks the right
-		// member at call time via `--network`.
-		if ( isset( self::$cli_groups[ $this->slug ] ) ) {
-			self::$cli_groups[ $this->slug ]->add( $settings );
+		// Multi-Manager auto-merge — when two Managers share the primary slug.
+		if ( isset( self::$settings_groups[ $this->slug ] ) ) {
+			self::$settings_groups[ $this->slug ]->add( $settings );
 			return;
 		}
 
-		$group                           = new SettingsGroup( $settings );
-		self::$cli_groups[ $this->slug ] = $group;
+		$group                                = new SettingsGroup( $settings );
+		self::$settings_groups[ $this->slug ] = $group;
 
 		$this->cli_controller = new CliController( $this->config, $group );
 		$this->cli_controller->register_hooks();
+	}
+
+	/**
+	 * Look up the Settings\Group registered under a slug.
+	 *
+	 * Returns the slug's registry of scoped Settings instances (one per
+	 * Manager sharing the slug — typically site + network). Call
+	 * `$group->resolve( bool $wants_network )` to pick a specific
+	 * Settings; null is returned when no Manager registered a group
+	 * under `$slug` (e.g. `'cli' => false` skips registration today).
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string $slug Plugin slug.
+	 * @return SettingsGroup|null
+	 */
+	public static function settings_group_for( string $slug ): ?SettingsGroup {
+		return self::$settings_groups[ $slug ] ?? null;
 	}
 
 	/**

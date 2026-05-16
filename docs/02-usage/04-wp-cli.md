@@ -271,6 +271,35 @@ The `--network` flag is always declared in every subcommand's synopsis, regardle
 
 WP-CLI runs as the invoking user (set via `--user=<id>`), but the regular `wp <slug> config …` commands are operator-level — they don't enforce caps the way REST/abilities surfaces do. If you have differential trust requirements between site and network operators, the CLI is not your gate; rely on filesystem/SSH access control instead.
 
+## Custom subcommands
+
+Plugins built on MilliBase can register their own `wp <slug> <command>` subcommands that resolve the `--network` flag through the same Settings registry the built-in `config` commands use. `Manager::settings_group_for( string $slug )` returns the `Settings\Group` registered under that slug, or `null` when no Manager has registered one (e.g. `'cli' => false`, or `WP_CLI` was unavailable at registration time).
+
+```php
+class My_Plugin_Rules_List_Command {
+    public function __invoke( array $args, array $assoc_args ): void {
+        $group    = \MilliBase\Manager::settings_group_for( 'my-plugin' );
+        $settings = $group?->resolve( ! empty( $assoc_args['network'] ) );
+
+        if ( null === $settings ) {
+            \WP_CLI::error(
+                ! empty( $assoc_args['network'] )
+                    ? '--network requires a network Settings instance registered under this slug.'
+                    : 'No per-site Settings registered under this slug.'
+            );
+        }
+
+        // Operate on $settings — read, write, etc.
+        $rules = $settings->get( 'rules' );
+        \WP_CLI\Utils\format_items( 'table', $rules, array( 'id', 'pattern' ) );
+    }
+}
+
+\WP_CLI::add_command( 'my-plugin rules list', My_Plugin_Rules_List_Command::class );
+```
+
+The returned `Group` exposes `resolve( bool $wants_network ): ?Settings`. Custom commands declare `[--network]` in their own synopsis so operators see one consistent flag across every subcommand of the plugin.
+
 ## Next Steps
 
 - **[Programmatic Access](./03-programmatic-access.md)** — the PHP API behind these commands

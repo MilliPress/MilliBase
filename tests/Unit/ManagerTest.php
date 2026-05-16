@@ -167,3 +167,57 @@ it('does not warn when two Managers share slug but differ in network mode', func
 
     expect($GLOBALS['__milli_test_doing_it_wrong'])->toBe([]);
 });
+
+it('settings_group_for() returns null for an unregistered slug', function () {
+    expect(Manager::settings_group_for('nonexistent-' . uniqid()))->toBeNull();
+});
+
+it('settings_group_for() returns the same Group for both Managers under a shared slug', function () {
+    $reflection = new ReflectionClass(Manager::class);
+    $groups     = $reflection->getProperty('settings_groups');
+    $groups->setAccessible(true);
+    $groups->setValue(null, []);
+    $fingerprints = $reflection->getProperty('registered_fingerprints');
+    $fingerprints->setAccessible(true);
+    $fingerprints->setValue(null, []);
+    $GLOBALS['__milli_test_actions'] = [];
+
+    new Manager('settings-group-test', static fn () => ['tabs' => []]);
+    new Manager('settings-group-test', static fn () => ['tabs' => [], 'network' => true]);
+
+    foreach ($GLOBALS['__milli_test_actions']['init'] ?? [] as $by_priority) {
+        foreach ($by_priority as $cb) {
+            $cb();
+        }
+    }
+
+    $group = Manager::settings_group_for('settings-group-test');
+    expect($group)->toBeInstanceOf(\MilliBase\Settings\Group::class);
+
+    // Both Managers' Settings should resolve through the same Group instance.
+    expect($group->resolve(false))->not->toBeNull();
+    expect($group->resolve(true))->not->toBeNull();
+    expect($group->resolve(false)->is_network())->toBeFalse();
+    expect($group->resolve(true)->is_network())->toBeTrue();
+});
+
+it('settings_group_for() returns null when cli is disabled', function () {
+    $reflection = new ReflectionClass(Manager::class);
+    $groups     = $reflection->getProperty('settings_groups');
+    $groups->setAccessible(true);
+    $groups->setValue(null, []);
+    $fingerprints = $reflection->getProperty('registered_fingerprints');
+    $fingerprints->setAccessible(true);
+    $fingerprints->setValue(null, []);
+    $GLOBALS['__milli_test_actions'] = [];
+
+    new Manager('cli-disabled-test', static fn () => ['tabs' => [], 'cli' => false]);
+
+    foreach ($GLOBALS['__milli_test_actions']['init'] ?? [] as $by_priority) {
+        foreach ($by_priority as $cb) {
+            $cb();
+        }
+    }
+
+    expect(Manager::settings_group_for('cli-disabled-test'))->toBeNull();
+});
