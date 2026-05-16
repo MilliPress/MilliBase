@@ -112,25 +112,25 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 
 ## Defaults Filter
 
-The `{slug}_settings_defaults` filter lets you modify default values at runtime. This is primarily useful for non-UI settings that need to exist in the stored option but don't have a corresponding field in the schema:
+The `{slug}_settings_defaults` filter lets you modify default values at runtime. This is primarily useful for non-UI settings that need to exist in the stored option but don't have a corresponding field in the schema. A second argument, `$is_network`, indicates whether the Settings instance is network-scoped, so a single callback can serve both site and network Managers under a shared slug:
 
 ```php
-add_filter('my_plugin_settings_defaults', function (array $defaults): array {
-    // Override a default.
-    $defaults['cache']['ttl'] = 7200;
-
-    // Add defaults for non-UI settings (no corresponding schema field).
-    $defaults['internal'] = [
-        'migration_version' => 0,
-        'install_date'      => '',
-    ];
+add_filter('my_plugin_settings_defaults', function (array $defaults, bool $is_network): array {
+    if ($is_network) {
+        $defaults['license'] = ['key' => '', 'status' => 'inactive'];
+    } else {
+        $defaults['cache']['ttl'] = 7200;
+    }
 
     return $defaults;
-});
+}, 10, 2);
 ```
 
 > [!NOTE]
 > Settings added only via the defaults filter will not appear in the UI. To add settings with both UI fields and defaults, use the schema filter instead — defaults are extracted automatically from field definitions.
+
+> [!NOTE]
+> This filter can fire **before** `init` when Settings is accessed early (e.g. from a CLI bootstrap or another plugin's `plugins_loaded` callback). Callbacks should not assume that other plugins, the full schema, or translated strings are available — keep them self-contained.
 
 ## Allowed Actions Filter
 
@@ -149,14 +149,18 @@ By default, only `['__reset', '__restore']` are allowed. The framework's built-i
 
 ## Status Response Filter
 
-The `{slug}_rest_status_response` filter modifies the status endpoint response before it is returned:
+The `{slug}_rest_status_response` filter modifies the status endpoint response before it is returned. A third argument, `$is_network`, indicates whether the Controller is network-scoped:
 
 ```php
-add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request): array {
+add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request, bool $is_network): array {
     $status['addon_version'] = '2.1.0';
 
+    if ($is_network) {
+        $status['license'] = get_site_option('my_plugin_license_status');
+    }
+
     return $status;
-}, 10, 2);
+}, 10, 3);
 ```
 
 ## Action Performed Hook
@@ -176,10 +180,10 @@ add_action('my_plugin_rest_settings_action_performed', function (string $action,
 
 | Filter / Action | Parameters | Description |
 |----------------|------------|-------------|
-| `{slug}_settings_schema` | `(array $config)` | Modify the full config before Schema init |
-| `{slug}_settings_defaults` | `(array $defaults)` | Modify default settings |
+| `{slug}_settings_schema` | `(array $config, bool $is_network)` | Modify the full config before Schema init |
+| `{slug}_settings_defaults` | `(array $defaults, bool $is_network)` | Modify default settings |
 | `{slug}_rest_settings_allowed_actions` | `(array $allowed)` | Filter allowed REST action names |
-| `{slug}_rest_status_response` | `(array $status, WP_REST_Request $request)` | Modify status response |
+| `{slug}_rest_status_response` | `(array $status, WP_REST_Request $request, bool $is_network)` | Modify status response |
 | `{slug}_rest_settings_action_performed` | `(string $action, array $params, WP_REST_Request $request)` | Fires after an action |
 
 ## Next Steps

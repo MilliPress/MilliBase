@@ -351,13 +351,19 @@ final class Controller {
 				'constants'    => $this->settings->get_settings_from_constants(),
 			);
 
+			$is_network = ! empty( $this->config['network'] );
+
 			/**
 			 * Filters the status response.
 			 *
-			 * @param array            $status  The status data.
-			 * @param \WP_REST_Request $request The REST request.
+			 * @since 1.0.0
+			 * @since 2.5.1 Added $is_network argument.
+			 *
+			 * @param array            $status     The status data.
+			 * @param \WP_REST_Request $request    The REST request.
+			 * @param bool             $is_network Whether this Controller is network-scoped.
 			 */
-			$status_data = apply_filters( "{$slug}_rest_status_response", $status_data, $request );
+			$status_data = apply_filters( "{$slug}_rest_status_response", $status_data, $request, $is_network );
 
 			return new \WP_REST_Response( $status_data );
 		} catch ( \Exception $e ) {

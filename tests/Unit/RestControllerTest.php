@@ -226,6 +226,23 @@ it('returns error response when callback throws', function () {
     expect($response->get_data()['message'])->toBe('Connection failed');
 });
 
+it('fires {slug}_rest_status_response with $is_network as the third argument', function () {
+    $GLOBALS['__milli_test_filters'] = [];
+
+    $captured = [];
+    add_filter('test_rest_status_response', function ($status, $request, $is_network) use (&$captured) {
+        $captured[] = [$status, $request, $is_network];
+        return $status;
+    });
+
+    call_get_status(make_controller());
+    call_get_status(make_controller(['network' => true]));
+
+    expect($captured)->toHaveCount(2);
+    expect($captured[0][2])->toBeFalse();
+    expect($captured[1][2])->toBeTrue();
+});
+
 it('registers REST routes without a prefix in default (per-site) mode', function () {
     $GLOBALS['__milli_test_rest_routes'] = [];
     make_controller(['rest_namespace' => 'millicache/v1'])->register_routes();

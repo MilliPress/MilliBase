@@ -458,13 +458,15 @@ final class Settings {
 			 * Filter default settings.
 			 *
 			 * Allows add-on plugins to register additional setting modules
-			 * and keys so they are recognised throughout the settings lifecycle.
+			 * and keys so they are recognized throughout the settings lifecycle.
 			 *
 			 * @since 1.0.0
+			 * @since 2.5.1 Added $is_network argument.
 			 *
-			 * @param array<string, array<string, mixed>> $defaults Default settings.
+			 * @param array<string, array<string, mixed>> $defaults   Default settings.
+			 * @param bool                                $is_network Whether this Settings instance is network-scoped.
 			 */
-			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults );
+			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults, $this->network );
 		}
 
 		$this->resolved['__defaults__'] = $defaults;

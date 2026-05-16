@@ -380,3 +380,20 @@ it('is_network() returns true when constructed with network => true', function (
     $settings = new Settings(['slug' => 'test', 'network' => true, 'defaults' => []]);
     expect($settings->is_network())->toBeTrue();
 });
+
+it('fires {slug}_settings_defaults with $is_network as the second argument', function () {
+    $GLOBALS['__milli_test_filters'] = [];
+
+    $captured = [];
+    add_filter('test_settings_defaults', function ($defaults, $is_network) use (&$captured) {
+        $captured[] = [$defaults, $is_network];
+        return $defaults;
+    });
+
+    (new Settings(['slug' => 'test', 'defaults' => []]))->get_default_settings();
+    (new Settings(['slug' => 'test', 'network' => true, 'defaults' => []]))->get_default_settings();
+
+    expect($captured)->toHaveCount(2);
+    expect($captured[0][1])->toBeFalse();
+    expect($captured[1][1])->toBeTrue();
+});

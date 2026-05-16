@@ -154,7 +154,11 @@ Setting `'network' => true` on a Manager flips a few things at once:
 - **Storage backend** — Settings reads and writes route through `get_site_option` / `update_site_option`, so the data lands in `wp_sitemeta` instead of `wp_options`. Backups use per-network site transients; the sanitize callback hooks `pre_update_site_option_<name>` at priority `-100`.
 - **Admin menu placement** — On multisite the page is registered via `network_admin_menu` and appears under Network Admin. On single-site the flag is silently ignored for the menu placement, so a stray `'network' => true` on a non-multisite install doesn't hide the page.
 - **REST route prefix** — All routes registered by this Manager are prefixed with `/network` inside the shared namespace. A network Manager exposes `/<rest_namespace>/network/settings`, `/<rest_namespace>/network/status`, etc. The site Manager (same plugin, same `rest_namespace`) keeps the unprefixed paths. This lets two Managers coexist on a shared namespace without overwriting each other's route handlers.
-- **Schema filter context** — The `{slug}_settings_schema` filter receives a second argument `$is_network` (bool) so hooks can branch on which Manager fired:
+- **Scope-aware filters** — When two Managers share a slug, the orchestrator's filters pass `$is_network` so hooks can branch on which Manager fired. The argument is the **last** position in each signature:
+  - `{slug}_settings_schema` — `(array $config, bool $is_network)`
+  - `{slug}_settings_defaults` — `(array $defaults, bool $is_network)`
+  - `{slug}_rest_status_response` — `(array $status, WP_REST_Request $request, bool $is_network)`
+
   ```php
   add_filter( 'my-plugin_settings_schema', function ( $config, $is_network ) {
       if ( $is_network ) {
@@ -163,6 +167,8 @@ Setting `'network' => true` on a Manager flips a few things at once:
       return $config;
   }, 10, 2 );
   ```
+
+  Existing 1- or 2-argument callbacks keep working — PHP drops surplus arguments at the callable boundary, so the extra `$is_network` only reaches callbacks that declare it.
 
 A typical pattern is to run two Managers side-by-side under the same plugin slug — one with `'network' => false` for per-site settings (e.g. cache rules), one with `'network' => true` for network-wide settings (e.g. shared storage credentials). They share `option_name`-key strings safely (different DB tables) and share the REST namespace via the `/network` route prefix. CLI commands and abilities auto-merge across them.
 

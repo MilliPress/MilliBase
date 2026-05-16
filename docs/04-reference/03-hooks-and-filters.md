@@ -32,16 +32,20 @@ add_filter('my_plugin_settings_schema', function (array $config): array {
 
 ### `{slug}_settings_defaults`
 
-Modify default settings at runtime.
+Modify default settings at runtime. Can fire before `init` when Settings is accessed early — callbacks should not depend on other plugins or translated strings being available.
 
 ```php
-add_filter('my_plugin_settings_defaults', function (array $defaults): array {
-    $defaults['cache']['ttl'] = 7200;
+add_filter('my_plugin_settings_defaults', function (array $defaults, bool $is_network): array {
+    if (! $is_network) {
+        $defaults['cache']['ttl'] = 7200;
+    }
     return $defaults;
-});
+}, 10, 2);
 ```
 
-**Parameters:** `array $defaults` — default settings keyed by module.
+**Parameters:**
+- `array $defaults` — default settings keyed by module
+- `bool $is_network` — whether this Settings instance is network-scoped (since 2.5.1)
 
 ---
 
@@ -65,15 +69,16 @@ add_filter('my_plugin_rest_settings_allowed_actions', function (array $allowed):
 Modify the status endpoint response before it is returned.
 
 ```php
-add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request): array {
+add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_Request $request, bool $is_network): array {
     $status['extra_info'] = 'value';
     return $status;
-}, 10, 2);
+}, 10, 3);
 ```
 
 **Parameters:**
 - `array $status` — the status data (includes `settings.has_defaults`, `settings.has_backup`, `settings.constants`)
 - `\WP_REST_Request $request` — the REST request object
+- `bool $is_network` — whether this Controller is network-scoped (since 2.5.1)
 
 ---
 
