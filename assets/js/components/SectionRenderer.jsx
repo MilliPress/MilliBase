@@ -62,9 +62,12 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		const parts = field.key.split( '.' );
 		const module = parts[ 0 ];
 		const key = parts[ 1 ];
-		const constantDisabled = settings?.[ module ]
-			? ! ( key in settings[ module ] )
-			: false;
+		// A field is pinned by a wp-config constant when its module/key
+		// appears in the status `constants` slice. This is the authoritative
+		// source: `settings` re-overlays constant values on read, so the
+		// key's presence there can't distinguish pinned from stored.
+		const constantDisabled =
+			!! constants?.[ module ] && key in constants[ module ];
 
 		// Fields are disabled when defined by a constant OR when
 		// the section's active toggle is off.
