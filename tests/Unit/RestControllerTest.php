@@ -287,3 +287,120 @@ it('applies the /network prefix to custom action routes too', function () {
     $paths = array_column($GLOBALS['__milli_test_rest_routes'], 'route');
     expect($paths)->toContain('/network/purge');
 });
+
+// ─── enc_ secret masking (security) ─────────────────────────────────
+
+// Mirrors the private Settings::SECRET_MASK sentinel (20 bullets).
+const SECRET_MASK = "••••••••••••••••••••";
+
+function enc_settings(): Settings
+{
+    return new Settings([
+        'slug'     => 'test',
+        'defaults' => [
+            'license' => ['enc_key' => ''],
+            'cache'   => ['ttl' => 3600],
+        ],
+    ]);
+}
+
+function settings_request(array $body): WP_REST_Request
+{
+    return new class ($body) extends WP_REST_Request {
+        public function get_json_params(): array
+        {
+            return $this->get_params();
+        }
+    };
+}
+
+it('masks a stored enc_ value on GET /settings and never leaks the plaintext', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'super-secret-license'],
+    ];
+
+    $data = make_controller([], enc_settings())->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe(SECRET_MASK);
+    expect(json_encode($data))->not->toContain('super-secret-license');
+});
+
+it('returns an empty string for an unset enc_ value (configured vs. not)', function () {
+    $data = make_controller([], enc_settings())->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe('');
+});
+
+it('keeps the stored secret when an unrelated setting is saved (mask round-trips)', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'stored-secret'],
+        'cache'   => ['ttl' => 3600],
+    ];
+
+    $request = settings_request([
+        'license' => ['enc_key' => SECRET_MASK],
+        'cache'   => ['ttl' => 7200],
+    ]);
+
+    make_controller([], enc_settings())->save_settings_value($request);
+
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('stored-secret');
+    expect($GLOBALS['__milli_test_options']['test']['cache']['ttl'])->toBe(7200);
+});
+
+it('keeps the stored secret when the enc_ field is submitted empty', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'stored-secret'],
+    ];
+
+    $request = settings_request(['license' => ['enc_key' => '']]);
+
+    make_controller([], enc_settings())->save_settings_value($request);
+
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('stored-secret');
+});
+
+it('persists a genuinely new enc_ value typed by the admin', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'old-secret'],
+    ];
+
+    $request = settings_request(['license' => ['enc_key' => 'brand-new-key']]);
+
+    make_controller([], enc_settings())->save_settings_value($request);
+
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('brand-new-key');
+});
+
+it('never writes the mask sentinel as a value when nothing is stored', function () {
+    $request = settings_request(['license' => ['enc_key' => SECRET_MASK]]);
+
+    make_controller([], enc_settings())->save_settings_value($request);
+
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('');
+});
+
+it('masks enc_ constant values on GET /status but keeps the key and non-secret values', function () {
+    define('SECMASK_LICENSE_ENC_KEY', 'plaintext-license-from-constant');
+    define('SECMASK_CACHE_TTL', 4242);
+
+    $settings = new Settings([
+        'slug'            => 'test',
+        'constant_prefix' => 'SECMASK',
+        'defaults'        => [
+            'license' => ['enc_key' => ''],
+            'cache'   => ['ttl' => 3600],
+        ],
+    ]);
+
+    $data      = call_get_status(make_controller([], $settings));
+    $constants = $data['settings']['constants'];
+
+    // Secret constant is masked, plaintext never leaves the server …
+    expect($constants['license']['enc_key'])->toBe(SECRET_MASK);
+    expect(json_encode($constants))->not->toContain('plaintext-license-from-constant');
+    // … but the key is still present so the client keeps the field disabled …
+    expect($constants['license'])->toHaveKey('enc_key');
+    // … and non-secret constant values pass through untouched.
+    expect($constants['cache']['ttl'])->toBe(4242);
+});

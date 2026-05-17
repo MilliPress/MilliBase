@@ -277,16 +277,16 @@ final class Controller {
 	/**
 	 * Return the current settings value.
 	 *
-	 * Returns the full resolved settings tree (constants overlay applied,
-	 * encrypted fields decrypted) — the same view consumers see via
-	 * `Settings::get()`.
+	 * Returns the resolved settings tree (constants overlay applied) with
+	 * encrypted secrets masked — enc_ fields never leave the server in
+	 * plaintext. See {@see \MilliBase\Settings::redact_secrets()}.
 	 *
 	 * @since 2.5.0
 	 *
 	 * @return \WP_REST_Response
 	 */
 	public function get_settings_value(): \WP_REST_Response {
-		return rest_ensure_response( $this->settings->get() );
+		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get() ) );
 	}
 
 	/**
@@ -294,6 +294,9 @@ final class Controller {
 	 *
 	 * The body is the settings tree directly (no `option_name` wrapping).
 	 * Sanitization runs via the Schema's `sanitize_option_<name>` callback.
+	 * Masked/blank enc_ fields are reconciled against the stored value so an
+	 * unrelated save cannot wipe a secret — see
+	 * {@see \MilliBase\Settings::preserve_secret_writes()}.
 	 *
 	 * @since 2.5.0
 	 *
@@ -313,9 +316,11 @@ final class Controller {
 			);
 		}
 
+		$value = $this->settings->preserve_secret_writes( $value );
+
 		$this->settings->update( $value );
 
-		return rest_ensure_response( $this->settings->get() );
+		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get() ) );
 	}
 
 	/**
@@ -348,7 +353,7 @@ final class Controller {
 			$status_data['settings'] = array(
 				'has_defaults' => $this->settings->has_default_settings(),
 				'has_backup'   => $this->settings->has_backup(),
-				'constants'    => $this->settings->get_settings_from_constants(),
+				'constants'    => $this->settings->redact_secrets( $this->settings->get_settings_from_constants() ),
 			);
 
 			$is_network = ! empty( $this->config['network'] );

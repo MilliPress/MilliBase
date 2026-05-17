@@ -19,6 +19,18 @@ namespace MilliBase;
 final class Settings {
 
 	/**
+	 * Placeholder returned to REST clients in place of a stored secret.
+	 *
+	 * Carries no key material: a set enc_ field reads back as this string so
+	 * the UI shows a value exists without exposing it. Treated as "keep the
+	 * stored value" on write — see {@see self::preserve_secret_writes()}.
+	 *
+	 * @since 2.5.1
+	 * @var string
+	 */
+	private const SECRET_MASK = '••••••••••••••••••••';
+
+	/**
 	 * The option name in the database.
 	 *
 	 * @since 1.0.0
@@ -246,6 +258,88 @@ final class Settings {
 	 */
 	private static function is_enc_key( string $key ): bool {
 		return strpos( $key, 'enc_' ) === 0;
+	}
+
+	/**
+	 * Return a copy of a settings tree with stored secrets masked.
+	 *
+	 * Every enc_ field holding a non-empty string is replaced with
+	 * {@see self::SECRET_MASK}; an unset enc_ field stays empty so the UI can
+	 * tell "configured" from "not configured". Non-enc_ keys and non-string
+	 * values are left untouched. Applied at the REST boundary to both the
+	 * settings tree and the constants map; keys are always preserved so
+	 * constant-locked fields still resolve as locked client-side.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param array<string, mixed> $tree Module → key → value tree.
+	 * @return array<string, mixed>
+	 */
+	public function redact_secrets( array $tree ): array {
+		foreach ( $tree as $module_key => $module_settings ) {
+			if ( ! is_array( $module_settings ) ) {
+				continue;
+			}
+			foreach ( $module_settings as $key => $value ) {
+				if ( self::is_enc_key( $key ) && is_string( $value ) && '' !== $value ) {
+					$module_settings[ $key ] = self::SECRET_MASK;
+				}
+			}
+			$tree[ $module_key ] = $module_settings;
+		}
+
+		return $tree;
+	}
+
+	/**
+	 * Reinstate stored secrets the client did not change.
+	 *
+	 * Clients never receive real enc_ values (see {@see self::redact_secrets()}),
+	 * so on save an enc_ field that comes back empty, equal to the mask, or
+	 * still ENC:-encrypted means "unchanged" — the stored value is restored so
+	 * saving an unrelated setting cannot wipe the secret. A genuine new string
+	 * passes through and is encrypted normally on write. REST save path only;
+	 * {@see self::update()} stays unconditional for internal/Pro callers.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param array<string, mixed> $incoming Submitted settings tree.
+	 * @return array<string, mixed>
+	 */
+	public function preserve_secret_writes( array $incoming ): array {
+		$stored = null;
+
+		foreach ( $incoming as $module_key => $module_settings ) {
+			if ( ! is_array( $module_settings ) ) {
+				continue;
+			}
+			foreach ( $module_settings as $key => $value ) {
+				if ( ! self::is_enc_key( $key ) ) {
+					continue;
+				}
+				if ( is_string( $value ) && '' !== $value
+					&& self::SECRET_MASK !== $value
+					&& 0 !== strpos( $value, 'ENC:' )
+				) {
+					continue;
+				}
+
+				if ( null === $stored ) {
+					$stored = $this->read_raw();
+				}
+
+				$module_stored = $stored[ $module_key ] ?? array();
+				$existing      = is_array( $module_stored ) ? ( $module_stored[ $key ] ?? '' ) : '';
+
+				// Restore the stored secret; never let the mask reach storage.
+				$module_settings[ $key ] = ( is_string( $existing ) && '' !== $existing )
+					? $existing
+					: '';
+			}
+			$incoming[ $module_key ] = $module_settings;
+		}
+
+		return $incoming;
 	}
 
 	// ─── Settings access ────────────────────────────────────────────────
