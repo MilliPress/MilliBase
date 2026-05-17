@@ -13,6 +13,7 @@ const PasswordField = ( { field, value, onChange, disabled } ) => (
 		value={ value ?? '' }
 		disabled={ disabled }
 		onChange={ onChange }
+		placeholder={ field.placeholder || '' }
 	/>
 );
 
