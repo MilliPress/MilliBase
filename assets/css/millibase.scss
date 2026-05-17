@@ -8,6 +8,11 @@ body.modal-open:has(.millibase-page) {
 	overflow: unset;
 }
 
+// Cap modal width for readability on wide screens.
+body:has(.millibase-page) .components-modal__frame {
+	max-width: 600px;
+}
+
 .millibase-page {
 
 	&.wrap {
