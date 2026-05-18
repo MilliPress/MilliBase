@@ -305,7 +305,7 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 
 ### Chained actions
 
-`action` accepts either a single name or an ordered list of names. A list runs sequentially, stops at the first non-success response, and surfaces a single trailing snackbar plus one settings/status refresh — so a chain reads as one operation to the user (one busy span, one toast, one refetch).
+`action` accepts either a single name or an ordered list of names. A list runs sequentially, stops at the first non-success response, and surfaces a single trailing snackbar plus one settings/status refresh — so a chain reads as one operation to the user (one busy span, one toast, one refetch). If the final step's response body includes `reload: true`, the client does a full page reload after the snackbar instead of the settings/status refresh — see [Action response contract](../02-usage/01-configuration.md#action-response-contract).
 
 ```php
 [

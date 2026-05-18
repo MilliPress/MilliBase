@@ -237,6 +237,10 @@ export const SettingsProvider = ( { config, children } ) => {
 				if ( result.lastResponse?.message ) {
 					showSnackbarRef.current( result.lastResponse.message );
 				}
+				if ( result.lastResponse?.reload ) {
+					window.location.reload();
+					return;
+				}
 				fetchSettings();
 				fetchStatus();
 			} );

@@ -277,6 +277,23 @@ Define custom REST endpoints that the UI can trigger:
 
 The `name` field can be a string or an array of strings. Each name registers a separate trigger in the React UI that calls the same endpoint.
 
+#### Action response contract
+
+The callback returns a `WP_REST_Response` (or array). After a successful action the React client shows the response body's `message` as a snackbar, then refetches settings and status. If the body includes `'reload' => true`, the client performs a full page reload after the snackbar **instead of** the settings/status refetch:
+
+```php
+'callback' => function ($request) {
+    // ...changed something the schema is derived from...
+    return new \WP_REST_Response([
+        'success' => true,
+        'message' => __('License activated.', 'my-plugin'),
+        'reload'  => true,
+    ]);
+},
+```
+
+Use `reload` when the action changes schema-derived output that a settings/status refetch alone would not pick up — section intros, `status` badge labels, field placeholders, or section `capability` visibility. Plain actions omit it and behave as before.
+
 ### `status`
 
 MilliBase always registers a `GET /{rest_namespace}/status` endpoint that returns settings metadata (defaults, backup availability, constant overrides). The React UI polls this endpoint every 15 seconds.
