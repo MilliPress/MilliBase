@@ -52,9 +52,9 @@ final class ConfigFile {
 	 * @since 1.0.0
 	 * @since 2.4.3 Accepts a `Closure(): string` resolver in addition to a string.
 	 *
-	 * @param string                    $directory       The directory for config files.
-	 * @param string|\Closure(): string $domain_resolver Sanitized domain identifier or a resolver returning one.
-	 * @param string                    $option_name     The option name.
+	 * @param string $directory       The directory for config files.
+	 * @param mixed  $domain_resolver Sanitized domain identifier (string) or a `Closure(): string` resolver; validated at runtime.
+	 * @param string $option_name     The option name.
 	 *
 	 * @throws \InvalidArgumentException If $domain_resolver is neither a string nor a Closure.
 	 */
@@ -98,6 +98,7 @@ final class ConfigFile {
 			return array();
 		}
 
+		/** @var array<string, array<string, mixed>> $config */
 		if ( $module ) {
 			return isset( $config[ $module ] ) ? array( $module => (array) $config[ $module ] ) : array();
 		}

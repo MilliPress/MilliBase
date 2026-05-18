@@ -34,6 +34,7 @@ final class FrameworkAbilities {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function settings( $settings ): array {
+		// @phpstan-ignore function.alreadyNarrowedType (defensive: a different bundled library version of Settings may predate is_network())
 		$is_network = method_exists( $settings, 'is_network' ) && $settings->is_network();
 
 		return array(

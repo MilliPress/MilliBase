@@ -40,7 +40,7 @@ final class Runner {
 	/**
 	 * Declarative migration list from the Manager config.
 	 *
-	 * @var array<int, array<string, mixed>>
+	 * @var array<array-key, mixed>
 	 */
 	private array $migrations;
 
@@ -58,9 +58,9 @@ final class Runner {
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
-	 * @param string                           $slug       Manager slug.
-	 * @param array<int, array<string, mixed>> $migrations Migration list.
-	 * @param Manager                          $manager    Manager instance for callbacks.
+	 * @param string                  $slug       Manager slug.
+	 * @param array<array-key, mixed> $migrations Migration list.
+	 * @param Manager                 $manager    Manager instance for callbacks.
 	 */
 	public function __construct( string $slug, array $migrations, $manager ) {
 		$this->slug       = $slug;
@@ -134,8 +134,10 @@ final class Runner {
 			$changed[ $scope ] = true;
 		}
 
-		foreach ( array_keys( $changed ) as $scope ) {
-			$this->write_state( $scope, $states[ $scope ] );
+		foreach ( $states as $scope => $scope_states ) {
+			if ( isset( $changed[ $scope ] ) ) {
+				$this->write_state( $scope, $scope_states );
+			}
 		}
 	}
 
@@ -159,7 +161,12 @@ final class Runner {
 			? get_site_option( $this->state_key(), array() )
 			: get_option( $this->state_key(), array() );
 
-		return is_array( $value ) ? $value : array();
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		/** @var array<string, string|array{0: string, 1: string, 2: int}> $value */
+		return $value;
 	}
 
 	/**

@@ -402,6 +402,7 @@ final class Schema {
 								continue;
 							}
 
+							/** @var array<string, mixed> $field */
 							$client_field = $this->field_to_client( $field );
 							if ( $client_field ) {
 								$client_section['fields'][] = $client_field;
@@ -442,6 +443,10 @@ final class Schema {
 					continue;
 				}
 				foreach ( $section['fields'] as $field ) {
+					if ( ! is_array( $field ) ) {
+						continue;
+					}
+					/** @var array<string, mixed> $field */
 					$fields[] = $field;
 				}
 			}
@@ -599,7 +604,7 @@ final class Schema {
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param array<int|string, array<string, mixed>> $tabs The tabs array (numeric or associative).
+	 * @param array<array-key, mixed> $tabs The tabs array (numeric or associative).
 	 *
 	 * @return array<string, array<string, mixed>> Tabs keyed by name.
 	 */
@@ -607,7 +612,7 @@ final class Schema {
 		$keyed = array();
 
 		foreach ( $tabs as $tab ) {
-			if ( ! is_array( $tab ) || empty( $tab['name'] ) ) {
+			if ( ! is_array( $tab ) || empty( $tab['name'] ) || ! is_string( $tab['name'] ) ) {
 				continue;
 			}
 
@@ -617,7 +622,7 @@ final class Schema {
 			$incoming_sections = array();
 			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
 				foreach ( $tab['sections'] as $section ) {
-					if ( ! is_array( $section ) || empty( $section['id'] ) ) {
+					if ( ! is_array( $section ) || empty( $section['id'] ) || ! is_string( $section['id'] ) ) {
 						continue;
 					}
 					$incoming_sections[ $section['id'] ] = $section;

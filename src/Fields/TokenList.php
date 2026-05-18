@@ -39,7 +39,7 @@ final class TokenList implements FieldInterface {
 			return array();
 		}
 
-		return array_values( array_filter( array_map( 'sanitize_text_field', $value ) ) );
+		return array_values( array_filter( array_map( 'sanitize_text_field', array_filter( $value, 'is_string' ) ) ) );
 	}
 
 	/**

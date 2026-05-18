@@ -71,7 +71,7 @@ final class Import extends Command {
 			WP_CLI::error( "Failed to read file: {$file}" );
 		}
 
-		/** Decoded JSON payload. @var array<string, mixed>|null $data */
+		// Decoded JSON payload.
 		$data = json_decode( $contents, true );
 		if ( ! is_array( $data ) ) {
 			WP_CLI::error( 'Invalid JSON in file.' );
@@ -83,6 +83,7 @@ final class Import extends Command {
 
 		$settings->backup();
 
+		/** @var array<string, mixed> $data */
 		if ( ! $settings->import( $data, (bool) $merge ) ) {
 			WP_CLI::error( 'Import failed. No valid modules found in the provided data.' );
 		}

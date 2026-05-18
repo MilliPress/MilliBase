@@ -36,8 +36,13 @@ final class ServerVars {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Sanitised via stripslashes + htmlspecialchars here.
-		return htmlspecialchars( stripslashes( (string) $_SERVER[ $key ] ), ENT_QUOTES, 'UTF-8' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Sanitised via stripslashes + htmlspecialchars below.
+		$raw = $_SERVER[ $key ];
+		if ( ! is_scalar( $raw ) ) {
+			return '';
+		}
+
+		return htmlspecialchars( stripslashes( (string) $raw ), ENT_QUOTES, 'UTF-8' );
 	}
 
 	/**

@@ -18,5 +18,12 @@
         <!-- base64_encode/decode are used for sodium encryption, not obfuscation. -->
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode"/>
         <exclude name="WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode"/>
+
+        <!--
+            Conflicts with inline `/** @var T $x */` type assertions: PHPStan 2.x
+            only honours @var when it is the docblock's sole content, while this
+            sniff demands a short description in every docblock.
+        -->
+        <exclude name="Generic.Commenting.DocComment.MissingShort"/>
     </rule>
 </ruleset>

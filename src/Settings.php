@@ -132,13 +132,16 @@ final class Settings {
 			throw new \InvalidArgumentException( 'Settings requires a non-empty "slug" config value.' );
 		}
 
+		/** @var array<string, array<string, mixed>> $defaults_config */
+		$defaults_config = is_array( $config['defaults'] ?? null ) ? $config['defaults'] : array();
+		$this->defaults  = $defaults_config;
+
 		$default_option        = $this->slug;
 		$option_name           = $config['option_name'] ?? $default_option;
 		$this->option_name     = is_string( $option_name ) ? $option_name : $default_option;
 		$constant_prefix       = $config['constant_prefix'] ?? '';
 		$this->constant_prefix = strtoupper( is_string( $constant_prefix ) ? $constant_prefix : '' );
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
-		$this->defaults        = is_array( $config['defaults'] ?? null ) ? $config['defaults'] : array();
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
 		$this->network         = (bool) ( $config['network'] ?? false );
 
@@ -505,6 +508,7 @@ final class Settings {
 		$config_settings = ! empty( $file_settings ) ? $file_settings : $this->get_settings_from_db( $module );
 
 		foreach ( $config_settings as $module_key => $module_settings ) {
+			// @phpstan-ignore function.alreadyNarrowedType (defensive: file/DB-stored option data may be malformed at runtime)
 			if ( ! is_array( $module_settings ) ) {
 				continue;
 			}
@@ -519,9 +523,6 @@ final class Settings {
 		if ( ! $skip_constants && '' !== $this->constant_prefix ) {
 			$constant_settings = $this->get_settings_from_constants( $module );
 			foreach ( $constant_settings as $module_key => $module_settings ) {
-				if ( ! is_array( $module_settings ) ) {
-					continue;
-				}
 				foreach ( $module_settings as $key => $value ) {
 					$settings[ $module_key ][ $key ] = $value;
 				}
@@ -610,9 +611,6 @@ final class Settings {
 		$modules_to_check = $module ? array( $module => $defaults[ $module ] ?? array() ) : $defaults;
 
 		foreach ( $modules_to_check as $module_key => $module_settings ) {
-			if ( ! is_array( $module_settings ) ) {
-				continue;
-			}
 			foreach ( $module_settings as $key => $value ) {
 				$constant = strtoupper( "{$this->constant_prefix}_{$module_key}_{$key}" );
 
@@ -724,6 +722,7 @@ final class Settings {
 			return false;
 		}
 
+		// @phpstan-ignore function.alreadyNarrowedType (defensive: another plugin may filter the option value to a non-array)
 		if ( ! is_array( $settings ) ) {
 			return array();
 		}
@@ -739,10 +738,6 @@ final class Settings {
 		// Merge with defaults: add missing keys, remove obsolete ones.
 		$default_settings = $this->defaults();
 		foreach ( $default_settings as $mod => $mod_settings ) {
-			if ( ! is_array( $mod_settings ) ) {
-				continue;
-			}
-
 			if ( ! isset( $settings[ $mod ] ) ) {
 				$settings[ $mod ] = array();
 			}
@@ -792,6 +787,7 @@ final class Settings {
 		}
 
 		foreach ( $settings as $module => $module_settings ) {
+			// @phpstan-ignore function.alreadyNarrowedType (defensive: pre-save option value may be malformed at runtime)
 			if ( ! is_array( $module_settings ) ) {
 				continue;
 			}
@@ -824,6 +820,7 @@ final class Settings {
 		}
 
 		foreach ( $settings as $module => $module_settings ) {
+			// @phpstan-ignore function.alreadyNarrowedType (defensive: stored option value may be malformed at runtime)
 			if ( ! is_array( $module_settings ) ) {
 				continue;
 			}
@@ -1054,9 +1051,6 @@ final class Settings {
 		$settings = $this->resolve( $module, true );
 
 		foreach ( $settings as $module_key => $module_settings ) {
-			if ( ! is_array( $module_settings ) ) {
-				continue;
-			}
 			foreach ( $module_settings as $key => $value ) {
 				if ( ! self::is_enc_key( $key ) ) {
 					continue;
@@ -1161,9 +1155,9 @@ final class Settings {
 	 *
 	 * @since 1.3.0
 	 *
-	 * @param array<string, mixed> $old_data The old settings array.
-	 * @param array<string, mixed> $new_data The new settings array.
-	 * @param string               $prefix   Internal dot-notation prefix for recursion.
+	 * @param array<array-key, mixed> $old_data The old settings array.
+	 * @param array<array-key, mixed> $new_data The new settings array.
+	 * @param string                  $prefix   Internal dot-notation prefix for recursion.
 	 *
 	 * @return array<string, array{old: mixed, new: mixed}>
 	 */
@@ -1381,12 +1375,14 @@ final class Settings {
 	private static function multisite_mode(): ?string {
 		$is_multisite = function_exists( 'is_multisite' )
 			? is_multisite()
+			// @phpstan-ignore phpstanWP.wpConstant.fetch (intentional non-WP fallback; WP context uses is_multisite() above)
 			: ( defined( 'MULTISITE' ) && MULTISITE );
 
 		if ( ! $is_multisite ) {
 			return null;
 		}
 
+		// @phpstan-ignore phpstanWP.wpConstant.fetch (intentional non-WP fallback for subdomain detection)
 		return ( defined( 'SUBDOMAIN_INSTALL' ) && SUBDOMAIN_INSTALL )
 			? 'subdomain'
 			: 'subdirectory';

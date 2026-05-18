@@ -279,6 +279,11 @@ final class AdminPage {
 		$client_actions = array();
 		$actions        = is_array( $this->config['actions'] ?? null ) ? $this->config['actions'] : array();
 		foreach ( $actions as $action ) {
+			if ( ! is_array( $action ) ) {
+				continue;
+			}
+
+			/** @var array<string, mixed> $action */
 			$names    = (array) ( $action['name'] ?? '' );
 			$endpoint = $action['endpoint'] ?? '';
 			$method   = $action['method'] ?? 'POST';

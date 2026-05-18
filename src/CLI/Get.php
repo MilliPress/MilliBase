@@ -98,10 +98,6 @@ final class Get extends Command {
 
 		$all = $settings->get();
 
-		if ( ! is_array( $all ) ) {
-			WP_CLI::error( 'No settings found.' );
-		}
-
 		$rows    = $this->flatten_settings( $all, $show_source, $settings );
 		$columns = $show_source ? array( 'key', 'value', 'source' ) : array( 'key', 'value' );
 

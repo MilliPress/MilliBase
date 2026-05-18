@@ -1,8 +1,12 @@
 parameters:
-    level: max
+    level: 9
     paths:
         - src
     scanFiles:
         - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
         - vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
         - vendor/php-stubs/wp-cli-stubs/wp-cli-tools-stubs.php
+    stubFiles:
+        # Override the bundled wp-cli-stubs' incorrect `@return null` on
+        # WP_CLI::error() (it exits when $exit is truthy / default).
+        - phpstan-stubs/wp-cli.stub

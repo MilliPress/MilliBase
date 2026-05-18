@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Corrective stub for WP_CLI::error(): the bundled php-stubs/wp-cli-stubs
+ * (v2.12.0, latest) declares it `@return null`, but it calls exit() when
+ * $exit is truthy (the default), so PHPStan can't prune the post-error()
+ * branch and guards relying on it fail to narrow.
+ *
+ * The fix is already merged in wp-cli/wp-cli `main` (identical
+ * conditional return type), just not in a tagged release yet. Remove
+ * this once php-stubs/wp-cli-stubs regenerates from WP-CLI > 2.12.0.
+ */
+class WP_CLI {
+
+	/**
+	 * @param mixed    $message
+	 * @param bool|int $exit
+	 *
+	 * @phpstan-return ($exit is true|positive-int ? never : void)
+	 */
+	public static function error( $message, $exit = true ) {}
+}

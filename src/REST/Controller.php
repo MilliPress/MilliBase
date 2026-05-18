@@ -131,6 +131,11 @@ final class Controller {
 		// Custom plugin-defined action routes.
 		$actions = is_array( $this->config['actions'] ?? null ) ? $this->config['actions'] : array();
 		foreach ( $actions as $action ) {
+			if ( ! is_array( $action ) ) {
+				continue;
+			}
+
+			/** @var array<string, mixed> $action */
 			if ( empty( $action['endpoint'] ) || ! is_callable( $action['callback'] ?? null ) ) {
 				continue;
 			}
@@ -308,6 +313,7 @@ final class Controller {
 	public function save_settings_value( \WP_REST_Request $request ) {
 		$value = $request->get_json_params();
 
+		// @phpstan-ignore function.alreadyNarrowedType (defensive: REST JSON body is client-controlled)
 		if ( ! is_array( $value ) ) {
 			return new \WP_Error(
 				'invalid_settings_payload',
@@ -316,7 +322,9 @@ final class Controller {
 			);
 		}
 
-		$value = $this->settings->preserve_secret_writes( $value );
+		/** @var array<string, mixed> $payload */
+		$payload = $value;
+		$value   = $this->settings->preserve_secret_writes( $payload );
 
 		$this->settings->update( $value );
 
