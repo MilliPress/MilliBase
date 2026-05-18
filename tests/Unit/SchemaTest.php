@@ -1157,3 +1157,117 @@ it('preserves order of distinct tabs and sections', function () {
     expect($client['tabs'][0]['sections'][0]['id'])->toBe('a');
     expect($client['tabs'][0]['sections'][1]['id'])->toBe('b');
 });
+
+// ─── Section-level capability ───────────────────────────────────────
+//
+// current_user_can() is stubbed (tests/bootstrap.php) to return the
+// resolved boolean from $GLOBALS['millibase_abilities_can']; it does not
+// model WP's multisite→super-admin mapping. That mapping is WP core's
+// job — we deliberately delegate to current_user_can() and only assert
+// our gating logic given a resolved boolean.
+
+function capability_schema(): Schema
+{
+    return new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'general',
+                        'title' => 'General',
+                        'fields' => [
+                            ['key' => 'app.name', 'type' => 'text', 'default' => 'MilliBase'],
+                        ],
+                    ],
+                    [
+                        'id' => 'license',
+                        'title' => 'License',
+                        'capability' => 'manage_network_options',
+                        'fields' => [
+                            ['key' => 'license.enc_key', 'type' => 'password', 'default' => ''],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+}
+
+it('includes a capability-gated section when the user has the capability', function () {
+    $GLOBALS['millibase_abilities_can']['manage_network_options'] = true;
+
+    $sections = capability_schema()->to_client_array()['tabs'][0]['sections'];
+
+    expect(array_column($sections, 'id'))->toBe(['general', 'license']);
+});
+
+it('omits a capability-gated section when the user lacks the capability', function () {
+    // Default: current_user_can() returns false for the cap.
+    $client = capability_schema()->to_client_array();
+    $sections = $client['tabs'][0]['sections'];
+
+    // Section is absent from the client/REST schema...
+    expect(array_column($sections, 'id'))->toBe(['general']);
+
+    // ...but its field default still extracts (viewer-agnostic), so the
+    // engine's key remains a registered, persistable setting for everyone.
+    expect($client['defaults'])->toBe([
+        'app' => ['name' => 'MilliBase'],
+        'license' => ['enc_key' => ''],
+    ]);
+});
+
+it('keeps capability-gated defaults in get_defaults() and the REST setting schema', function () {
+    // No cap → section hidden from tabs, but get_defaults()/get_rest_schema()
+    // stay viewer-agnostic (the registration layer is not gated).
+    $schema = capability_schema();
+
+    expect($schema->get_defaults())->toBe([
+        'app' => ['name' => 'MilliBase'],
+        'license' => ['enc_key' => ''],
+    ]);
+
+    $rest = $schema->get_rest_schema();
+    expect($rest['properties']['license']['properties']['enc_key']['type'])
+        ->toBe('string');
+});
+
+it('always renders a section that declares no capability', function () {
+    // User has no capabilities at all; an ungated section is unaffected.
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    ['id' => 'plain', 'title' => 'Plain', 'fields' => []],
+                ],
+            ],
+        ],
+    ]);
+
+    $sections = $schema->to_client_array()['tabs'][0]['sections'];
+
+    expect(array_column($sections, 'id'))->toBe(['plain']);
+});
+
+it('renders a section whose capability is a non-string (treated as ungated)', function () {
+    // A malformed capability must not crash or silently hide the section.
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    ['id' => 'sec', 'title' => 'Section', 'capability' => 123, 'fields' => []],
+                ],
+            ],
+        ],
+    ]);
+
+    $sections = $schema->to_client_array()['tabs'][0]['sections'];
+
+    expect(array_column($sections, 'id'))->toBe(['sec']);
+});

@@ -322,9 +322,12 @@ final class Schema {
 	/**
 	 * Generate the client-safe configuration for the React UI.
 	 *
-	 * Strips PHP callbacks and server-only properties.
+	 * Strips PHP callbacks and server-only properties. Sections declaring a
+	 * `capability` the current user lacks are omitted (render/REST only —
+	 * defaults stay viewer-agnostic, see {@see get_defaults()}).
 	 *
 	 * @since 1.0.0
+	 * @since 2.5.1 Honors a per-section `capability`.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -363,6 +366,14 @@ final class Schema {
 
 				foreach ( $tab['sections'] as $section ) {
 					if ( ! is_array( $section ) ) {
+						continue;
+					}
+
+					if (
+						isset( $section['capability'] )
+						&& is_string( $section['capability'] )
+						&& ! current_user_can( $section['capability'] )
+					) {
 						continue;
 					}
 
