@@ -292,10 +292,11 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 | `inline`        | `bool`                                             | `false`       | Place the button on the same row as the previous field.                                                                  |
 | `width`         | `string`                                           | —             | CSS width applied to the inline-row flex item (e.g. `'200px'`, `'30%'`).                                                 |
 | `show` / `hide` | `[field, op, value]`                               | —             | Conditional visibility against the current settings (e.g. `['license.is_valid', '=', true]`).                            |
+| `lock`          | `[field, op, value]`                               | —             | Conditionally render the button disabled — same condition syntax as `show`/`hide`.                                       |
 
 **Action wiring:** the button's `action` must match the `name` of an entry in the config's `actions` array (which registers a REST endpoint), or be one of the framework-reserved built-ins listed below. See [Schema Definition → Actions](../02-usage/02-schema-definition.md) for full action registration.
 
-**Busy/disabled state:** automatic — `isBusy` reflects the global loading state, and the button is disabled while saving or loading. Buttons are also disabled when the section's `active` toggle is off.
+**Busy/disabled state:** automatic — `isBusy` reflects the global loading state, and the button is disabled while saving or loading. Buttons are also disabled when the section's `active` toggle is off, or when a `lock` condition matches.
 
 **Sanitization:** none — buttons are not persisted.
 **JSON schema:** none — buttons do not appear in the REST settings schema.

@@ -562,6 +562,7 @@ final class Schema {
 			'width',
 			'show',
 			'hide',
+			'lock',
 			// Button-specific.
 			'action',
 			'variant',

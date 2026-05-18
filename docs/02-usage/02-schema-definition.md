@@ -246,6 +246,7 @@ Accordion mode works with all section features including active toggles and stat
         'width'       => '200px',           // Fixed width when inline
         'show'        => ['advanced.expert_mode', true],  // Show condition
         'hide'        => ['cache.disabled', true],        // Hide condition
+        'lock'        => ['license.is_valid', '=', true], // Read-only condition
     ],
 ],
 ```
@@ -265,7 +266,8 @@ Accordion mode works with all section features including active toggles and stat
 | `default`     | `mixed`  | `null`    | Default value extracted by the Schema                      |
 | `tooltip`     | `string` | —         | Help text shown in an info icon tooltip                    |
 | `placeholder` | `string` | —         | Placeholder text (text, password, token-list)              |
-| `disabled`    | `bool`   | `false`   | Render field as read-only                                  |
+| `disabled`    | `bool`   | `false`   | Render field as read-only (unconditional)                  |
+| `lock`        | `[field, op, value]` | — | Conditionally render the field read-only — same condition syntax as `show`/`hide`. See [Conditional Display](#conditional-display). |
 
 ### Layout Properties
 
@@ -309,7 +311,7 @@ Field keys use dot notation: `module.setting`. The part before the dot is the **
 
 ## Conditional Display
 
-Fields can be conditionally shown or hidden based on other settings values using `show` and `hide` conditions.
+Fields can be conditionally shown, hidden, or made read-only based on other settings values using `show`, `hide`, and `lock` conditions. All three use the identical condition syntax described below — they differ only in effect: `show`/`hide` control visibility, `lock` controls editability.
 
 ### 2-Tuple: Equality / Glob Match
 
@@ -343,10 +345,11 @@ When the expected value is a string containing `*`, MilliBase uses glob matching
 
 ### Evaluation Rules
 
-- `show` and `hide` are evaluated against the **effective** settings (stored values merged with constant overrides)
+- `show`, `hide`, and `lock` are all evaluated against the **effective** settings (stored values merged with constant overrides), and may reference `status.*` values
 - When `show` is defined and evaluates to `false`, the field is hidden
 - When `hide` is defined and evaluates to `true`, the field is hidden
-- Both can be used on the same field — `hide` takes precedence
+- `show` and `hide` can be used on the same field — `hide` takes precedence
+- When `lock` evaluates to `true`, the field is rendered **read-only** rather than hidden; its stored value is still submitted, it just cannot be edited. `lock` is independent of `show`/`hide` and applies to every field type, including `button`
 
 ## Tab and Section Overrides
 

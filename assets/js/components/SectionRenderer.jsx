@@ -2,7 +2,7 @@
  * Renders a PanelBody with grouped fields from a section definition.
  */
 
-import { createElement, useState } from '@wordpress/element';
+import { createElement, useState, useMemo } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem, FormToggle } from '@wordpress/components';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
@@ -35,6 +35,18 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	const { status, settings, updateSetting } = context;
 	const constants = status?.settings?.constants || {};
 
+	// Effective runtime values: editable settings overlaid with constant
+	// overrides, plus status under the `status` namespace. Shared by every
+	// field-level condition (show/hide/lock) so they all evaluate
+	// against identical data. Computed once per render, not once per field.
+	const effective = useMemo( () => {
+		const merged = { ...settings, status };
+		for ( const [ mod, vals ] of Object.entries( constants ) ) {
+			merged[ mod ] = { ...merged[ mod ], ...vals };
+		}
+		return merged;
+	}, [ settings, status, constants ] );
+
 	// Active-toggle configuration.
 	const active = section.active || null;
 	let activeModule, activeKey, isActive;
@@ -46,6 +58,12 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	}
 
 	const renderField = ( field ) => {
+		// Symmetric with show/hide: a truthy `lock` condition makes
+		// the field read-only. Applies to every field type.
+		const conditionDisabled = !! (
+			field.lock && evaluateCondition( field.lock, effective )
+		);
+
 		// Buttons have no module/key lookup and no value/onChange contract.
 		if ( field.type === 'button' ) {
 			return (
@@ -54,7 +72,7 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 					field={ field }
 					value={ undefined }
 					onChange={ () => {} }
-					disabled={ !! ( active && ! isActive ) }
+					disabled={ !! ( active && ! isActive ) || conditionDisabled }
 				/>
 			);
 		}
@@ -69,9 +87,10 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		const constantDisabled =
 			!! constants?.[ module ] && key in constants[ module ];
 
-		// Fields are disabled when defined by a constant OR when
-		// the section's active toggle is off.
-		const disabled = constantDisabled || ( active && ! isActive );
+		// Fields are disabled when defined by a constant, when the
+		// section's active toggle is off, or when `lock` matches.
+		const disabled =
+			constantDisabled || ( active && ! isActive ) || conditionDisabled;
 
 		// For constant-defined fields, show the constant value
 		// from the status API instead of the schema default.
@@ -93,14 +112,6 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	};
 
 	const isFieldVisible = ( field ) => {
-		// Merge editable settings with constant overrides so that
-		// hide/show conditions reflect the effective runtime values.
-		// Status data is exposed under the `status` namespace so that
-		// conditions can reference values like `status.storage.connected`.
-		const effective = { ...settings, status };
-		for ( const [ mod, vals ] of Object.entries( constants ) ) {
-			effective[ mod ] = { ...effective[ mod ], ...vals };
-		}
 		if ( field.hide && evaluateCondition( field.hide, effective ) ) {
 			return false;
 		}
