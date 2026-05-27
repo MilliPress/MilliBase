@@ -10,7 +10,7 @@ body.modal-open:has(.millibase-page) {
 
 // Cap modal width for readability on wide screens.
 body:has(.millibase-page) .components-modal__frame {
-	max-width: 600px;
+	max-width: 800px;
 }
 
 .millibase-page {
@@ -162,6 +162,17 @@ body:has(.millibase-page) .components-modal__frame {
 	.millibase-code-field {
 		font-family: monospace;
 		font-size: 13px;
+	}
+
+	.millibase-key-field input {
+		font-family: monospace;
+		font-size: 13px;
+	}
+
+	// Suffix clear (×) on masked KeyField / PasswordField — sits inside the
+	// input's suffix slot; give it a little breathing room on both sides.
+	.millibase-field-clear {
+		margin: 0 4px;
 	}
 
 	// Inline button fields: align with sibling inputs (label-spacer above)

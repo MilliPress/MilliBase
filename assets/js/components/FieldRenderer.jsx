@@ -6,6 +6,7 @@
 import TextField from './fields/TextField.jsx';
 import NumberField from './fields/NumberField.jsx';
 import PasswordField from './fields/PasswordField.jsx';
+import KeyField from './fields/KeyField.jsx';
 import ToggleField from './fields/ToggleField.jsx';
 import SelectField from './fields/SelectField.jsx';
 import UnitField from './fields/UnitField.jsx';
@@ -19,6 +20,7 @@ const builtinTypes = {
 	text: TextField,
 	number: NumberField,
 	password: PasswordField,
+	key: KeyField,
 	toggle: ToggleField,
 	select: SelectField,
 	unit: UnitField,
