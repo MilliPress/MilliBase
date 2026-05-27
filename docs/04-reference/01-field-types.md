@@ -1,12 +1,12 @@
 ---
 title: 'Field Types'
-post_excerpt: 'Reference for all 10 built-in field types: properties, sanitization, and JSON schema.'
+post_excerpt: 'Reference for all 11 built-in field types: properties, sanitization, and JSON schema.'
 menu_order: 10
 ---
 
 # Field Types
 
-MilliBase ships with 10 built-in field types. Each type provides server-side sanitization and a matching React component.
+MilliBase ships with 11 built-in field types. Each type provides server-side sanitization and a matching React component.
 
 ## Common Properties
 
@@ -18,7 +18,7 @@ Every field type accepts the following properties in addition to its type-specif
 | `type`    | `string` | Required. One of the type slugs documented below.                                                    |
 | `label`   | `string` | Field label.                                                                                         |
 | `tooltip` | `string` | Optional help text shown in a hover tooltip on a (?) icon next to the label.                         |
-| `help`    | `string` | Optional description rendered below the input. Supports inline `[label](url)` markdown-style links: allowed schemes are `https://`, `http://`, `mailto:`, `tel:`, and root-relative paths. `http(s)://` links open in a new tab with `noopener noreferrer`; relative / `mailto:` / `tel:` stay in the current tab. Unsafe schemes (`javascript:`, `data:`, …) render the label as plain text. Supported on `text`, `password`, `number`, `select`, `toggle`, `unit`, and `code`. On `token-list` the prop is forwarded but only takes effect once the host WordPress ships `@wordpress/components` ≥ 33.0.0; `color` and `button` do not support it. |
+| `help`    | `string` | Optional description rendered below the input. Supports inline `[label](url)` markdown-style links: allowed schemes are `https://`, `http://`, `mailto:`, `tel:`, and root-relative paths. `http(s)://` links open in a new tab with `noopener noreferrer`; relative / `mailto:` / `tel:` stay in the current tab. Unsafe schemes (`javascript:`, `data:`, …) render the label as plain text. Supported on `text`, `password`, `key`, `number`, `select`, `toggle`, `unit`, and `code`. On `token-list` the prop is forwarded but only takes effect once the host WordPress ships `@wordpress/components` ≥ 33.0.0; `color` and `button` do not support it. |
 | `default` | `mixed`  | Default value used when no value has been saved yet.                                                 |
 
 ---
@@ -75,7 +75,7 @@ Numeric input with optional min/max bounds.
 
 ## password
 
-Password input. Stores the raw value without HTML stripping (important for tokens and API keys containing special characters).
+Password input — for user-chosen credentials. Stores the raw value without HTML stripping (important for tokens with special characters). When read back via REST on an `enc_`-prefixed key, the value is **always** replaced with a 20-bullet placeholder; passwords never partially reveal.
 
 ```php
 [
@@ -92,6 +92,48 @@ Password input. Stores the raw value without HTML stripping (important for token
 
 > [!TIP]
 > Prefix the key with `enc_` (e.g. `storage.enc_password`) to enable automatic encryption. The value will be encrypted with sodium before saving and decrypted on read.
+
+> [!NOTE]
+> For server-issued identifiers the user needs to **recognize** later — license keys, API tokens — use the [`key`](#key) field type instead. It opts into a partial-reveal mask (e.g. `MILL••••••••a9F2`).
+
+---
+
+## key
+
+Recognizable-identifier input — for license keys, API tokens, webhook secrets, and other server-issued values an admin needs to recognize later (not user-chosen passwords). Renders as a monospace text input that auto-selects on focus for paste-to-replace; password managers and spellcheck are opted out.
+
+```php
+[
+    'key'   => 'license.enc_key',
+    'type'  => 'key',
+    'label' => 'License key',
+]
+```
+
+Combine with the `enc_` storage-key prefix to encrypt at rest. When read back via REST the stored value is masked — by default `ABCD••••••••••••••••••WXYZ` (first 4 / last 4 around an all-bullets middle at input length) — so the admin can still recognize which key is installed without the plaintext crossing the wire.
+
+| Property      | Type                                                                            | Default                           | Description                                                                  |
+|---------------|---------------------------------------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------|
+| `placeholder` | `string`                                                                        | —                                 | Placeholder text                                                             |
+| `mask`        | `'full' \| 'structured' \| array{first?:int, last?:int, structured?:bool}`      | first 4 / last 4, bullets middle  | Controls how an `enc_`-stored value is masked on read. See below.            |
+
+### `mask` modes
+
+| Mode                                           | Render for `MILLI-AAAA-BBBB-CCCC-DDDD`         | Notes                                                                                              |
+|------------------------------------------------|------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| omitted (default)                              | `MILL•••••••••••••••••DDDD`                    | First 4 / last 4 around an all-bullets middle that matches the input's length.                     |
+| `'full'`                                       | `••••••••••••••••••••`                         | 20-bullet full mask. The only mode that **hides** the input's length. Skips partial reveal entirely. |
+| `'structured'`                                 | `MILL•-••••-••••-••••-DDDD`                    | Preserves non-alphanumeric separators (`-` `/` `:` `_`) so the mask keeps the input's visual shape. |
+| `['first' => 5, 'last' => 4, 'structured' => true]` | `MILLI-••••-••••-••••-DDDD`              | Per-field overrides; any subset of keys.                                                            |
+
+> [!IMPORTANT]
+> The mask config affects only the read-side render — the stored value is unchanged. Inputs shorter than `first + last + 4` always fall back to the full mask so at least 4 characters stay hidden. `ENC:`-prefixed values (the constants overlay can hold encrypted strings) also full-mask, since slicing ciphertext is meaningless.
+
+> [!NOTE]
+> Encryption is gated by the `enc_` storage-key prefix, **not** the field type. A `type: 'key'` without an `enc_` key renders monospace + autocomplete=off but does no masking. Conversely, an `enc_` field declared as `type: 'password'` always full-masks regardless of any `mask` config.
+
+**Sanitization:** Preserves the raw string value (no HTML stripping).
+**JSON schema:** `{ "type": "string" }`
 
 ---
 

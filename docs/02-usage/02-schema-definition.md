@@ -256,7 +256,7 @@ Accordion mode works with all section features including active toggles and stat
 | Property   | Type     | Description                                                                                                                                                                             |
 |------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `key`      | `string` | Dot-notation key in `module.setting` format. The module (before the dot) groups settings in the stored option. For `button` fields the key is a render-only identifier (not persisted). |
-| `type`     | `string` | Field type: `text`, `number`, `password`, `toggle`, `select`, `unit`, `token-list`, `color`, `code`, `button`                                                                           |
+| `type`     | `string` | Field type: `text`, `number`, `password`, `key`, `toggle`, `select`, `unit`, `token-list`, `color`, `code`, `button`                                                                    |
 
 ### Common Properties
 
@@ -265,7 +265,7 @@ Accordion mode works with all section features including active toggles and stat
 | `label`       | `string` | `''`      | Display label shown above the field                        |
 | `default`     | `mixed`  | `null`    | Default value extracted by the Schema                      |
 | `tooltip`     | `string` | —         | Help text shown in an info icon tooltip                    |
-| `placeholder` | `string` | —         | Placeholder text (text, password, token-list)              |
+| `placeholder` | `string` | —         | Placeholder text (text, password, key, token-list)         |
 | `disabled`    | `bool`   | `false`   | Render field as read-only (unconditional)                  |
 | `lock`        | `[field, op, value]` | — | Conditionally render the field read-only — same condition syntax as `show`/`hide`. See [Conditional Display](#conditional-display). |
 
@@ -287,6 +287,7 @@ Accordion mode works with all section features including active toggles and stat
 | `save`          | `unit`           | Set to `'seconds'` for automatic time unit conversion             |
 | `rows`          | `code`           | Number of textarea rows (default: 6)                              |
 | `language`      | `code`           | Syntax language hint                                              |
+| `mask`          | `key`            | Controls how an `enc_`-stored value reads back: `'full'`, `'structured'`, or `array{first, last, structured}`. Default reveals first 4 / last 4 around an all-bullets middle at input length. See [Field Types → key](../04-reference/01-field-types.md#key). |
 | `action`        | `button`         | Required. Name (or ordered list of names) of an `actions` entry — or a reserved built-in (`__save`, `__reset`, `__restore`). |
 | `variant`       | `button`         | `'primary' \| 'secondary' \| 'tertiary' \| 'link'`.               |
 | `size`          | `button`         | `'default' \| 'compact' \| 'small'`.                              |

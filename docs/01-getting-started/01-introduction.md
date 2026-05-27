@@ -12,7 +12,7 @@ MilliBase is a declarative WordPress settings framework. Define your settings pa
 
 - **Declarative schema** — define tabs, sections, and fields in a PHP array
 - **React admin UI** — generated from the schema using `@wordpress/components`
-- **9 built-in field types** — text, number, password, toggle, select, unit, token-list, color, code
+- **11 built-in field types** — text, number, password, key, toggle, select, unit, token-list, color, code, button
 - **Custom extensibility** — register custom field types and custom tab components
 - **Settings storage** — with dot-notation access, encryption, and constants override
 - **Config file sync** — write settings to PHP files for pre-WordPress access
