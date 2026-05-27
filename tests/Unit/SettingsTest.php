@@ -397,3 +397,68 @@ it('fires {slug}_settings_defaults with $is_network as the second argument', fun
     expect($captured[0][1])->toBeFalse();
     expect($captured[1][1])->toBeTrue();
 });
+
+// ─── mask_for_field() / normalize_mask_config() ─────────────────────
+
+// Public helpers consumers reach for when they need to surface a secret's
+// partial mask outside the REST GET path (e.g. MilliPro showing the network
+// key's mask inside a subsite admin UI).
+
+it('mask_for_field returns the full SECRET_MASK when mask is "full"', function () {
+    expect(Settings::mask_for_field('ABCDEFGHIJKLMNOPQRSTUVWXYZ', ['mask' => 'full']))
+        ->toBe(str_repeat('•', 20));
+});
+
+it('mask_for_field defaults to first 4 / last 4, all-bullets middle, at input length', function () {
+    expect(Settings::mask_for_field('ABCDEFGHIJKLMNOPQRSTUVWXYZ', []))
+        ->toBe('ABCD' . str_repeat('•', 18) . 'WXYZ');
+});
+
+it('mask_for_field with mask "structured" preserves non-alphanumeric separators', function () {
+    expect(Settings::mask_for_field('MILLI-AAAA-BBBB-CCCC-DDDD', ['mask' => 'structured']))
+        ->toBe('MILL•-••••-••••-••••-DDDD');
+});
+
+it('mask_for_field honors per-field first/last + structured in array form', function () {
+    expect(Settings::mask_for_field(
+        'NETW-AAAA-BBBB-CCCC-DDDD',
+        ['mask' => ['first' => 3, 'last' => 3, 'structured' => true]]
+    ))->toBe('NET•-••••-••••-••••-•DDD');
+});
+
+it('mask_for_field returns empty string for empty input (caller chooses fallback)', function () {
+    expect(Settings::mask_for_field('', ['mask' => 'structured']))->toBe('');
+});
+
+it('mask_for_field falls back to SECRET_MASK for values too short to safely reveal', function () {
+    // first=4 + last=4 + minimum 4 hidden = 12-char minimum; "SHORT" is 5.
+    expect(Settings::mask_for_field('SHORT', []))->toBe(str_repeat('•', 20));
+});
+
+it('normalize_mask_config returns null for "full" (signal: skip partial, use SECRET_MASK)', function () {
+    expect(Settings::normalize_mask_config('full'))->toBeNull();
+});
+
+it('normalize_mask_config returns defaults for null / unknown input', function () {
+    expect(Settings::normalize_mask_config(null))->toBe([
+        'first'      => 4,
+        'last'       => 4,
+        'structured' => false,
+    ]);
+});
+
+it('normalize_mask_config interprets "structured" as defaults + structured flag', function () {
+    expect(Settings::normalize_mask_config('structured'))->toBe([
+        'first'      => 4,
+        'last'       => 4,
+        'structured' => true,
+    ]);
+});
+
+it('normalize_mask_config honors any subset of first/last/structured in array form', function () {
+    expect(Settings::normalize_mask_config(['first' => 8]))->toBe([
+        'first'      => 8,
+        'last'       => 4,
+        'structured' => false,
+    ]);
+});

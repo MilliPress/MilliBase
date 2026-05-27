@@ -32,6 +32,7 @@ final class Schema {
 		'color'      => Fields\Color::class,
 		'code'       => Fields\Code::class,
 		'password'   => Fields\Password::class,
+		'key'        => Fields\Password::class,
 		'token-list' => Fields\TokenList::class,
 		'unit'       => Fields\Unit::class,
 	);
@@ -464,6 +465,47 @@ final class Schema {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Build the per-field partial-mask map for stored secrets.
+	 *
+	 * Collects `type: 'key'` fields whose storage key denotes an encrypted (enc_)
+	 * value, keyed by dot-notation "module.key". A field's optional `mask`
+	 * configures the reveal: absent → defaults; `array{first:n,last:m}` → custom
+	 * amounts; `'full'` → field is omitted from the map so
+	 * {@see Settings::redact_secrets()} falls back to a full bullet mask;
+	 * `'structured'` (or any array with `'structured' => true`) → preserves
+	 * non-alphanumeric chars (dashes, slashes, colons) in the masked middle so
+	 * the rendered placeholder keeps the input's visual shape. Consumed at the
+	 * REST boundary.
+	 *
+	 * @since 2.5.2
+	 *
+	 * @return array<string, array{first:int, last:int, structured:bool}>
+	 */
+	public function get_secret_mask_map(): array {
+		$map = array();
+
+		foreach ( $this->get_all_fields() as $field ) {
+			if ( ( $field['type'] ?? null ) !== 'key' || ! isset( $field['key'] ) || ! is_string( $field['key'] ) ) {
+				continue;
+			}
+
+			$parts = explode( '.', $field['key'] );
+			if ( count( $parts ) < 2 || strpos( $parts[1], 'enc_' ) !== 0 ) {
+				continue;
+			}
+
+			$config = Settings::normalize_mask_config( $field['mask'] ?? null );
+			if ( null === $config ) {
+				continue;
+			}
+
+			$map[ $field['key'] ] = $config;
+		}
+
+		return $map;
 	}
 
 	/**

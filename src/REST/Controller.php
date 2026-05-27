@@ -9,6 +9,7 @@
 namespace MilliBase\REST;
 
 use MilliBase\Concerns\HasConfig;
+use MilliBase\Schema;
 use MilliBase\ServerVars;
 use MilliBase\Settings;
 
@@ -40,6 +41,14 @@ final class Controller {
 	 * @var Settings
 	 */
 	private $settings;
+
+	/**
+	 * Cached per-field secret-mask map (lazy; see {@see self::secret_mask_map()}).
+	 *
+	 * @since 2.5.2
+	 * @var array<string, array{first:int, last:int, structured:bool}>|null
+	 */
+	private ?array $mask_map = null;
 
 	/**
 	 * Create a new RestController instance.
@@ -291,7 +300,22 @@ final class Controller {
 	 * @return \WP_REST_Response
 	 */
 	public function get_settings_value(): \WP_REST_Response {
-		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get() ) );
+		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get(), $this->secret_mask_map() ) );
+	}
+
+	/**
+	 * Resolve (and cache) the per-field secret-mask map from the schema.
+	 *
+	 * @since 2.5.2
+	 *
+	 * @return array<string, array{first:int, last:int, structured:bool}>
+	 */
+	private function secret_mask_map(): array {
+		if ( null === $this->mask_map ) {
+			$this->mask_map = ( new Schema( $this->config ) )->get_secret_mask_map();
+		}
+
+		return $this->mask_map;
 	}
 
 	/**
@@ -299,9 +323,9 @@ final class Controller {
 	 *
 	 * The body is the settings tree directly (no `option_name` wrapping).
 	 * Sanitization runs via the Schema's `sanitize_option_<name>` callback.
-	 * Masked/blank enc_ fields are reconciled against the stored value so an
+	 * Masked enc_ fields are reconciled against the stored value so an
 	 * unrelated save cannot wipe a secret — see
-	 * {@see \MilliBase\Settings::preserve_secret_writes()}.
+	 * {@see Settings::preserve_secret_writes()}.
 	 *
 	 * @since 2.5.0
 	 *
@@ -328,7 +352,7 @@ final class Controller {
 
 		$this->settings->update( $value );
 
-		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get() ) );
+		return rest_ensure_response( $this->settings->redact_secrets( $this->settings->get(), $this->secret_mask_map() ) );
 	}
 
 	/**
@@ -361,7 +385,7 @@ final class Controller {
 			$status_data['settings'] = array(
 				'has_defaults' => $this->settings->has_default_settings(),
 				'has_backup'   => $this->settings->has_backup(),
-				'constants'    => $this->settings->redact_secrets( $this->settings->get_settings_from_constants() ),
+				'constants'    => $this->settings->redact_secrets( $this->settings->get_settings_from_constants(), $this->secret_mask_map() ),
 			);
 
 			$is_network = ! empty( $this->config['network'] );

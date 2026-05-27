@@ -24,11 +24,40 @@ final class Settings {
 	 * Carries no key material: a set enc_ field reads back as this string so
 	 * the UI shows a value exists without exposing it. Treated as "keep the
 	 * stored value" on write — see {@see self::preserve_secret_writes()}.
+	 * Opt-in fields may instead read back a partial mask that reveals a few
+	 * leading/trailing characters — see {@see self::mask_secret()}.
 	 *
 	 * @since 2.5.1
 	 * @var string
 	 */
 	private const SECRET_MASK = '••••••••••••••••••••';
+
+	/**
+	 * The bullet character used in secret masks (U+2022).
+	 *
+	 * On write its presence in an enc_ value marks the value as a (full or
+	 * partial) mask the client never edited — a real secret never contains it.
+	 *
+	 * @since 2.5.2
+	 * @var string
+	 */
+	private const SECRET_BULLET = '•';
+
+	/**
+	 * Default leading characters revealed by a partial mask on a `type: 'key'` field.
+	 *
+	 * @since 2.5.3
+	 * @var int
+	 */
+	private const MASK_FIRST_DEFAULT = 4;
+
+	/**
+	 * Default trailing characters revealed by a partial mask on a `type: 'key'` field.
+	 *
+	 * @since 2.5.3
+	 * @var int
+	 */
+	private const MASK_LAST_DEFAULT = 4;
 
 	/**
 	 * The option name in the database.
@@ -273,19 +302,24 @@ final class Settings {
 	 * settings tree and the constants map; keys are always preserved so
 	 * constant-locked fields still resolve as locked client-side.
 	 *
-	 * @since 2.5.1
+	 * Fields listed in $mask_map read back as a partial mask exposing their
+	 * leading/trailing characters for recognition — see {@see self::mask_secret()}.
 	 *
-	 * @param array<string, mixed> $tree Module → key → value tree.
+	 * @since 2.5.1
+	 * @since 2.5.2 Added the $mask_map parameter.
+	 *
+	 * @param array<string, mixed>                                        $tree     Module → key → value tree.
+	 * @param array<string, array{first:int, last:int, structured?:bool}> $mask_map Per-field partial-mask config keyed by "module.key".
 	 * @return array<string, mixed>
 	 */
-	public function redact_secrets( array $tree ): array {
+	public function redact_secrets( array $tree, array $mask_map = array() ): array {
 		foreach ( $tree as $module_key => $module_settings ) {
 			if ( ! is_array( $module_settings ) ) {
 				continue;
 			}
 			foreach ( $module_settings as $key => $value ) {
 				if ( self::is_enc_key( $key ) && is_string( $value ) && '' !== $value ) {
-					$module_settings[ $key ] = self::SECRET_MASK;
+					$module_settings[ $key ] = self::mask_secret( $value, $mask_map[ "{$module_key}.{$key}" ] ?? null );
 				}
 			}
 			$tree[ $module_key ] = $module_settings;
@@ -295,14 +329,122 @@ final class Settings {
 	}
 
 	/**
+	 * Normalize a field's `mask` shorthand into the array shape
+	 * {@see self::mask_secret()} consumes.
+	 *
+	 * Accepts: `'full'` → returns null (signal: skip partial, full-mask);
+	 * `'structured'` → defaults + structured on; `array{first?:int, last?:int,
+	 * structured?:bool}` → custom; null/anything else → defaults.
+	 *
+	 * @since 2.5.3
+	 *
+	 * @param mixed $mask Raw `mask` shorthand from a field config.
+	 * @return array{first:int, last:int, structured:bool}|null
+	 */
+	public static function normalize_mask_config( $mask ): ?array {
+		if ( 'full' === $mask ) {
+			return null;
+		}
+
+		$first      = self::MASK_FIRST_DEFAULT;
+		$last       = self::MASK_LAST_DEFAULT;
+		$structured = ( 'structured' === $mask );
+
+		if ( is_array( $mask ) ) {
+			if ( isset( $mask['first'] ) && is_int( $mask['first'] ) ) {
+				$first = $mask['first'];
+			}
+			if ( isset( $mask['last'] ) && is_int( $mask['last'] ) ) {
+				$last = $mask['last'];
+			}
+			$structured = ! empty( $mask['structured'] );
+		}
+
+		return array(
+			'first'      => $first,
+			'last'       => $last,
+			'structured' => $structured,
+		);
+	}
+
+	/**
+	 * Compute the masked placeholder for a stored value using a field's
+	 * `mask` config — public mirror of the per-field masking applied by
+	 * {@see self::redact_secrets()} at the REST boundary.
+	 *
+	 * For consumers (e.g. surfacing a network-license key's masked shape
+	 * inside a subsite admin UI) that need the same partial placeholder a
+	 * REST GET would yield, without routing the value through the REST stack.
+	 * Empty input returns '' — caller decides any fallback.
+	 *
+	 * @since 2.5.3
+	 *
+	 * @param string               $value Decrypted plaintext secret value.
+	 * @param array<string, mixed> $field Field config; consults `mask`.
+	 * @return string
+	 */
+	public static function mask_for_field( string $value, array $field ): string {
+		if ( '' === $value ) {
+			return '';
+		}
+		$config = self::normalize_mask_config( $field['mask'] ?? null );
+		if ( null === $config ) {
+			return self::SECRET_MASK;
+		}
+		return self::mask_secret( $value, $config );
+	}
+
+	/**
+	 * Build the masked placeholder for a stored secret value.
+	 *
+	 * Default mode renders a bullet middle at input length (e.g.
+	 * "ABCD••••••••••••••••••WXYZ"); `structured` mode preserves separators
+	 * like `-` `/` `:` `_` (e.g. "MILL•-••••-••••-••••-DDDD"). Both reveal
+	 * the input's length; only the full {@see self::SECRET_MASK} hides it.
+	 * Falls back to the full mask for ENC:-prefixed values and for inputs
+	 * too short to keep ≥4 chars hidden.
+	 *
+	 * @since 2.5.2
+	 *
+	 * @param string                                            $value Decrypted plaintext secret.
+	 * @param array{first:int, last:int, structured?:bool}|null $mask  Partial-mask config, or null for full mask.
+	 * @return string
+	 */
+	private static function mask_secret( string $value, ?array $mask ): string {
+		if ( null === $mask ) {
+			return self::SECRET_MASK;
+		}
+		if ( 0 === strpos( $value, 'ENC:' ) ) {
+			return self::SECRET_MASK;
+		}
+
+		$first      = $mask['first'];
+		$last       = $mask['last'];
+		$middle_len = mb_strlen( $value ) - $first - $last;
+		if ( $middle_len < 4 ) {
+			return self::SECRET_MASK;
+		}
+
+		$middle_raw = mb_substr( $value, $first, $middle_len );
+		$bullets    = str_repeat( self::SECRET_BULLET, $middle_len );
+		$middle     = empty( $mask['structured'] )
+			? $bullets
+			: ( preg_replace( '/[\p{L}\p{N}]/u', self::SECRET_BULLET, $middle_raw ) ?? $bullets );
+
+		return mb_substr( $value, 0, $first ) . $middle . mb_substr( $value, -$last );
+	}
+
+	/**
 	 * Reinstate stored secrets the client did not change.
 	 *
 	 * Clients never receive real enc_ values (see {@see self::redact_secrets()}),
-	 * so on save an enc_ field that comes back empty, equal to the mask, or
-	 * still ENC:-encrypted means "unchanged" — the stored value is restored so
-	 * saving an unrelated setting cannot wipe the secret. A genuine new string
-	 * passes through and is encrypted normally on write. REST save path only;
-	 * {@see self::update()} stays unconditional for internal/Pro callers.
+	 * so on save an enc_ field that still carries a bullet (full or partial mask)
+	 * or is still ENC:-encrypted means "unchanged" — the stored value is restored
+	 * so saving an unrelated setting cannot wipe the secret (an untouched field
+	 * round-trips the mask, never ''). A genuine new string contains no bullet,
+	 * passes through and is encrypted normally; an empty string is an explicit
+	 * clear and is written through as-is. REST save path only; {@see self::update()}
+	 * stays unconditional for internal/Pro callers.
 	 *
 	 * @since 2.5.1
 	 *
@@ -320,10 +462,9 @@ final class Settings {
 				if ( ! self::is_enc_key( $key ) ) {
 					continue;
 				}
-				if ( is_string( $value ) && '' !== $value
-					&& self::SECRET_MASK !== $value
-					&& 0 !== strpos( $value, 'ENC:' )
-				) {
+				$unchanged = ( is_string( $value ) && false !== mb_strpos( $value, self::SECRET_BULLET ) )
+					|| ( is_string( $value ) && 0 === strpos( $value, 'ENC:' ) );
+				if ( ! $unchanged ) {
 					continue;
 				}
 

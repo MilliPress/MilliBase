@@ -404,3 +404,161 @@ it('masks enc_ constant values on GET /status but keeps the key and non-secret v
     // … and non-secret constant values pass through untouched.
     expect($constants['cache']['ttl'])->toBe(4242);
 });
+
+// ─── enc_ partial mask (type:key opt-in recognition) ────────────────
+
+// A controller whose schema declares license.enc_key as a type:key field.
+function key_controller(Settings $settings): RestController
+{
+    return make_controller([
+        'tabs' => [[
+            'name'     => 'settings',
+            'sections' => [[
+                'id'     => 'license',
+                'fields' => [
+                    ['key' => 'license.enc_key', 'type' => 'key'],
+                ],
+            ]],
+        ]],
+    ], $settings);
+}
+
+it('reveals the leading/trailing chars of a type:key enc_ value on GET /settings', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+    ];
+
+    $data = key_controller(enc_settings())->get_settings_value()->get_data();
+
+    // First 4 + bullets matching the real middle (18) + last 4. Plaintext never leaks.
+    expect($data['license']['enc_key'])->toBe('ABCD' . str_repeat('•', 18) . 'WXYZ');
+    expect(json_encode($data))->not->toContain('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+});
+
+it('renders the partial mask at the input length (only mask:"full" hides length)', function () {
+    // Default partial mask preserves the input's length so admins can compare
+    // shapes. mask:'full' is the only mode that hides it — covered separately.
+    $short = str_repeat('x', 14) . 'TAIL';   // 18 chars
+    $long  = str_repeat('y', 60) . 'TAIL';   // 64 chars
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => $short]];
+    $a = key_controller(enc_settings())->get_settings_value()->get_data();
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => $long]];
+    $b = key_controller(enc_settings())->get_settings_value()->get_data();
+
+    expect(mb_strlen($a['license']['enc_key']))->toBe(18);
+    expect(mb_strlen($b['license']['enc_key']))->toBe(64);
+});
+
+it('falls back to the full mask for a type:key value too short to reveal safely', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'short'],
+    ];
+
+    $data = key_controller(enc_settings())->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe(SECRET_MASK);
+});
+
+it('keeps the stored secret when the partial mask round-trips on save', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+    ];
+
+    // Client submits the exact value it received (the input-length partial mask).
+    $request = settings_request([
+        'license' => ['enc_key' => 'ABCD' . str_repeat('•', 18) . 'WXYZ'],
+    ]);
+
+    key_controller(enc_settings())->save_settings_value($request);
+
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+});
+
+it('keeps enc_ fields fully masked when the schema does not declare them as type:key', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+    ];
+
+    // No tabs/fields in config → empty mask map → full mask.
+    $data = make_controller([], enc_settings())->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe(SECRET_MASK);
+});
+
+it('keeps a type:key field fully masked when its mask is set to "full"', function () {
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+    ];
+
+    $controller = make_controller([
+        'tabs' => [[
+            'name'     => 'settings',
+            'sections' => [[
+                'id'     => 'license',
+                'fields' => [
+                    ['key' => 'license.enc_key', 'type' => 'key', 'mask' => 'full'],
+                ],
+            ]],
+        ]],
+    ], enc_settings());
+
+    $data = $controller->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe(SECRET_MASK);
+});
+
+it('preserves non-alphanumeric separators in the masked middle when mask => "structured"', function () {
+    // Structured mode mirrors the input's shape — dashes pass through,
+    // alphanumerics become bullets. So "MILLI-AAAA-BBBB-CCCC-DDDD" reads
+    // back as "MILL•-••••-••••-••••-DDDD" with the default first 4 / last 4.
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'MILLI-AAAA-BBBB-CCCC-DDDD'],
+    ];
+
+    $controller = make_controller([
+        'tabs' => [[
+            'name'     => 'settings',
+            'sections' => [[
+                'id'     => 'license',
+                'fields' => [
+                    ['key' => 'license.enc_key', 'type' => 'key', 'mask' => 'structured'],
+                ],
+            ]],
+        ]],
+    ], enc_settings());
+
+    $data = $controller->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe('MILL•-••••-••••-••••-DDDD');
+    expect(json_encode($data))->not->toContain('MILLI-AAAA-BBBB-CCCC-DDDD');
+});
+
+it('honors custom first/last alongside the structured flag', function () {
+    // first=5, last=4, structured=true → "MILLI-••••-••••-••••-DDDD"
+    // Lets users reveal a whole leading segment for keys with a known prefix.
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'MILLI-AAAA-BBBB-CCCC-DDDD'],
+    ];
+
+    $controller = make_controller([
+        'tabs' => [[
+            'name'     => 'settings',
+            'sections' => [[
+                'id'     => 'license',
+                'fields' => [
+                    [
+                        'key'  => 'license.enc_key',
+                        'type' => 'key',
+                        'mask' => ['first' => 5, 'last' => 4, 'structured' => true],
+                    ],
+                ],
+            ]],
+        ]],
+    ], enc_settings());
+
+    $data = $controller->get_settings_value()->get_data();
+
+    expect($data['license']['enc_key'])->toBe('MILLI-••••-••••-••••-DDDD');
+});

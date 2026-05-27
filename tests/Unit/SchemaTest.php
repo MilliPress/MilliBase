@@ -1271,3 +1271,84 @@ it('renders a section whose capability is a non-string (treated as ungated)', fu
 
     expect(array_column($sections, 'id'))->toBe(['sec']);
 });
+
+// ─── get_secret_mask_map() ──────────────────────────────────────────
+
+function key_schema(array $fields): Schema
+{
+    return new Schema([
+        'tabs' => [[
+            'name'     => 'settings',
+            'title'    => 'Settings',
+            'sections' => [['id' => 'sec', 'title' => 'Section', 'fields' => $fields]],
+        ]],
+    ]);
+}
+
+it('maps an enc_ type:key field to the default first/last reveal', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key'],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe(['license.enc_key' => ['first' => 4, 'last' => 4, 'structured' => false]]);
+});
+
+it('honors per-field first/last overrides via mask config', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'mask' => ['first' => 6, 'last' => 2]],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe(['license.enc_key' => ['first' => 6, 'last' => 2, 'structured' => false]]);
+});
+
+it('falls back to defaults for a partial mask override array', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'mask' => ['first' => 8]],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe(['license.enc_key' => ['first' => 8, 'last' => 4, 'structured' => false]]);
+});
+
+it('accepts mask => "structured" as a string shorthand with default first/last', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'mask' => 'structured'],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe(['license.enc_key' => ['first' => 4, 'last' => 4, 'structured' => true]]);
+});
+
+it('reads the structured flag from an array mask config alongside custom first/last', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'mask' => ['first' => 6, 'last' => 4, 'structured' => true]],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe(['license.enc_key' => ['first' => 6, 'last' => 4, 'structured' => true]]);
+});
+
+it('excludes a type:key field with mask => full from the map (server falls back to full mask)', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'mask' => 'full'],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe([]);
+});
+
+it('excludes non-key types and non-enc_ keys', function () {
+    $map = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'password'],            // enc_ but type=password
+        ['key' => 'api.token', 'type' => 'key'],                        // type=key but not enc_
+        ['key' => 'storage.enc_secret', 'type' => 'text'],              // enc_ but type=text
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe([]);
+});
+
+it('never includes a type:password field regardless of any mask config', function () {
+    // Belt-and-suspenders: passwords always full-mask. Ensures a future
+    // typo on a password field cannot leak first/last characters.
+    $map = key_schema([
+        ['key' => 'auth.enc_secret', 'type' => 'password', 'mask' => ['first' => 4, 'last' => 4]],
+    ])->get_secret_mask_map();
+
+    expect($map)->toBe([]);
+});
