@@ -13,6 +13,7 @@ import {
 import { caution, backup } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Banner from './Banner.jsx';
+import FooterRenderer from './FooterRenderer.jsx';
 import Header from './Header.jsx';
 import TabRenderer from './TabRenderer.jsx';
 
@@ -140,6 +141,7 @@ const SettingsApp = ( { config } ) => {
 	return (
 		<div className="millibase-settings-wrapper">
 			<Header />
+			<FooterRenderer />
 
 			{ ( () => {
 					if ( isLoadingSettings ) {

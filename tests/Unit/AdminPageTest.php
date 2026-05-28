@@ -64,3 +64,67 @@ it('ignores a non-string `footer.left` (defensive: malformed config falls back t
 
     expect($rendered)->toBe('Thank you for creating with WordPress.');
 });
+
+// ─── ['component' => '…'] form (React-portal hydration) ─────────────
+
+it('renders a placeholder span when `footer.right` is `[component => name]`', function () {
+    $rendered = make_admin_page(['footer' => ['right' => ['component' => 'MyFooterRight']]])
+        ->filter_update_footer('Version 6.7.1');
+
+    // Placeholder is hydrated by FooterRenderer at runtime; MilliBase
+    // version is still appended so the framework version stays visible.
+    expect($rendered)->toContain('<span class="millibase-footer-slot" data-component="MyFooterRight"></span>');
+    expect($rendered)->toContain(' · MilliBase ');
+});
+
+it('renders a placeholder span when `footer.left` is `[component => name]`', function () {
+    $rendered = make_admin_page(['footer' => ['left' => ['component' => 'MyFooterLeft']]])
+        ->filter_admin_footer_text('Thank you for creating with WordPress.');
+
+    expect($rendered)->toBe('<span class="millibase-footer-slot" data-component="MyFooterLeft"></span>');
+});
+
+it('escapes the component name to keep the data attribute safe against malicious config', function () {
+    $rendered = make_admin_page([
+        'footer' => ['right' => ['component' => 'X"><script>alert(1)</script>']],
+    ])->filter_update_footer('');
+
+    expect($rendered)->not->toContain('<script>');
+    // esc_attr converts " into &quot;
+    expect($rendered)->toContain('&quot;');
+});
+
+it('ignores a `[component => "" ]` shape (malformed) and falls back to MilliBase-only', function () {
+    $rendered = make_admin_page(['footer' => ['right' => ['component' => '']]])
+        ->filter_update_footer('');
+
+    expect($rendered)->toStartWith('MilliBase ');
+    expect($rendered)->not->toContain('millibase-footer-slot');
+});
+
+it('ignores a `[component => 42]` shape (non-string) and falls back', function () {
+    $rendered = make_admin_page(['footer' => ['left' => ['component' => 42]]])
+        ->filter_admin_footer_text('Thank you for creating with WordPress.');
+
+    expect($rendered)->toBe('Thank you for creating with WordPress.');
+});
+
+// ─── wp_kses_post sanitization (string form) ────────────────────────
+
+it('lets safe HTML (anchors, basic formatting) survive in `footer.right`', function () {
+    $rendered = make_admin_page([
+        'footer' => ['right' => '<a href="https://example.com">Docs</a> · <strong>Pro</strong>'],
+    ])->filter_update_footer('');
+
+    expect($rendered)->toContain('<a href="https://example.com">Docs</a>');
+    expect($rendered)->toContain('<strong>Pro</strong>');
+});
+
+it('strips dangerous HTML (script/style) from string footer config', function () {
+    $rendered = make_admin_page([
+        'footer' => ['left' => '<script>alert(1)</script>Hello'],
+    ])->filter_admin_footer_text('');
+
+    expect($rendered)->not->toContain('<script>');
+    expect($rendered)->toContain('Hello');
+});

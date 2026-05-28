@@ -199,8 +199,10 @@ final class AdminPage {
 	public function filter_admin_footer_text( $text ): string {
 		$footer = $this->config['footer'] ?? null;
 		$left   = is_array( $footer ) ? ( $footer['left'] ?? null ) : null;
-		if ( is_string( $left ) ) {
-			return $left;
+
+		$rendered = self::render_footer_slot( $left );
+		if ( null !== $rendered ) {
+			return $rendered;
 		}
 		return is_string( $text ) ? $text : '';
 	}
@@ -221,15 +223,48 @@ final class AdminPage {
 		unset( $text );
 
 		$footer = $this->config['footer'] ?? null;
-		$right  = is_array( $footer ) ? ( $footer['right'] ?? '' ) : '';
+		$right  = is_array( $footer ) ? ( $footer['right'] ?? null ) : null;
 
-		$parts = array();
-		if ( is_string( $right ) && '' !== $right ) {
-			$parts[] = $right;
+		$parts    = array();
+		$rendered = self::render_footer_slot( $right );
+		if ( null !== $rendered && '' !== $rendered ) {
+			$parts[] = $rendered;
 		}
 		$parts[] = sprintf( 'MilliBase %s', self::millibase_version() );
 
 		return implode( ' · ', $parts );
+	}
+
+	/**
+	 * Render a footer slot value into HTML.
+	 *
+	 * Accepts:
+	 *   - A string → returned after `wp_kses_post()` so basic markup (links,
+	 *     `<strong>`, `<em>`, `<span>`, etc.) survives while script/style/iframe
+	 *     and other dangerous tags are stripped. Consumers can format their
+	 *     footer text with anchors and inline styling without hand-escaping.
+	 *   - `['component' => 'Name']` → returns a placeholder span the JS bundle
+	 *     hydrates into a registered `window.MilliBase.customComponents` entry.
+	 *     The component name is `esc_attr()`-escaped before it lands in the
+	 *     `data-component` attribute.
+	 *   - Anything else → null (caller decides the fallback).
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param mixed $slot Raw value from `footer.left` / `footer.right` config.
+	 * @return string|null
+	 */
+	private static function render_footer_slot( $slot ): ?string {
+		if ( is_string( $slot ) ) {
+			return function_exists( 'wp_kses_post' ) ? wp_kses_post( $slot ) : $slot;
+		}
+		if ( is_array( $slot ) && isset( $slot['component'] ) && is_string( $slot['component'] ) && '' !== $slot['component'] ) {
+			return sprintf(
+				'<span class="millibase-footer-slot" data-component="%s"></span>',
+				esc_attr( $slot['component'] )
+			);
+		}
+		return null;
 	}
 
 	/**

@@ -256,6 +256,27 @@ if (! function_exists('esc_html')) {
     }
 }
 
+if (! function_exists('esc_attr')) {
+    function esc_attr(string $text): string
+    {
+        // Minimal stub: escape ", &, <, > the way WP's esc_attr does for tests.
+        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
+if (! function_exists('wp_kses_post')) {
+    function wp_kses_post(string $html): string
+    {
+        // Minimal stub: strip <script>/<style> blocks (the dangerous shapes
+        // we care about in tests). Real WP allows post-safe HTML; this
+        // stub is just enough to verify the production code passes input
+        // through a sanitizer and dangerous tags don't reach the output.
+        $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
+        $html = preg_replace('#<style\b[^>]*>.*?</style>#is', '', $html);
+        return is_string($html) ? $html : '';
+    }
+}
+
 if (! function_exists('esc_html__')) {
     function esc_html__(string $text, string $domain = 'default'): string
     {

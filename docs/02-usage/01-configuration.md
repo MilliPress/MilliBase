@@ -264,17 +264,49 @@ the framework version is visible for support.
 
 ```php
 'footer' => [
-    'left'  => __( 'Thanks for using My Plugin.', 'my-plugin' ),  // Replaces "Thank you for creating with WordPress."
-    'right' => 'My Plugin ' . MY_PLUGIN_VERSION,                  // Prepended to "MilliBase X.Y.Z"
+    'left'  => __( 'Thanks for using <a href="https://my-plugin.com">My Plugin</a>.', 'my-plugin' ),
+    'right' => 'My Plugin ' . MY_PLUGIN_VERSION,
 ],
 ```
 
 Rendered (with both keys set):
-- **Left:** `Thanks for using My Plugin.`
+- **Left:** `Thanks for using My Plugin.` (with the anchor wired)
 - **Right:** `My Plugin 1.2.3 · MilliBase 2.5.3`
 
-With no `footer` config, the left text stays as WordPress's default and the
-right reads simply `MilliBase 2.5.3`.
+String values go through `wp_kses_post()`, so anchors, `<strong>`, `<em>`,
+`<span>`, and other post-safe HTML survive while `<script>` / `<style>` and
+other dangerous tags are stripped. With no `footer` config, the left text
+stays as WordPress's default and the right reads simply `MilliBase 2.5.3`.
+
+#### Custom React component in a footer slot
+
+Either slot can also be a `['component' => 'Name']` reference to a React
+component the consumer has registered via
+`window.MilliBase.registerCustomComponent()` — same registry header buttons
+and custom tabs use.
+
+```php
+'footer' => [
+    'right' => [ 'component' => 'MyPluginFooterStatus' ],
+],
+```
+
+```jsx
+window.MilliBase.registerCustomComponent( 'MyPluginFooterStatus', ( { status } ) => (
+    <span>
+        { status?.license?.is_licensed
+            ? 'Pro · Active'
+            : 'Pro · Not active' }
+    </span>
+) );
+```
+
+The component receives the same standard prop set custom tabs already get:
+`{ status, settings, triggerAction, isLoading }`. It renders via a React
+portal from inside `SettingsApp`'s tree, so it has full access to
+`useSettings()`-style state without re-fetching anything. Placeholders for
+unregistered names render as an empty span — degrades gracefully if the
+JS registry hasn't been populated yet.
 
 ### `actions`
 
