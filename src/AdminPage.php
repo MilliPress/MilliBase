@@ -125,6 +125,8 @@ final class AdminPage {
 				$menu_icon
 			);
 		}
+
+		$this->register_footer_filters_on_page();
 	}
 
 	/**
@@ -152,6 +154,102 @@ final class AdminPage {
 			$slug,
 			$this->render_callback( $slug )
 		);
+
+		$this->register_footer_filters_on_page();
+	}
+
+	/**
+	 * Wire admin-footer overrides scoped to this settings page only.
+	 *
+	 * Hooked via `load-{hook_suffix}` so the filters are registered only when
+	 * our page loads — other admin pages keep the stock WP footer untouched.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return void
+	 */
+	private function register_footer_filters_on_page(): void {
+		if ( '' === $this->hook_suffix ) {
+			return;
+		}
+		add_action( "load-{$this->hook_suffix}", array( $this, 'register_footer_filters' ) );
+	}
+
+	/**
+	 * Register the footer filters. Public so it can be hooked.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return void
+	 */
+	public function register_footer_filters(): void {
+		add_filter( 'admin_footer_text', array( $this, 'filter_admin_footer_text' ) );
+		add_filter( 'update_footer', array( $this, 'filter_update_footer' ), 11 );
+	}
+
+	/**
+	 * Replace the left admin-footer text ("Thank you for creating with WordPress.")
+	 * with the consumer's `footer.left` config when provided. Pass-through otherwise.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string|mixed $text The default footer text.
+	 * @return string
+	 */
+	public function filter_admin_footer_text( $text ): string {
+		$footer = $this->config['footer'] ?? null;
+		$left   = is_array( $footer ) ? ( $footer['left'] ?? null ) : null;
+		if ( is_string( $left ) ) {
+			return $left;
+		}
+		return is_string( $text ) ? $text : '';
+	}
+
+	/**
+	 * Replace WP's "Version X.Y.Z" with `{consumer's footer.right} · MilliBase X.Y.Z`.
+	 *
+	 * MilliBase's own version is appended unconditionally so the framework
+	 * version is always visible on every consumer's settings page — useful
+	 * for support / debugging across plugins.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string|mixed $text The default footer text (WP version) — discarded.
+	 * @return string
+	 */
+	public function filter_update_footer( $text ): string {
+		unset( $text );
+
+		$footer = $this->config['footer'] ?? null;
+		$right  = is_array( $footer ) ? ( $footer['right'] ?? '' ) : '';
+
+		$parts = array();
+		if ( is_string( $right ) && '' !== $right ) {
+			$parts[] = $right;
+		}
+		$parts[] = sprintf( 'MilliBase %s', self::millibase_version() );
+
+		return implode( ' · ', $parts );
+	}
+
+	/**
+	 * Resolve MilliBase's own installed version via Composer runtime.
+	 *
+	 * Returns `'dev'` when Composer's `InstalledVersions` isn't available
+	 * (very old / non-composer environments) or doesn't know the package.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @return string
+	 */
+	private static function millibase_version(): string {
+		if ( class_exists( '\Composer\InstalledVersions' ) ) {
+			$version = \Composer\InstalledVersions::getVersion( 'millipress/millibase' );
+			if ( is_string( $version ) && '' !== $version ) {
+				return $version;
+			}
+		}
+		return 'dev';
 	}
 
 	/**

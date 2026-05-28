@@ -256,6 +256,26 @@ Configures the header section of the settings page:
 
 Available dropdown icons: `lifesaver`, `backup`, `flipVertical`.
 
+### `footer`
+
+Overrides WordPress's admin-footer text on the settings page only. Both keys
+are optional; MilliBase always appends its own version to the right slot so
+the framework version is visible for support.
+
+```php
+'footer' => [
+    'left'  => __( 'Thanks for using My Plugin.', 'my-plugin' ),  // Replaces "Thank you for creating with WordPress."
+    'right' => 'My Plugin ' . MY_PLUGIN_VERSION,                  // Prepended to "MilliBase X.Y.Z"
+],
+```
+
+Rendered (with both keys set):
+- **Left:** `Thanks for using My Plugin.`
+- **Right:** `My Plugin 1.2.3 · MilliBase 2.5.3`
+
+With no `footer` config, the left text stays as WordPress's default and the
+right reads simply `MilliBase 2.5.3`.
+
 ### `actions`
 
 Define custom REST endpoints that the UI can trigger:
