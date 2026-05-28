@@ -33,7 +33,7 @@ jobs:
           php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, sodium
           coverage: none
-      - run: composer update --prefer-dist --no-interaction --no-progress
+      - run: composer install --prefer-dist --no-interaction --no-progress
       - name: Run PHPCS
         run: vendor/bin/phpcs
       - name: Run PHPStan
@@ -53,7 +53,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, sodium
           coverage: none
-      - run: composer update --prefer-dist --no-interaction --no-progress
+      - run: composer install --prefer-dist --no-interaction --no-progress
       - name: Run Pest
         run: vendor/bin/pest
 
