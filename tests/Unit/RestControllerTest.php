@@ -348,7 +348,12 @@ it('keeps the stored secret when an unrelated setting is saved (mask round-trips
     expect($GLOBALS['__milli_test_options']['test']['cache']['ttl'])->toBe(7200);
 });
 
-it('keeps the stored secret when the enc_ field is submitted empty', function () {
+it('clears the stored secret when the enc_ field is submitted empty', function () {
+    // KeyField/PasswordField render the server's masked value as the input's
+    // PLACEHOLDER, not its value — so an untouched field round-trips the mask
+    // (preserved via bullet-detection) and the only way to produce an empty
+    // submission is the explicit × clear button or the user actively deleting
+    // a typed value. Both express intent to clear, so empty → clear.
     $GLOBALS['__milli_test_options']['test'] = [
         'license' => ['enc_key' => 'stored-secret'],
     ];
@@ -357,7 +362,7 @@ it('keeps the stored secret when the enc_ field is submitted empty', function ()
 
     make_controller([], enc_settings())->save_settings_value($request);
 
-    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('stored-secret');
+    expect($GLOBALS['__milli_test_options']['test']['license']['enc_key'])->toBe('');
 });
 
 it('persists a genuinely new enc_ value typed by the admin', function () {
