@@ -54,6 +54,9 @@
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "phpstan/extension-installer": true,
             "pestphp/pest-plugin": true
+        },
+        "platform": {
+            "php": "8.2"
         }
     },
     "extra": {
