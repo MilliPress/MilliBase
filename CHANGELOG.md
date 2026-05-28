@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.6.0](https://github.com/MilliPress/MilliBase/compare/v2.5.0...v2.6.0) (2026-05-28)
+
+
+### Features
+
+* **admin:** footer slots accept [component =&gt; name] for React portal hydration ([333dfb7](https://github.com/MilliPress/MilliBase/commit/333dfb7acd5cb358722ffbc415d064cadd77c6af))
+* **admin:** override admin footer text on the settings page ([b803256](https://github.com/MilliPress/MilliBase/commit/b8032561f879f11ded3dea09e9a6edfd8c80c329))
+* **cli:** expose settings_group_for() for downstream subcommands ([1fdb7fa](https://github.com/MilliPress/MilliBase/commit/1fdb7fa4f6c8f2b57d44d9c2a3fe9a25c70ecbf7))
+* **fields:** add KeyField with masked-as-placeholder rendering + clear button ([3687378](https://github.com/MilliPress/MilliBase/commit/36873788970d14d2881abf1e21618f253da08db1))
+* **schema:** add lock conditional for fields ([c3ab20c](https://github.com/MilliPress/MilliBase/commit/c3ab20cb0dd49d5cadaf1d977e5e94c42c97f4db))
+* **schema:** gate sections by per-section capability ([976ae05](https://github.com/MilliPress/MilliBase/commit/976ae05c4de69ba975ae4ea86333951d3f59f261))
+* **settings:** add partial-mask reveal for type:'key' secrets ([90cc221](https://github.com/MilliPress/MilliBase/commit/90cc221c5a6b2f9f4261416f42f5cd08044d6e63))
+* **settings:** honor reload directive in action responses ([66ff3d4](https://github.com/MilliPress/MilliBase/commit/66ff3d418a00e193281bd126eb4880d8131a6154))
+
+
+### Bug Fixes
+
+* **fields:** render placeholder in PasswordField ([fd1a7ff](https://github.com/MilliPress/MilliBase/commit/fd1a7ff449ebe0b5ff25fb89581a1829c9b435f4))
+* **filters:** pass $is_network to settings_defaults and rest_status_response ([06dcc47](https://github.com/MilliPress/MilliBase/commit/06dcc4705b07c442b6276cc92866162ac556f4f8))
+* **lint:** satisfy stricter wordpress-stubs param annotations ([d215bbb](https://github.com/MilliPress/MilliBase/commit/d215bbbe48fe7bfcd6f4012b732d5b1c9d579d04))
+* **rest:** mask encrypted secrets in settings/status responses ([6105817](https://github.com/MilliPress/MilliBase/commit/6105817be54583f5872e70f1b39700a259bd284b))
+* **ui:** cap modal width at 600px ([2efb935](https://github.com/MilliPress/MilliBase/commit/2efb935dd5d1e6d45d126f2bf61e47cd060249b0))
+
+
+### Miscellaneous
+
+* **docs:** bump unshipped [@since](https://github.com/since) tags to 2.6.0 ([23b9945](https://github.com/MilliPress/MilliBase/commit/23b994519dc7197ac8b04b990b063315fa1bd287))
+
 ## [2.5.0](https://github.com/MilliPress/MilliBase/compare/v2.4.2...v2.5.0) (2026-05-13)
 
 
