@@ -89,7 +89,7 @@ final class Controller {
 	 */
 	public function register_routes(): void {
 		$prefix     = ! empty( $this->config['network'] ) ? '/network' : '';
-		$namespace  = $this->config_string( 'rest_namespace', 'millibase/v1' );
+		$namespace  = $this->config_non_falsy_string( 'rest_namespace', 'millibase/v1' );
 		$capability = $this->config_string( 'capability', 'manage_options' );
 
 		$permission = function () use ( $capability ) {

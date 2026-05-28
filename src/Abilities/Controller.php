@@ -283,8 +283,16 @@ final class Controller {
 	 *
 	 * @param string $slug The plugin slug to validate.
 	 * @return bool
+	 *
+	 * @phpstan-assert-if-true non-falsy-string&lowercase-string $slug
 	 */
 	private static function is_valid_slug( string $slug ): bool {
+		// The regex below matches '0' as a 1-char slug. Exclude it explicitly
+		// so the @phpstan-assert non-falsy guarantee holds; no realistic slug
+		// is literally '0' anyway.
+		if ( '0' === $slug ) {
+			return false;
+		}
 		return 1 === preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug );
 	}
 
@@ -295,8 +303,14 @@ final class Controller {
 	 *
 	 * @param string $name The fully qualified ability name to validate.
 	 * @return bool
+	 *
+	 * @phpstan-assert-if-true non-falsy-string&lowercase-string $name
 	 */
 	private static function is_valid_name( string $name ): bool {
+		// Any string matching this regex contains a literal `/` and thus has
+		// length ≥ 3 with at least one non-`[0-9]` char, so it's automatically
+		// non-falsy and lowercase — unlike is_valid_slug which needs to
+		// special-case the standalone '0'.
 		return 1 === preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/', $name );
 	}
 
