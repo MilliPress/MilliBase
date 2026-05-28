@@ -13,8 +13,8 @@ import {
 import { caution, backup } from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import Banner from './Banner.jsx';
-import FooterRenderer from './FooterRenderer.jsx';
 import Header from './Header.jsx';
+import FooterRenderer from './FooterRenderer.jsx';
 import TabRenderer from './TabRenderer.jsx';
 
 const RecoveryDisplay = ( {
