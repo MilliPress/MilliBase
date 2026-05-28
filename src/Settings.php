@@ -27,7 +27,7 @@ final class Settings {
 	 * Opt-in fields may instead read back a partial mask that reveals a few
 	 * leading/trailing characters — see {@see self::mask_secret()}.
 	 *
-	 * @since 2.5.1
+	 * @since 2.6.0
 	 * @var string
 	 */
 	private const SECRET_MASK = '••••••••••••••••••••';
@@ -38,7 +38,7 @@ final class Settings {
 	 * On write its presence in an enc_ value marks the value as a (full or
 	 * partial) mask the client never edited — a real secret never contains it.
 	 *
-	 * @since 2.5.2
+	 * @since 2.6.0
 	 * @var string
 	 */
 	private const SECRET_BULLET = '•';
@@ -46,7 +46,7 @@ final class Settings {
 	/**
 	 * Default leading characters revealed by a partial mask on a `type: 'key'` field.
 	 *
-	 * @since 2.5.3
+	 * @since 2.6.0
 	 * @var int
 	 */
 	private const MASK_FIRST_DEFAULT = 4;
@@ -54,7 +54,7 @@ final class Settings {
 	/**
 	 * Default trailing characters revealed by a partial mask on a `type: 'key'` field.
 	 *
-	 * @since 2.5.3
+	 * @since 2.6.0
 	 * @var int
 	 */
 	private const MASK_LAST_DEFAULT = 4;
@@ -305,8 +305,8 @@ final class Settings {
 	 * Fields listed in $mask_map read back as a partial mask exposing their
 	 * leading/trailing characters for recognition — see {@see self::mask_secret()}.
 	 *
-	 * @since 2.5.1
-	 * @since 2.5.2 Added the $mask_map parameter.
+	 * @since 2.6.0
+	 * @since 2.6.0 Added the $mask_map parameter.
 	 *
 	 * @param array<string, mixed>                                        $tree     Module → key → value tree.
 	 * @param array<string, array{first:int, last:int, structured?:bool}> $mask_map Per-field partial-mask config keyed by "module.key".
@@ -336,7 +336,7 @@ final class Settings {
 	 * `'structured'` → defaults + structured on; `array{first?:int, last?:int,
 	 * structured?:bool}` → custom; null/anything else → defaults.
 	 *
-	 * @since 2.5.3
+	 * @since 2.6.0
 	 *
 	 * @param mixed $mask Raw `mask` shorthand from a field config.
 	 * @return array{first:int, last:int, structured:bool}|null
@@ -377,7 +377,7 @@ final class Settings {
 	 * REST GET would yield, without routing the value through the REST stack.
 	 * Empty input returns '' — caller decides any fallback.
 	 *
-	 * @since 2.5.3
+	 * @since 2.6.0
 	 *
 	 * @param string               $value Decrypted plaintext secret value.
 	 * @param array<string, mixed> $field Field config; consults `mask`.
@@ -404,7 +404,7 @@ final class Settings {
 	 * Falls back to the full mask for ENC:-prefixed values and for inputs
 	 * too short to keep ≥4 chars hidden.
 	 *
-	 * @since 2.5.2
+	 * @since 2.6.0
 	 *
 	 * @param string                                            $value Decrypted plaintext secret.
 	 * @param array{first:int, last:int, structured?:bool}|null $mask  Partial-mask config, or null for full mask.
@@ -446,7 +446,7 @@ final class Settings {
 	 * clear and is written through as-is. REST save path only; {@see self::update()}
 	 * stays unconditional for internal/Pro callers.
 	 *
-	 * @since 2.5.1
+	 * @since 2.6.0
 	 *
 	 * @param array<string, mixed> $incoming Submitted settings tree.
 	 * @return array<string, mixed>
@@ -697,7 +697,7 @@ final class Settings {
 			 * and keys so they are recognized throughout the settings lifecycle.
 			 *
 			 * @since 1.0.0
-			 * @since 2.5.1 Added $is_network argument.
+			 * @since 2.6.0 Added $is_network argument.
 			 *
 			 * @param array<string, array<string, mixed>> $defaults   Default settings.
 			 * @param bool                                $is_network Whether this Settings instance is network-scoped.

@@ -45,7 +45,7 @@ final class Controller {
 	/**
 	 * Cached per-field secret-mask map (lazy; see {@see self::secret_mask_map()}).
 	 *
-	 * @since 2.5.2
+	 * @since 2.6.0
 	 * @var array<string, array{first:int, last:int, structured:bool}>|null
 	 */
 	private ?array $mask_map = null;
@@ -306,7 +306,7 @@ final class Controller {
 	/**
 	 * Resolve (and cache) the per-field secret-mask map from the schema.
 	 *
-	 * @since 2.5.2
+	 * @since 2.6.0
 	 *
 	 * @return array<string, array{first:int, last:int, structured:bool}>
 	 */
@@ -394,7 +394,7 @@ final class Controller {
 			 * Filters the status response.
 			 *
 			 * @since 1.0.0
-			 * @since 2.5.1 Added $is_network argument.
+			 * @since 2.6.0 Added $is_network argument.
 			 *
 			 * @param array            $status     The status data.
 			 * @param \WP_REST_Request $request    The REST request.

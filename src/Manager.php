@@ -307,7 +307,7 @@ final class Manager {
 	 * Settings; null is returned when no Manager registered a group
 	 * under `$slug` (e.g. `'cli' => false` skips registration today).
 	 *
-	 * @since 2.5.1
+	 * @since 2.6.0
 	 *
 	 * @param string $slug Plugin slug.
 	 * @return SettingsGroup|null

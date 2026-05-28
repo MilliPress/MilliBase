@@ -328,7 +328,7 @@ final class Schema {
 	 * defaults stay viewer-agnostic, see {@see get_defaults()}).
 	 *
 	 * @since 1.0.0
-	 * @since 2.5.1 Honors a per-section `capability`.
+	 * @since 2.6.0 Honors a per-section `capability`.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -480,7 +480,7 @@ final class Schema {
 	 * the rendered placeholder keeps the input's visual shape. Consumed at the
 	 * REST boundary.
 	 *
-	 * @since 2.5.2
+	 * @since 2.6.0
 	 *
 	 * @return array<string, array{first:int, last:int, structured:bool}>
 	 */
