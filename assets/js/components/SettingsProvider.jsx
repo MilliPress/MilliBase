@@ -320,6 +320,29 @@ export const SettingsProvider = ( { config, children } ) => {
 		};
 	}, [ fetchSettings, fetchStatus ] );
 
+	// Sync the active tab from the URL hash for deep links and in-app hash
+	// navigation (e.g. ?page=millicache#settings). Unknown/empty hashes fall
+	// back to the first tab. Uses the plain setActiveTab setter — not
+	// setActiveTabWithHash — so reacting to a hash change never rewrites the
+	// hash and re-triggers itself.
+	useEffect( () => {
+		const syncTabFromHash = () => {
+			const hash = window.location.hash.replace( '#', '' );
+			const tabNames = ( config.schema?.tabs || [] ).map(
+				( tab ) => tab.name
+			);
+			const next =
+				hash && tabNames.includes( hash )
+					? hash
+					: ( tabNames[ 0 ] ?? null );
+			setActiveTab( next );
+		};
+
+		window.addEventListener( 'hashchange', syncTabFromHash );
+		return () =>
+			window.removeEventListener( 'hashchange', syncTabFromHash );
+	}, [ config.schema ] );
+
 	const updateSetting = useCallback( ( module, key, value ) => {
 		setSettings( ( prev ) => {
 			const safePrev = prev ?? {};

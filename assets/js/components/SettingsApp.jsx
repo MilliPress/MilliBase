@@ -208,6 +208,11 @@ const SettingsApp = ( { config } ) => {
 						>
 							{ ( { className } ) => (
 								<TabPanel
+									// TabPanel reads `initialTabName` only on
+									// mount. Keying on the active tab remounts
+									// it so programmatic setActiveTab()/hash
+									// navigation actually switches the view.
+									key={ initialTab }
 									className={ `millibase-tabs ${ className }` }
 									style={ {
 										border: '1px solid #ddd',
