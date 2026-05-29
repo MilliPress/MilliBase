@@ -729,6 +729,32 @@ it('normalizes array active config with custom default', function () {
     ]);
 });
 
+it('passes a lock condition through active config', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->normalize_active([
+        'key'     => 'pro.enabled',
+        'default' => false,
+        'lock'    => ['status.license.is_licensed', false],
+    ]))->toBe([
+        'key'     => 'pro.enabled',
+        'default' => false,
+        'lock'    => ['status.license.is_licensed', false],
+    ]);
+});
+
+it('omits a non-array lock from active config', function () {
+    $schema = new Schema(['tabs' => []]);
+
+    expect($schema->normalize_active([
+        'key'  => 'pro.enabled',
+        'lock' => 'not-an-array',
+    ]))->toBe([
+        'key'     => 'pro.enabled',
+        'default' => false,
+    ]);
+});
+
 it('returns null for invalid active values', function () {
     $schema = new Schema(['tabs' => []]);
 

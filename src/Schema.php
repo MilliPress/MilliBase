@@ -537,13 +537,14 @@ final class Schema {
 	 * Normalize an active-toggle configuration into a standard array form.
 	 *
 	 * Accepts either a string shorthand ('module.key') or an array
-	 * with 'key' and optional 'default'. Returns null for invalid input.
+	 * with 'key', optional 'default', and optional 'lock' condition.
+	 * Returns null for invalid input.
 	 *
 	 * @since 1.1.0
 	 *
 	 * @param mixed $active The active-toggle configuration.
 	 *
-	 * @return array{key: string, default: bool}|null
+	 * @return array{key: string, default: bool, lock?: array<int|string, mixed>}|null
 	 */
 	public function normalize_active( $active ): ?array {
 		if ( is_string( $active ) && '' !== $active ) {
@@ -554,10 +555,16 @@ final class Schema {
 		}
 
 		if ( is_array( $active ) && isset( $active['key'] ) && is_string( $active['key'] ) && '' !== $active['key'] ) {
-			return array(
+			$normalized = array(
 				'key'     => $active['key'],
 				'default' => (bool) ( $active['default'] ?? false ),
 			);
+			// Pass a `lock` condition through to the client, where it gates
+			// the header toggle's editability (same syntax as field `lock`).
+			if ( isset( $active['lock'] ) && is_array( $active['lock'] ) ) {
+				$normalized['lock'] = $active['lock'];
+			}
+			return $normalized;
 		}
 
 		return null;

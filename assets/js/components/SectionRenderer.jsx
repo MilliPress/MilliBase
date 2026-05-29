@@ -57,6 +57,12 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		isActive = settings?.[ activeModule ]?.[ activeKey ] ?? active.default;
 	}
 
+	// Symmetric with field `lock`: a truthy `lock` condition makes the
+	// active toggle read-only. Evaluated against the same `effective` data.
+	const activeLocked = !! (
+		active?.lock && evaluateCondition( active.lock, effective )
+	);
+
 	const renderField = ( field ) => {
 		// Symmetric with show/hide: a truthy `lock` condition makes
 		// the field read-only. Applies to every field type.
@@ -141,7 +147,11 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		>
 			<FormToggle
 				checked={ isActive }
+				disabled={ activeLocked }
 				onChange={ () => {
+					if ( activeLocked ) {
+						return;
+					}
 					const next = ! isActive;
 					updateSetting( activeModule, activeKey, next );
 					if ( next ) {

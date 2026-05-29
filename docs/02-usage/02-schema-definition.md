@@ -84,14 +84,20 @@ The toggle value is stored as a regular setting using the same dot-notation as f
 
 // Array form — custom default
 'active' => ['key' => 'minify.enabled', 'default' => true],
+
+// Array form — read-only when a condition matches
+'active' => ['key' => 'pro.enabled', 'default' => false, 'lock' => ['status.license.is_licensed', false]],
 ```
 
-| Property   | Type     | Default  | Description                                 |
-|------------|----------|----------|---------------------------------------------|
-| `key`      | `string` | —        | Dot-notation setting key (`module.setting`) |
-| `default`  | `bool`   | `false`  | Default toggle state                        |
+| Property   | Type     | Default  | Description                                                                          |
+|------------|----------|----------|--------------------------------------------------------------------------------------|
+| `key`      | `string` | —        | Dot-notation setting key (`module.setting`)                                          |
+| `default`  | `bool`   | `false`  | Default toggle state                                                                 |
+| `lock`     | `array`  | —        | Conditionally render the toggle read-only — same condition syntax as a field `lock`  |
 
 The string shorthand `'cache.enabled'` is equivalent to `['key' => 'cache.enabled', 'default' => false]`.
+
+When `lock` evaluates to `true`, the header toggle is rendered disabled and cannot be switched; its stored value is unchanged. The condition is evaluated against the same **effective** settings as field conditions and may reference `status.*` values. With no `lock`, the toggle is always editable.
 
 Active-toggle defaults are extracted automatically by the Schema — no need to duplicate them in a defaults filter. Field defaults take precedence if the same key is defined both as a field and as an active toggle.
 
