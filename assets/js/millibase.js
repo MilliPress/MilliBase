@@ -18,6 +18,7 @@ import {
 	useSettings,
 } from './components/SettingsProvider.jsx';
 import { LabelWithTooltip } from './components/LabelWithTooltip.jsx';
+import InfoPopover from './components/InfoPopover.jsx';
 
 import '../css/millibase.scss';
 
@@ -70,6 +71,7 @@ window.MilliBase.registerFieldType = function ( type, component ) {
 
 window.MilliBase.components = {
 	LabelWithTooltip,
+	InfoPopover,
 };
 
 // ─── Exposed hooks for custom tab authors ───────────────────────────

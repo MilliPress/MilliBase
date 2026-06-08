@@ -13,7 +13,83 @@ body:has(.millibase-page) .components-modal__frame {
 	max-width: 800px;
 }
 
+// InfoPopover (window.MilliBase.components.InfoPopover) — popovers portal to
+// body, so the popover block lives outside .millibase-page and is unscoped.
+.millibase-info-popover {
+
+	.components-popover__content {
+		min-width: 300px;
+		max-width: 360px;
+	}
+
+	.millibase-info-popover__content {
+		padding: 12px;
+
+		p {
+			margin: 0;
+			line-height: 1.5;
+			font-size: 13px;
+			color: #1e1e1e;
+		}
+	}
+
+	.millibase-info-popover__title {
+		margin: 0 0 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: #1e1e1e;
+		text-transform: none;
+		letter-spacing: 0;
+	}
+
+	.millibase-info-popover__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		margin-top: 8px;
+		color: var(--wp-admin-theme-color, #3858e9);
+		text-decoration: none;
+		font-size: 12px;
+
+		&:hover,
+		&:focus {
+			text-decoration: underline;
+		}
+
+		/* stylelint-disable-next-line no-descending-specificity */
+		svg {
+			fill: currentcolor;
+		}
+	}
+}
+
 .millibase-page {
+
+	.millibase-info-trigger-wrapper {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.millibase-info-trigger.components-button {
+		color: #949494;
+		min-width: 16px;
+		width: 16px;
+		height: 16px;
+		padding: 0;
+		background: transparent;
+
+		&:hover:not(:disabled),
+		&:focus:not(:disabled) {
+			background: transparent;
+			color: var(--wp-admin-theme-color, #3858e9);
+		}
+
+		/* stylelint-disable-next-line no-descending-specificity */
+		svg,
+		svg path {
+			fill: currentcolor;
+		}
+	}
 
 	&.wrap {
 		margin: 0 0 0 -20px;
