@@ -1,6 +1,6 @@
 /**
  * Info "ⓘ" trigger that opens a popover explaining a metric. Exposed via
- * `window.MilliBase.components.InfoPopover`. Receives `info` = { title?, description, docs_url? }.
+ * `window.MilliBase.components.InfoPopover`. Receives `info` = { title?, description, url? }.
  */
 
 import { useState, useRef, useEffect } from '@wordpress/element';
@@ -88,9 +88,9 @@ const InfoPopover = ( { info: meta } ) => {
 							</h4>
 						) }
 						<p>{ meta.description }</p>
-						{ meta.docs_url && (
+						{ meta.url && (
 							<a
-								href={ meta.docs_url }
+								href={ meta.url }
 								target="_blank"
 								rel="noopener noreferrer"
 								className="millibase-info-popover__link"

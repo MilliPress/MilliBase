@@ -103,6 +103,30 @@ window.MilliBase.registerComponent('PurgeCacheButton', function ({ status, trigg
 });
 ```
 
+## Provided Components
+
+MilliBase exposes a few of its own React components on `window.MilliBase.components` so custom tabs can reuse them instead of reimplementing common UI. Read them off the registry at module scope (guard the access — the registry only exists once `millibase` has loaded):
+
+```javascript
+const { InfoPopover, LabelWithTooltip } = window.MilliBase?.components ?? {};
+```
+
+### `InfoPopover`
+
+An info "ⓘ" trigger that opens a popover explaining a metric or field. Useful on KPI cards and labels. Only one is open at a time. Renders nothing when `info.description` is empty.
+
+| Prop   | Type     | Description                                                                                 |
+|--------|----------|---------------------------------------------------------------------------------------------|
+| `info` | `object` | `{ title?, description, url? }` — `description` is required; `url` adds a "Learn more" link |
+
+```jsx
+{ InfoPopover && <InfoPopover info={ { title: 'Hit rate', description: 'Share of requests served from cache.', url: 'https://example.com/docs' } } /> }
+```
+
+### `LabelWithTooltip`
+
+A field/label string paired with a help tooltip — the same label treatment MilliBase uses for built-in fields.
+
 ## Enqueue Order
 
 Same as custom field types — enqueue your script with `millibase` as a dependency:

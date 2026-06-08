@@ -66,6 +66,7 @@ $manager->settings()->get('general.enabled'); // true
 - **React admin UI** — auto-generated from the schema using `@wordpress/components`
 - **9 built-in field types** — text, number, password, toggle, select, unit, token-list, color, code
 - **Custom extensibility** — register custom field types and custom tab components from JS
+- **Provided components** — reusable React UI on `window.MilliBase.components` (`InfoPopover`, `LabelWithTooltip`) for custom tabs
 - **Conditional display** — show/hide fields based on other settings values
 - **Settings priority** — constants > config file > database > defaults
 - **Encryption** — automatic sodium encryption for sensitive fields (keys prefixed with `enc_`)
