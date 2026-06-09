@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/MilliPress/MilliBase/compare/v2.6.1...v2.6.2) (2026-06-09)
+
+
+### Features
+
+* **settings:** add get_raw() per-key accessor that bypasses the defaults-gate ([a126027](https://github.com/MilliPress/MilliBase/commit/a1260278de70afbe900cec2d03bed1806a9a6978))
+
 ## [2.6.1](https://github.com/MilliPress/MilliBase/compare/v2.6.0...v2.6.1) (2026-06-09)
 
 
