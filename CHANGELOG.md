@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.1](https://github.com/MilliPress/MilliBase/compare/v2.6.0...v2.6.1) (2026-06-09)
+
+
+### Features
+
+* **components:** add shared InfoPopover to the registry ([222c7bd](https://github.com/MilliPress/MilliBase/commit/222c7bdc86a79b14a451f8dd34e3eb71d27b9815))
+* **settings:** support lock condition on section active toggles ([f10fd3f](https://github.com/MilliPress/MilliBase/commit/f10fd3fec018714706cd17e1a5b6f91bbda182e2))
+
+
+### Bug Fixes
+
+* **settings:** make TabPanel respond to programmatic and URL tab changes ([0407573](https://github.com/MilliPress/MilliBase/commit/04075737ab5eddd36e67001211744f98ca5fe96e))
+
+
+### Miscellaneous
+
+* **deps:** bump npm-dependencies group (minors only) ([#51](https://github.com/MilliPress/MilliBase/issues/51)) ([1c232c4](https://github.com/MilliPress/MilliBase/commit/1c232c450a110157c52199ed93e6bf91f5e570b5))
+
 ## [2.6.0](https://github.com/MilliPress/MilliBase/compare/v2.5.0...v2.6.0) (2026-05-28)
 
 
