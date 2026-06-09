@@ -510,17 +510,28 @@ final class Settings {
 			return $settings;
 		}
 
-		$keys  = explode( '.', $key );
-		$value = $settings;
+		return $this->dig( $settings, $key, $fallback );
+	}
 
-		foreach ( $keys as $k ) {
-			if ( ! is_array( $value ) || ! array_key_exists( $k, $value ) ) {
+	/**
+	 * Walk a settings tree by the dot-notation key.
+	 *
+	 * @since 2.6.2
+	 *
+	 * @param array<string, mixed> $tree     Tree to dig into.
+	 * @param string               $key      Dot-notation key.
+	 * @param mixed                $fallback Returned when any segment is missing.
+	 * @return mixed
+	 */
+	private function dig( array $tree, string $key, $fallback ) {
+		foreach ( explode( '.', $key ) as $k ) {
+			if ( ! is_array( $tree ) || ! array_key_exists( $k, $tree ) ) {
 				return $fallback;
 			}
-			$value = $value[ $k ];
+			$tree = $tree[ $k ];
 		}
 
-		return $value;
+		return $tree;
 	}
 
 	/**
@@ -612,6 +623,33 @@ final class Settings {
 		}
 
 		return is_array( $value ) ? $value : array();
+	}
+
+	/**
+	 * Read one key's raw stored value bypassing the defaults-gate.
+	 *
+	 * Internal value resolution only (e.g. during the `{slug}_settings_schema`
+	 * filter, before defaults exist). Never use for REST/config output. Pairs
+	 * with read_raw(); decryption and the network/site branch are inherited.
+	 *
+	 * @since 2.6.2
+	 *
+	 * @param string $key      Dot-notation key.
+	 * @param mixed  $fallback Returned when the key resolves nowhere.
+	 *
+	 * @return mixed
+	 */
+	public function get_raw( string $key, $fallback = null ) {
+		$sentinel = "\0milli_get_raw_absent\0";
+		$raw      = $this->dig( $this->read_raw(), $key, $sentinel );
+
+		// Present in the stored row → return as-is, any type.
+		if ( $sentinel !== $raw ) {
+			return $raw;
+		}
+
+		// Absent from the row → defer to normal resolution.
+		return $this->get( $key, $fallback );
 	}
 
 	// ─── Settings resolution ────────────────────────────────────────────

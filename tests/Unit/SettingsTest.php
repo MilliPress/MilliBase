@@ -462,3 +462,43 @@ it('normalize_mask_config honors any subset of first/last/structured in array fo
         'structured' => false,
     ]);
 });
+
+// ─── get_raw() ──────────────────────────────────────────────────────
+
+it('reads a DB key absent from defaults while get() returns the fallback', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => 'ABC-123']];
+
+    expect($settings->get_raw('license.enc_key'))->toBe('ABC-123');
+    expect($settings->get('license.enc_key', ''))->toBe('');
+});
+
+it('defers to get() for a standalone instance with no stored row', function () {
+    $settings = Settings::standalone(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    expect($settings->get_raw('cache.ttl'))->toBe(3600);
+});
+
+it('returns a present non-string value as-is', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['mod' => ['key' => ['a', 'b']]];
+
+    expect($settings->get_raw('mod.key'))->toBe(['a', 'b']);
+});
+
+it('reads the network store via get_site_option', function () {
+    $settings = new Settings(['slug' => 'test', 'network' => true, 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_site_options']['test'] = ['license' => ['enc_key' => 'NET-KEY']];
+    $GLOBALS['__milli_test_options']['test']      = ['license' => ['enc_key' => 'SITE-KEY']];
+
+    expect($settings->get_raw('license.enc_key'))->toBe('NET-KEY');
+});
+
+it('returns the fallback when the key resolves nowhere', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    expect($settings->get_raw('nope.missing', 'FB'))->toBe('FB');
+});
