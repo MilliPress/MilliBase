@@ -23,6 +23,14 @@ updates:
       npm-dependencies:
         patterns:
           - "*"
+    # @wordpress/components 34 and @wordpress/element 7 require React 19;
+    # WordPress core (and our externalized runtime) is still on React 18.
+    # Hold the majors until core ships React 19.
+    ignore:
+      - dependency-name: "@wordpress/components"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@wordpress/element"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
