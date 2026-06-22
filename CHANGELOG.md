@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.4](https://github.com/MilliPress/MilliBase/compare/v2.6.3...v2.6.4) (2026-06-22)
+
+
+### Features
+
+* **fields:** generalize unit field storage base to any time unit ([eba0ad1](https://github.com/MilliPress/MilliBase/commit/eba0ad1a57732fa6cef14b71149805c85f252049))
+* **settings:** preserve flagged fields across a full reset ([93f5c02](https://github.com/MilliPress/MilliBase/commit/93f5c02431666cfb635913acef06fa1b4862621a))
+
 ## [2.6.3](https://github.com/MilliPress/MilliBase/compare/v2.6.2...v2.6.3) (2026-06-22)
 
 
