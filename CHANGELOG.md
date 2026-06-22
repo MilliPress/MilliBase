@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.6.3](https://github.com/MilliPress/MilliBase/compare/v2.6.2...v2.6.3) (2026-06-22)
+
+
+### Bug Fixes
+
+* **admin:** preload /settings and /status via apiFetch middleware ([87f7eab](https://github.com/MilliPress/MilliBase/commit/87f7eab5a364d0a36f8a51f3858ffacb001a85e9))
+* **admin:** preload /settings and /status via apiFetch middleware ([c113949](https://github.com/MilliPress/MilliBase/commit/c1139495d6afaf098e17978c5fb7dd70adad3294))
+
 ## [2.6.2](https://github.com/MilliPress/MilliBase/compare/v2.6.1...v2.6.2) (2026-06-09)
 
 
