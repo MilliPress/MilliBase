@@ -290,7 +290,7 @@ Accordion mode works with all section features including active toggles and stat
 | `max`           | `number`, `unit` | Maximum value                                                     |
 | `options`       | `select`         | Array of `{label, value}` objects                                 |
 | `units`         | `unit`           | Array of `{label, value}` unit options                            |
-| `save`          | `unit`           | Set to `'seconds'` for automatic time unit conversion             |
+| `save`          | `unit`           | Storage base for automatic time-unit conversion: `'seconds'`, `'minutes'`, `'hours'`, `'days'`, `'weeks'`, `'months'`, or `'years'`. The value is stored in that base unit while the user picks any unit from `units`. See [Field Types → unit](../04-reference/01-field-types.md#unit). |
 | `rows`          | `code`           | Number of textarea rows (default: 6)                              |
 | `language`      | `code`           | Syntax language hint                                              |
 | `mask`          | `key`            | Controls how an `enc_`-stored value reads back: `'full'`, `'structured'`, or `array{first, last, structured}`. Default reveals first 4 / last 4 around an all-bullets middle at input length. See [Field Types → key](../04-reference/01-field-types.md#key). |

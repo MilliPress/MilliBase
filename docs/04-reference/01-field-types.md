@@ -186,17 +186,17 @@ Dropdown select with validation against a whitelist of allowed values.
 
 ## unit
 
-Numeric input with a CSS unit selector. Supports automatic conversion to/from seconds for time-based values.
+Numeric input with a CSS unit selector. Supports automatic conversion between time units for time-based values.
 
 ```php
 [
-    'key'      => 'cache.ttl',
-    'type'     => 'unit',
-    'label'    => 'Cache TTL',
-    'default'  => 3600,
-    'save' => 'seconds',
-    'min'      => 0,
-    'units'    => [
+    'key'     => 'cache.ttl',
+    'type'    => 'unit',
+    'label'   => 'Cache TTL',
+    'default' => 3600,
+    'save'    => 'seconds',
+    'min'     => 0,
+    'units'   => [
         ['label' => 'Seconds', 'value' => 's'],
         ['label' => 'Minutes', 'value' => 'm'],
         ['label' => 'Hours',   'value' => 'h'],
@@ -208,12 +208,17 @@ Numeric input with a CSS unit selector. Supports automatic conversion to/from se
 | Property | Type | Description |
 |----------|------|-------------|
 | `units` | `array` | Array of `{label, value}` unit options |
-| `save` | `string` | Set to `'seconds'` for automatic time unit conversion |
+| `save` | `string` | Storage base for time-unit conversion: `'seconds'`, `'minutes'`, `'hours'`, `'days'`, `'weeks'`, `'months'`, or `'years'`. Omit for no conversion (raw number, pinned to the first unit). |
 | `min` | `int\|float` | Minimum allowed value |
 
-**Time unit conversion:** When `save` is `'seconds'`, the value is saved in seconds but displayed in the most appropriate unit. For example, `3600` seconds displays as `1 h`.
+**Time unit conversion:** When `save` is set, the value is stored in that base unit but displayed in the largest unit that divides it exactly, letting the user enter any unit from `units`. The conversion runs through seconds internally using the multiplier table below.
 
-Unit multipliers (for `save: 'seconds'`):
+- `save: 'seconds'` — a stored `3600` displays as `1 h`; entering `2 h` stores `7200`.
+- `save: 'days'` — a field offering Days / Weeks / Months stores a clean day-count: entering `1 w` stores `7`, which displays back as `1 w`.
+
+When `save` is omitted the entered number is stored verbatim and the display is pinned to the first entry in `units`.
+
+Unit multipliers (seconds per unit) — used both to pick the display unit and to resolve the `save` base:
 
 | Unit | Multiplier |
 |------|------------|
@@ -222,7 +227,8 @@ Unit multipliers (for `save: 'seconds'`):
 | `h` | 3600 |
 | `d` | 86400 |
 | `w` | 604800 |
-| `M` | 2592000 |
+| `mo` | 2592000 |
+| `y` | 31536000 |
 
 **Default units** (when `units` is not specified): Seconds, Minutes, Hours, Days.
 

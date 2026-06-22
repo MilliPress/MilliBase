@@ -14,6 +14,20 @@ const UNIT_MULTIPLIERS = {
 	d: 86400,
 	w: 604800,
 	mo: 2592000,
+	y: 31536000,
+};
+
+/**
+ * Maps a field's `save` base to its unit key in UNIT_MULTIPLIERS.
+ */
+const SAVE_UNIT_KEYS = {
+	seconds: 's',
+	minutes: 'm',
+	hours: 'h',
+	days: 'd',
+	weeks: 'w',
+	months: 'mo',
+	years: 'y',
 };
 
 /**
@@ -59,9 +73,9 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 		{ value: 'd', label: 'Days' },
 	];
 
-	const storeAsSeconds = field.save === 'seconds';
-	const display = storeAsSeconds
-		? secondsToDisplay( value || 0, units )
+	const base = UNIT_MULTIPLIERS[ SAVE_UNIT_KEYS[ field.save ] ];
+	const display = base
+		? secondsToDisplay( ( value || 0 ) * base, units )
 		: { number: value || 0, unit: units[ 0 ]?.value || 's' };
 
 	return (
@@ -72,8 +86,8 @@ const UnitField = ( { field, value, onChange, disabled } ) => {
 			disabled={ disabled }
 			value={ `${ display.number }${ display.unit }` }
 			onChange={ ( combinedValue ) => {
-				if ( storeAsSeconds ) {
-					onChange( displayToSeconds( combinedValue ) );
+				if ( base ) {
+					onChange( displayToSeconds( combinedValue ) / base );
 				} else {
 					onChange( parseFloat( combinedValue ) );
 				}
