@@ -320,6 +320,7 @@ final class AdminPage {
 
 		$this->enqueue_bundle();
 		$this->inject_config();
+		$this->preload_rest_requests();
 
 		// WordPress components styles.
 		wp_enqueue_style( 'wp-components' );
@@ -441,6 +442,7 @@ final class AdminPage {
 				'troubleshooting' => $this->config['troubleshooting'] ?? null,
 				'actions'         => $client_actions,
 				'isNetworkAdmin'  => $this->is_network_admin(),
+				'preloadPaths'    => $this->get_preload_paths(),
 			)
 		);
 
@@ -450,6 +452,78 @@ final class AdminPage {
 			'millibase',
 			"window.MilliBase = window.MilliBase || {}; window.MilliBase.init = window.MilliBase.init || function(s,c){ window.MilliBase.configs = window.MilliBase.configs || {}; window.MilliBase.configs[s] = c; }; window.MilliBase.init('{$escaped_slug}', {$config_json});",
 			'before'
+		);
+	}
+
+	/**
+	 * Build the list of REST paths to preload into the page.
+	 *
+	 * Defaults to the framework's own `settings` + `status` routes (which the
+	 * React provider always fetches on mount). A `preload` config of `false`
+	 * disables preloading; an array appends extra consumer paths.
+	 *
+	 * @since 2.6.3
+	 *
+	 * @return array<int, string> Leading-slash REST paths, deduped.
+	 */
+	private function get_preload_paths(): array {
+		$preload = $this->config['preload'] ?? null;
+		if ( false === $preload ) {
+			return array();
+		}
+
+		// Mirror inject_config()'s namespace: fold the `/network` route prefix
+		// in so preloaded paths match what the client actually requests.
+		$route_prefix   = ! empty( $this->config['network'] ) ? '/network' : '';
+		$rest_namespace = $this->config_string( 'rest_namespace', 'millibase/v1' ) . $route_prefix;
+
+		$paths = array(
+			'/' . $rest_namespace . '/settings',
+			'/' . $rest_namespace . '/status',
+		);
+
+		if ( is_array( $preload ) ) {
+			foreach ( $preload as $path ) {
+				if ( is_string( $path ) && '' !== $path ) {
+					$paths[] = '/' . ltrim( $path, '/' );
+				}
+			}
+		}
+
+		return array_values( array_unique( $paths ) );
+	}
+
+	/**
+	 * Embed REST responses inline and register apiFetch's preloading middleware.
+	 *
+	 * Lets the client's first GET to each preloaded path resolve from embedded
+	 * data instead of a network round-trip, so the settings UI mounts without
+	 * waiting on `/settings`. Attaches to `wp-api-fetch` so it runs before the
+	 * bundle's first request.
+	 *
+	 * @since 2.6.3
+	 *
+	 * @return void
+	 */
+	private function preload_rest_requests(): void {
+		if ( ! function_exists( 'rest_preload_api_request' ) ) {
+			return;
+		}
+
+		$paths = $this->get_preload_paths();
+		if ( empty( $paths ) ) {
+			return;
+		}
+
+		$preload_data = array_reduce( $paths, 'rest_preload_api_request', array() );
+
+		wp_add_inline_script(
+			'wp-api-fetch',
+			sprintf(
+				'wp.apiFetch.use( wp.apiFetch.createPreloadingMiddleware( %s ) );',
+				wp_json_encode( $preload_data )
+			),
+			'after'
 		);
 	}
 
