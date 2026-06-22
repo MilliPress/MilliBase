@@ -503,11 +503,14 @@ final class Manager {
 			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ), $this->settings->is_network() )
 			: array( 'tabs' => array() );
 
-		$defaults = ( new Schema( $config ) )->get_defaults();
+		$schema   = new Schema( $config );
+		$defaults = $schema->get_defaults();
 
 		if ( ! empty( $defaults ) ) {
 			$this->settings->merge_defaults( $defaults );
 		}
+
+		$this->settings->merge_preserved_keys( $schema->get_preserved_keys() );
 	}
 
 	/**
@@ -602,13 +605,16 @@ final class Manager {
 					'config_file'     => $config['config_file'] ?? false,
 					'network'         => ! empty( $config['network'] ),
 					'defaults'        => $defaults,
+					'preserved_keys'  => $schema->get_preserved_keys(),
 				)
 			);
 		}
 
-		// Always merge schema defaults, so active-toggle keys (and any other
-		// schema-derived defaults) are recognized even by pre-built instances.
+		// Always merge schema defaults and preserved keys, so active-toggle keys
+		// (and any other schema-derived state) are recognized even by pre-built
+		// instances.
 		$settings->merge_defaults( $schema->get_defaults() );
+		$settings->merge_preserved_keys( $schema->get_preserved_keys() );
 
 		return $settings;
 	}

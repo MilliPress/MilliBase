@@ -92,6 +92,14 @@ final class Settings {
 	private array $defaults;
 
 	/**
+	 * Dot-notation keys whose values survive a full reset.
+	 *
+	 * @since 2.6.4
+	 * @var array<int, string>
+	 */
+	private array $preserved_keys = array();
+
+	/**
 	 * The ConfigFile instance, or null if config files are disabled.
 	 *
 	 * @since 1.0.0
@@ -145,6 +153,16 @@ final class Settings {
 	private bool $bypass_schema_filter = false;
 
 	/**
+	 * When true, {@see self::fire_setting_changed_hooks()} returns without
+	 * firing. Set around the reset preservation write-back so re-storing an
+	 * unchanged preserved value does not emit a phantom "added" change event.
+	 *
+	 * @since 2.6.4
+	 * @var bool
+	 */
+	private bool $suppress_change_hooks = false;
+
+	/**
 	 * Create a new Settings instance.
 	 *
 	 * @since 1.0.0
@@ -173,6 +191,10 @@ final class Settings {
 		$this->encryption      = (bool) ( $config['encryption'] ?? false );
 		$this->standalone      = (bool) ( $config['standalone'] ?? false );
 		$this->network         = (bool) ( $config['network'] ?? false );
+
+		if ( is_array( $config['preserved_keys'] ?? null ) ) {
+			$this->preserved_keys = array_values( array_filter( $config['preserved_keys'], 'is_string' ) );
+		}
 
 		// Initialize the config file handler if configured.
 		if ( ! empty( $config['config_file'] ) && is_array( $config['config_file'] ) ) {
@@ -267,6 +289,25 @@ final class Settings {
 	public function merge_defaults( array $additional ): void {
 		$this->defaults = array_replace_recursive( $additional, $this->defaults );
 		$this->resolved = array();
+	}
+
+	/**
+	 * Merge additional preserved keys into this instance.
+	 *
+	 * Mirrors {@see self::merge_defaults()}: lets the Manager inject
+	 * schema-extracted preserve flags (and add-on extensions) into a pre-built
+	 * Settings instance. Keys are unioned; order is not significant.
+	 *
+	 * @since 2.6.4
+	 *
+	 * @param array<int, string> $keys Dot-notation keys to preserve across a full reset.
+	 *
+	 * @return void
+	 */
+	public function merge_preserved_keys( array $keys ): void {
+		$this->preserved_keys = array_values(
+			array_unique( array_merge( $this->preserved_keys, array_filter( $keys, 'is_string' ) ) )
+		);
 	}
 
 	/**
@@ -1153,12 +1194,39 @@ final class Settings {
 	/**
 	 * Check if settings are at their defaults (ignoring constants).
 	 *
+	 * Preserve-flagged keys are stripped from both operands first: they hold
+	 * identity/credential state that is orthogonal to configuration and that a
+	 * full reset deliberately keeps, so a lingering license key must not make
+	 * an otherwise-default install read as customized. See {@see self::reset()}.
+	 *
 	 * @since 1.0.0
+	 * @since 2.6.4 Ignores preserve-flagged keys.
 	 *
 	 * @return bool
 	 */
 	public function has_default_settings(): bool {
-		return $this->resolve( null, true ) === $this->get_default_settings();
+		return $this->without_preserved_keys( $this->resolve( null, true ) )
+			=== $this->without_preserved_keys( $this->get_default_settings() );
+	}
+
+	/**
+	 * Return a copy of a settings tree with preserve-flagged keys removed.
+	 *
+	 * @since 2.6.4
+	 *
+	 * @param array<string, array<string, mixed>> $tree Settings tree to strip.
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function without_preserved_keys( array $tree ): array {
+		foreach ( $this->preserved_keys as $key ) {
+			$parts = explode( '.', $key );
+			if ( count( $parts ) < 2 ) {
+				continue;
+			}
+			unset( $tree[ $parts[0] ][ $parts[1] ] );
+		}
+
+		return $tree;
 	}
 
 	// ─── Reset ──────────────────────────────────────────────────────────
@@ -1181,9 +1249,28 @@ final class Settings {
 
 		// Full reset deletes the option so reads fall through to defaults
 		// (matches REST __reset, keeps has_default_settings() consistent
-		// and lets schema-supplied defaults stay live).
+		// and lets schema-supplied defaults stay live). Preserve-flagged keys
+		// are captured first and re-stored as a minimal option after delete.
 		if ( null === $module ) {
+			$preserved = $this->capture_preserved_settings();
 			$this->delete();
+
+			if ( ! empty( $preserved ) ) {
+				// The preserved values are unchanged, so suppress the change
+				// hooks the write-back would otherwise fire as phantom "adds"
+				// (config-file sync in on_add_option still runs).
+				$this->suppress_change_hooks = true;
+				try {
+					if ( $this->network ) {
+						update_site_option( $this->option_name, $preserved );
+					} else {
+						update_option( $this->option_name, $preserved );
+					}
+				} finally {
+					$this->suppress_change_hooks = false;
+				}
+			}
+
 			return true;
 		}
 
@@ -1209,6 +1296,56 @@ final class Settings {
 		} else {
 			delete_option( $this->option_name );
 		}
+	}
+
+	/**
+	 * Capture the stored values of preserve-flagged keys as a minimal tree.
+	 *
+	 * Reads the stored row (constant-defined keys live in their constant, not
+	 * the option, so they are naturally skipped). A key is captured only when
+	 * its stored value is non-empty and differs from its default — an empty or
+	 * already-default value carries nothing a reset wouldn't restore anyway, so
+	 * the written-back option stays minimal. Decryption runs via
+	 * {@see self::read_raw()}, so the re-store path's encrypt filter re-encrypts
+	 * enc_ values cleanly.
+	 *
+	 * @since 2.6.4
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function capture_preserved_settings(): array {
+		if ( empty( $this->preserved_keys ) ) {
+			return array();
+		}
+
+		$raw       = $this->read_raw();
+		$defaults  = $this->get_default_settings();
+		$preserved = array();
+
+		foreach ( $this->preserved_keys as $key ) {
+			$parts = explode( '.', $key );
+			if ( count( $parts ) < 2 ) {
+				continue;
+			}
+
+			$module = $parts[0];
+			$field  = $parts[1];
+
+			if ( ! isset( $raw[ $module ] ) || ! is_array( $raw[ $module ] ) || ! array_key_exists( $field, $raw[ $module ] ) ) {
+				continue;
+			}
+
+			$value   = $raw[ $module ][ $field ];
+			$default = $defaults[ $module ][ $field ] ?? null;
+
+			if ( null === $value || '' === $value || $value === $default ) {
+				continue;
+			}
+
+			$preserved[ $module ][ $field ] = $value;
+		}
+
+		return $preserved;
 	}
 
 	// ─── Import / Export ────────────────────────────────────────────────
@@ -1458,6 +1595,10 @@ final class Settings {
 	 * @return void
 	 */
 	private function fire_setting_changed_hooks( array $old_settings, array $new_settings ): void {
+		if ( $this->suppress_change_hooks ) {
+			return;
+		}
+
 		$changes = self::flatten_diff( $old_settings, $new_settings );
 
 		if ( empty( $changes ) ) {

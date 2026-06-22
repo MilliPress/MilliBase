@@ -171,13 +171,67 @@ if (! function_exists('apply_filters')) {
 if (! function_exists('do_action')) {
     function do_action(string $hook, ...$args): void
     {
+        // Record every fired hook so tests can assert on (non-)dispatch, then
+        // dispatch to registered callbacks the way apply_filters() already does.
+        $GLOBALS['__milli_test_actions_fired'][] = $hook;
+
+        $bag = $GLOBALS['__milli_test_actions'][$hook] ?? [];
+        ksort($bag);
+        foreach ($bag as $callbacks) {
+            foreach ($callbacks as $callback) {
+                $callback(...$args);
+            }
+        }
     }
+}
+
+if (! defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
 }
 
 if (! function_exists('get_transient')) {
     function get_transient(string $key)
     {
-        return false;
+        return $GLOBALS['__milli_test_transients'][$key] ?? false;
+    }
+}
+
+if (! function_exists('set_transient')) {
+    function set_transient(string $key, $value, int $expiration = 0): bool
+    {
+        $GLOBALS['__milli_test_transients'][$key] = $value;
+        return true;
+    }
+}
+
+if (! function_exists('delete_transient')) {
+    function delete_transient(string $key): bool
+    {
+        unset($GLOBALS['__milli_test_transients'][$key]);
+        return true;
+    }
+}
+
+if (! function_exists('get_site_transient')) {
+    function get_site_transient(string $key)
+    {
+        return $GLOBALS['__milli_test_site_transients'][$key] ?? false;
+    }
+}
+
+if (! function_exists('set_site_transient')) {
+    function set_site_transient(string $key, $value, int $expiration = 0): bool
+    {
+        $GLOBALS['__milli_test_site_transients'][$key] = $value;
+        return true;
+    }
+}
+
+if (! function_exists('delete_site_transient')) {
+    function delete_site_transient(string $key): bool
+    {
+        unset($GLOBALS['__milli_test_site_transients'][$key]);
+        return true;
     }
 }
 
@@ -199,7 +253,18 @@ if (! function_exists('get_option')) {
 if (! function_exists('update_option')) {
     function update_option(string $key, $value): bool
     {
+        $existed = array_key_exists($key, $GLOBALS['__milli_test_options']);
+        $old     = $GLOBALS['__milli_test_options'][$key] ?? false;
+
         $GLOBALS['__milli_test_options'][$key] = $value;
+
+        // Fire the matching lifecycle action so registered Settings hooks run.
+        if ($existed) {
+            do_action("update_option_{$key}", $old, $value);
+        } else {
+            do_action("add_option_{$key}", $key, $value);
+        }
+
         return true;
     }
 }
@@ -208,6 +273,7 @@ if (! function_exists('delete_option')) {
     function delete_option(string $name): bool
     {
         unset($GLOBALS['__milli_test_options'][$name]);
+        do_action('delete_option', $name);
         return true;
     }
 }
@@ -222,7 +288,17 @@ if (! function_exists('get_site_option')) {
 if (! function_exists('update_site_option')) {
     function update_site_option(string $key, $value): bool
     {
+        $existed = array_key_exists($key, $GLOBALS['__milli_test_site_options']);
+        $old     = $GLOBALS['__milli_test_site_options'][$key] ?? false;
+
         $GLOBALS['__milli_test_site_options'][$key] = $value;
+
+        if ($existed) {
+            do_action("update_site_option_{$key}", $key, $value, $old);
+        } else {
+            do_action("add_site_option_{$key}", $key, $value);
+        }
+
         return true;
     }
 }
@@ -231,6 +307,7 @@ if (! function_exists('delete_site_option')) {
     function delete_site_option(string $name): bool
     {
         unset($GLOBALS['__milli_test_site_options'][$name]);
+        do_action('delete_site_option', $name);
         return true;
     }
 }

@@ -374,11 +374,11 @@ The example saves any pending field changes (the user pasted a key into a text i
 
 The framework ships three built-in actions, named with a leading double-underscore (`__`) by convention to keep them visually distinct from consumer-registered actions. Consumer plugins are free to use any naming scheme; the only literal collisions to avoid are `__save`, `__reset`, and `__restore`.
 
-| Name        | Effect                                                                                                                                                     |
-|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `__save`    | Persists the current dirty settings against `/wp/v2/settings`. Silent no-op when there are no pending changes — safe to keep at the head of every chain.   |
-| `__reset`   | Backs up the current option, then deletes it so defaults take over. Allow-list filterable via `{slug}_rest_settings_allowed_actions`.                      |
-| `__restore` | Restores the most recent backup written by `__reset`. Returns a 400 `success: false` if no backup exists or the backup has expired.                        |
+| Name        | Effect                                                                                                                                                                                                                                                                            |
+|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `__save`    | Persists the current dirty settings against `/wp/v2/settings`. Silent no-op when there are no pending changes — safe to keep at the head of every chain.                                                                                                                          |
+| `__reset`   | Backs up the current option, then deletes it so defaults take over. Fields flagged `preserve` keep their value (see [Schema Definition](../02-usage/02-schema-definition.md#preserving-values-across-a-reset)). Allow-list filterable via `{slug}_rest_settings_allowed_actions`. |
+| `__restore` | Restores the most recent backup written by `__reset`. Returns a 400 `success: false` if no backup exists or the backup has expired.                                                                                                                                               |
 
 ## Next Steps
 

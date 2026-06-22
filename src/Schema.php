@@ -468,6 +468,29 @@ final class Schema {
 	}
 
 	/**
+	 * Collect dot-notation keys of fields flagged to survive a full reset.
+	 *
+	 * A field opts in with `'preserve' => true`; {@see Settings::reset()} reads
+	 * this list to re-store those values after deleting the option.
+	 *
+	 * @since 2.6.4
+	 *
+	 * @return array<int, string>
+	 */
+	public function get_preserved_keys(): array {
+		$keys = array();
+
+		foreach ( $this->get_all_fields() as $field ) {
+			if ( empty( $field['preserve'] ) || ! isset( $field['key'] ) || ! is_string( $field['key'] ) ) {
+				continue;
+			}
+			$keys[] = $field['key'];
+		}
+
+		return $keys;
+	}
+
+	/**
 	 * Build the per-field partial-mask map for stored secrets.
 	 *
 	 * Collects `type: 'key'` fields whose storage key denotes an encrypted (enc_)

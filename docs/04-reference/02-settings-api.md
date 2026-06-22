@@ -79,7 +79,7 @@ Get the source of a setting value. Returns `'constant'`, `'file'`, `'db'`, or `'
 
 ### `has_default_settings(): bool`
 
-Check if current settings (excluding constants) match the defaults.
+Check if current settings (excluding constants) match the defaults. Fields flagged `preserve` in the schema are ignored by this check, so a retained license key or install ID does not make an otherwise-default install report as customized.
 
 ### `get_option_name(): string`
 
@@ -111,7 +111,7 @@ $settings->set('ttl', 7200);              // false (no module)
 
 ### `reset(?string $module = null): bool`
 
-Reset settings to defaults. Pass a module name to reset only that module.
+Reset settings to defaults. Pass a module name to reset only that module. A full reset (no module) deletes the option, but values from fields flagged `preserve` in the schema are captured and re-stored as a minimal option — see [Preserving values across a reset](../02-usage/02-schema-definition.md#preserving-values-across-a-reset).
 
 ### `delete(): void`
 

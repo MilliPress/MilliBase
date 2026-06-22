@@ -1378,3 +1378,35 @@ it('never includes a type:password field regardless of any mask config', functio
 
     expect($map)->toBe([]);
 });
+
+// ─── get_preserved_keys() ───────────────────────────────────────────
+
+it('collects keys of fields flagged with preserve => true', function () {
+    $keys = key_schema([
+        ['key' => 'license.enc_key', 'type' => 'key', 'preserve' => true],
+        ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+        ['key' => 'install.id', 'type' => 'text', 'preserve' => true],
+    ])->get_preserved_keys();
+
+    expect($keys)->toBe(['license.enc_key', 'install.id']);
+});
+
+it('returns an empty array when no field opts in', function () {
+    $keys = key_schema([
+        ['key' => 'cache.ttl', 'type' => 'number', 'default' => 3600],
+    ])->get_preserved_keys();
+
+    expect($keys)->toBe([]);
+});
+
+it('ignores falsy preserve values and fields without a string key', function () {
+    $keys = key_schema([
+        ['key' => 'a.keep', 'type' => 'text', 'preserve' => true],
+        ['key' => 'a.skip', 'type' => 'text', 'preserve' => false],
+        ['key' => 'a.zero', 'type' => 'text', 'preserve' => 0],
+        ['type' => 'text', 'preserve' => true],          // no key
+        ['key' => 123, 'type' => 'text', 'preserve' => true], // non-string key
+    ])->get_preserved_keys();
+
+    expect($keys)->toBe(['a.keep']);
+});

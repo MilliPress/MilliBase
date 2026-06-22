@@ -502,3 +502,174 @@ it('returns the fallback when the key resolves nowhere', function () {
 
     expect($settings->get_raw('nope.missing', 'FB'))->toBe('FB');
 });
+
+// ─── reset() with preserved keys ────────────────────────────────────
+
+it('deletes the option on full reset when no keys are preserved', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['cache' => ['ttl' => 99]];
+
+    $settings->reset();
+
+    expect(array_key_exists('test', $GLOBALS['__milli_test_options']))->toBeFalse();
+});
+
+it('re-stores a preserved value as a minimal option, dropping everything else', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['license' => ['enc_key' => ''], 'cache' => ['ttl' => 3600]],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'LIVE-KEY'],
+        'cache'   => ['ttl' => 99],
+    ];
+
+    $settings->reset();
+
+    // Only the preserved key survives; the cache customization is gone.
+    expect($GLOBALS['__milli_test_options']['test'])->toBe(['license' => ['enc_key' => 'LIVE-KEY']]);
+});
+
+it('skips a preserved value that is empty', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['license' => ['enc_key' => '']],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => '']];
+
+    $settings->reset();
+
+    // Nothing worth preserving → option stays deleted.
+    expect(array_key_exists('test', $GLOBALS['__milli_test_options']))->toBeFalse();
+});
+
+it('skips a preserved value already equal to its default', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['retention' => ['days' => 30]],
+        'preserved_keys' => ['retention.days'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['retention' => ['days' => 30]];
+
+    $settings->reset();
+
+    expect(array_key_exists('test', $GLOBALS['__milli_test_options']))->toBeFalse();
+});
+
+it('preserves a non-default value for the same key', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['retention' => ['days' => 30]],
+        'preserved_keys' => ['retention.days'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['retention' => ['days' => 90]];
+
+    $settings->reset();
+
+    expect($GLOBALS['__milli_test_options']['test'])->toBe(['retention' => ['days' => 90]]);
+});
+
+it('re-stores a preserved value into the network store on a network reset', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'network'        => true,
+        'defaults'       => ['license' => ['enc_key' => '']],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_site_options']['test'] = ['license' => ['enc_key' => 'NET-KEY']];
+
+    $settings->reset();
+
+    expect($GLOBALS['__milli_test_site_options']['test'])->toBe(['license' => ['enc_key' => 'NET-KEY']]);
+});
+
+it('leaves preserved keys untouched on a per-module reset', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['cache' => ['ttl' => 3600], 'license' => ['enc_key' => '']],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = [
+        'cache'   => ['ttl' => 99],
+        'license' => ['enc_key' => 'LIVE-KEY'],
+    ];
+
+    $settings->reset('cache');
+
+    // Module reset isolates the module; the option is not deleted and the
+    // license is carried through by the ordinary module-reset path.
+    expect($GLOBALS['__milli_test_options']['test']['cache'])->toBe(['ttl' => 3600]);
+    expect($GLOBALS['__milli_test_options']['test']['license'])->toBe(['enc_key' => 'LIVE-KEY']);
+});
+
+// ─── has_default_settings() ignores preserved keys ──────────────────
+
+it('reports defaults when only a preserved key differs from its default', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['license' => ['enc_key' => ''], 'cache' => ['ttl' => 3600]],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'LIVE-KEY'],
+        'cache'   => ['ttl' => 3600],
+    ];
+
+    expect($settings->has_default_settings())->toBeTrue();
+});
+
+it('reports non-defaults when a non-preserved key differs', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['license' => ['enc_key' => ''], 'cache' => ['ttl' => 3600]],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = [
+        'license' => ['enc_key' => 'LIVE-KEY'],
+        'cache'   => ['ttl' => 999],
+    ];
+
+    expect($settings->has_default_settings())->toBeFalse();
+});
+
+// ─── reset() suppresses phantom change hooks for the write-back ──────
+
+it('does not fire setting-changed hooks for the preservation write-back', function () {
+    $settings = new Settings([
+        'slug'           => 'test',
+        'defaults'       => ['license' => ['enc_key' => '']],
+        'preserved_keys' => ['license.enc_key'],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => 'LIVE-KEY']];
+
+    $settings->reset();
+
+    $changed = array_filter(
+        $GLOBALS['__milli_test_actions_fired'],
+        fn ($hook) => strpos($hook, 'test_setting_changed') === 0
+    );
+
+    expect($changed)->toBe([]);
+});
+
+it('fires setting-changed hooks on an ordinary option write (recorder sanity check)', function () {
+    // Proves the suppression test above is not vacuous: the same hook path
+    // fires normally when not suppressed.
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $settings->on_add_option('test', ['cache' => ['ttl' => 5]]);
+
+    expect($GLOBALS['__milli_test_actions_fired'])->toContain('test_setting_changed');
+});

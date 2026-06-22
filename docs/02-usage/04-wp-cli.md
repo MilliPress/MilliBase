@@ -166,6 +166,8 @@ wp myplugin config reset --module=cache
 wp myplugin config reset --yes
 ```
 
+A full reset (no `--module`) restores defaults but keeps the value of any field flagged [`preserve`](02-schema-definition.md#preserving-values-across-a-reset) in the schema, such as a license key.
+
 ## Backup and Restore
 
 ```bash

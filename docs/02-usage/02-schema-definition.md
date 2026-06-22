@@ -266,14 +266,15 @@ Accordion mode works with all section features including active toggles and stat
 
 ### Common Properties
 
-| Property      | Type     | Default   | Description                                                |
-|---------------|----------|-----------|------------------------------------------------------------|
-| `label`       | `string` | `''`      | Display label shown above the field                        |
-| `default`     | `mixed`  | `null`    | Default value extracted by the Schema                      |
-| `tooltip`     | `string` | —         | Help text shown in an info icon tooltip                    |
-| `placeholder` | `string` | —         | Placeholder text (text, password, key, token-list)         |
-| `disabled`    | `bool`   | `false`   | Render field as read-only (unconditional)                  |
-| `lock`        | `[field, op, value]` | — | Conditionally render the field read-only — same condition syntax as `show`/`hide`. See [Conditional Display](#conditional-display). |
+| Property      | Type                 | Default     | Description                                                                                                                                                                |
+|---------------|----------------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `label`       | `string`             | `''`        | Display label shown above the field                                                                                                                                        |
+| `default`     | `mixed`              | `null`      | Default value extracted by the Schema                                                                                                                                      |
+| `tooltip`     | `string`             | —           | Help text shown in an info icon tooltip                                                                                                                                    |
+| `placeholder` | `string`             | —           | Placeholder text (text, password, key, token-list)                                                                                                                         |
+| `disabled`    | `bool`               | `false`     | Render field as read-only (unconditional)                                                                                                                                  |
+| `lock`        | `[field, op, value]` | —           | Conditionally render the field read-only — same condition syntax as `show`/`hide`. See [Conditional Display](#conditional-display).                                        |
+| `preserve`    | `bool`               | `false`     | Keep this field's stored value across a **full** reset (e.g. a license key or install ID). See [Preserving values across a reset](#preserving-values-across-a-reset).      |
 
 ### Layout Properties
 
@@ -315,6 +316,22 @@ Field keys use dot notation: `module.setting`. The part before the dot is the **
 
 > [!IMPORTANT]
 > Fields with keys starting with `enc_` are automatically encrypted when `encryption` is enabled in the config. The `enc_` prefix triggers sodium encryption on save and decryption on read.
+
+## Preserving values across a reset
+
+A **full** reset (`reset()` with no module, or the `__reset` REST/CLI action) normally deletes the whole option so every setting falls back to its default. Mark a field with `'preserve' => true` to carry its stored value through that wipe — intended for values that identify the install rather than configure it, such as a license key or a generated install ID:
+
+```php
+['key' => 'license.enc_key', 'type' => 'key', 'preserve' => true],
+```
+
+Behavior:
+
+- The value is captured before the option is deleted and re-stored as a minimal option afterward. `enc_` values round-trip through decryption/encryption transparently.
+- A preserved value is only re-stored when it is **non-empty and differs from its default** — an empty or already-default value carries nothing a reset wouldn't restore anyway.
+- Preserved keys are **ignored by [`has_default_settings()`](../04-reference/02-settings-api.md#has_default_settings-bool)**, so a lingering license key does not make an otherwise-default install report as customized.
+- Re-storing the preserved value does **not** fire `{slug}_setting_changed` hooks — the value did not change.
+- A **per-module** reset (`reset('cache')`) is unaffected: it already isolates a single module and leaves other modules, including preserved keys, untouched.
 
 ## Conditional Display
 
