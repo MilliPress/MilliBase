@@ -16,7 +16,7 @@ import { runActionChain } from './actionChain.js';
 const SettingsContext = createContext();
 
 export const SettingsProvider = ( { config, children } ) => {
-	const { restNamespace } = config;
+	const { restNamespace, preloadPaths = [] } = config;
 
 	const [ status, setStatus ] = useState( {} );
 	const [ settings, setSettings ] = useState( {} );
@@ -49,6 +49,10 @@ export const SettingsProvider = ( { config, children } ) => {
 	const hasStorageChangesRef = useRef( hasStorageChanges );
 	const { showSnackbar } = useSnackbar();
 	const showSnackbarRef = useRef( showSnackbar );
+	// Tracks preloaded paths already served from embedded data. WP's preloading
+	// middleware resolves each path only once, so subsequent fetches hit the
+	// network and get the normal anti-flicker delay back.
+	const consumedPreloadRef = useRef( new Set() );
 
 	const delay = ( ms ) =>
 		new Promise( ( resolve ) => setTimeout( resolve, ms ) );
@@ -85,14 +89,28 @@ export const SettingsProvider = ( { config, children } ) => {
 	const apiRequest = useCallback(
 		async ( options ) => {
 			try {
-				await delay( 300 );
+				// Skip the anti-flicker delay when this GET resolves from
+				// preloaded data — the first hit to each preloaded path is
+				// served from embedded JSON, so there's no round-trip to mask.
+				const method = options.method || 'GET';
+				const isPreloaded =
+					'GET' === method &&
+					preloadPaths.includes( options.path ) &&
+					! consumedPreloadRef.current.has( options.path );
+
+				if ( isPreloaded ) {
+					consumedPreloadRef.current.add( options.path );
+				} else {
+					await delay( 300 );
+				}
+
 				return await apiFetch( options );
 			} catch ( apiError ) {
 				const errorMessage = handleApiError( apiError );
 				throw new Error( errorMessage );
 			}
 		},
-		[ handleApiError ]
+		[ handleApiError, preloadPaths ]
 	);
 
 	const fetchStatus = useCallback( async () => {

@@ -72,7 +72,7 @@ body:has(.millibase-page) .components-modal__frame {
 
 	.millibase-info-trigger.components-button {
 		color: #949494;
-		min-width: 16px;
+		min-width: 16px !important;
 		width: 16px;
 		height: 16px;
 		padding: 0;
