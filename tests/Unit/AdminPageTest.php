@@ -19,11 +19,12 @@ it('renders just "MilliBase {version}" on the right when no footer config is pro
     expect($rendered)->not->toContain('Version 6.7.1');
 });
 
-it('prepends the consumer\'s `footer.right` to MilliBase\'s own version, separated by " · "', function () {
+it('lets a non-empty `footer.right` fully replace the right slot (no MilliBase suffix)', function () {
     $rendered = make_admin_page(['footer' => ['right' => 'MilliCache 2.0.1']])
         ->filter_update_footer('Version 6.7.1');
 
-    expect($rendered)->toStartWith('MilliCache 2.0.1 · MilliBase ');
+    expect($rendered)->toBe('MilliCache 2.0.1');
+    expect($rendered)->not->toContain('MilliBase ');
     expect($rendered)->not->toContain('Version 6.7.1');
 });
 
@@ -71,10 +72,10 @@ it('renders a placeholder span when `footer.right` is `[component => name]`', fu
     $rendered = make_admin_page(['footer' => ['right' => ['component' => 'MyFooterRight']]])
         ->filter_update_footer('Version 6.7.1');
 
-    // Placeholder is hydrated by FooterRenderer at runtime; MilliBase
-    // version is still appended so the framework version stays visible.
-    expect($rendered)->toContain('<span class="millibase-footer-slot" data-component="MyFooterRight"></span>');
-    expect($rendered)->toContain(' · MilliBase ');
+    // Placeholder is hydrated by FooterRenderer at runtime and fully
+    // replaces the right slot, so no MilliBase suffix is appended.
+    expect($rendered)->toBe('<span class="millibase-footer-slot" data-component="MyFooterRight"></span>');
+    expect($rendered)->not->toContain('MilliBase ');
 });
 
 it('renders a placeholder span when `footer.left` is `[component => name]`', function () {

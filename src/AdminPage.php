@@ -208,11 +208,11 @@ final class AdminPage {
 	}
 
 	/**
-	 * Replace WP's "Version X.Y.Z" with `{consumer's footer.right} · MilliBase X.Y.Z`.
+	 * Replace WP's "Version X.Y.Z" with the consumer's `footer.right` slot.
 	 *
-	 * MilliBase's own version is appended unconditionally so the framework
-	 * version is always visible on every consumer's settings page — useful
-	 * for support / debugging across plugins.
+	 * When `footer.right` renders to a non-empty value it fully replaces the
+	 * right slot. Only when it is unset/empty does MilliBase fall back to its
+	 * own `MilliBase X.Y.Z` so the framework version stays visible for support.
 	 *
 	 * @since 2.6.0
 	 *
@@ -225,14 +225,12 @@ final class AdminPage {
 		$footer = $this->config['footer'] ?? null;
 		$right  = is_array( $footer ) ? ( $footer['right'] ?? null ) : null;
 
-		$parts    = array();
 		$rendered = self::render_footer_slot( $right );
 		if ( null !== $rendered && '' !== $rendered ) {
-			$parts[] = $rendered;
+			return $rendered;
 		}
-		$parts[] = sprintf( 'MilliBase %s', self::millibase_version() );
 
-		return implode( ' · ', $parts );
+		return sprintf( 'MilliBase %s', self::millibase_version() );
 	}
 
 	/**

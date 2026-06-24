@@ -259,8 +259,8 @@ Available dropdown icons: `lifesaver`, `backup`, `flipVertical`.
 ### `footer`
 
 Overrides WordPress's admin-footer text on the settings page only. Both keys
-are optional; MilliBase always appends its own version to the right slot so
-the framework version is visible for support.
+are optional. Each slot fully replaces its side of the footer when set, so the
+consumer owns both — including whether to show any branding.
 
 ```php
 'footer' => [
@@ -271,12 +271,15 @@ the framework version is visible for support.
 
 Rendered (with both keys set):
 - **Left:** `Thanks for using My Plugin.` (with the anchor wired)
-- **Right:** `My Plugin 1.2.3 · MilliBase 2.5.3`
+- **Right:** `My Plugin 1.2.3`
 
 String values go through `wp_kses_post()`, so anchors, `<strong>`, `<em>`,
 `<span>`, and other post-safe HTML survive while `<script>` / `<style>` and
-other dangerous tags are stripped. With no `footer` config, the left text
-stays as WordPress's default and the right reads simply `MilliBase 2.5.3`.
+other dangerous tags are stripped.
+
+MilliBase only fills the right slot when `right` is unset/empty, falling back to
+`MilliBase 2.5.3` so the framework version stays visible for support when the
+consumer hasn't supplied their own.
 
 #### Custom React component in a footer slot
 
