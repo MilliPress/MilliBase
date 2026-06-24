@@ -261,7 +261,7 @@ Accordion mode works with all section features including active toggles and stat
 
 | Property   | Type     | Description                                                                                                                                                                             |
 |------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `key`      | `string` | Dot-notation key in `module.setting` format. The module (before the dot) groups settings in the stored option. For `button` fields the key is a render-only identifier (not persisted). |
+| `key`      | `string` | Dot-notation key in `module.setting` format. The module (before the dot) groups settings in the stored option. For `button` fields the key is a render-only identifier (not persisted). A setting whose name (after the dot) starts with `_` is **presentation-only** — it renders but gets no default and is never persisted. |
 | `type`     | `string` | Field type: `text`, `number`, `password`, `key`, `toggle`, `select`, `unit`, `token-list`, `color`, `code`, `button`                                                                    |
 
 ### Common Properties
@@ -316,6 +316,9 @@ Field keys use dot notation: `module.setting`. The part before the dot is the **
 
 > [!IMPORTANT]
 > Fields with keys starting with `enc_` are automatically encrypted when `encryption` is enabled in the config. The `enc_` prefix triggers sodium encryption on save and decryption on read.
+
+> [!NOTE]
+> A setting name starting with `_` (e.g. `editor._pro_gate`) is **presentation-only**: the field renders in the UI but is excluded from the extracted defaults and dropped on save, so nothing it submits is ever persisted. Use it for purely visual fields — upsell tiles, info panels — that have no stored value.
 
 ## Preserving values across a reset
 

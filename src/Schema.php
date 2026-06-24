@@ -116,6 +116,11 @@ final class Schema {
 			$module = $parts[0];
 			$key    = $parts[1];
 
+			// Internal keys starting with an underscore are presentation-only.
+			if ( str_starts_with( $key, '_' ) ) {
+				continue;
+			}
+
 			if ( ! isset( $defaults[ $module ] ) ) {
 				$defaults[ $module ] = array();
 			}

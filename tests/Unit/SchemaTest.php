@@ -96,6 +96,56 @@ it('skips button-type fields when extracting defaults', function () {
     ]);
 });
 
+it('skips underscore-prefixed keys when extracting defaults', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'editor',
+                        'title' => 'Editor',
+                        'fields' => [
+                            ['key' => 'editor._pro_gate', 'type' => 'pro_gate', 'label' => 'Pro feature'],
+                            ['key' => 'editor.dynamic_blocks', 'type' => 'toggle', 'default' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    expect($schema->get_defaults())->toBe([
+        'editor' => ['dynamic_blocks' => true],
+    ]);
+});
+
+it('drops underscore-prefixed keys on sanitize', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    [
+                        'id' => 'editor',
+                        'title' => 'Editor',
+                        'fields' => [
+                            ['key' => 'editor._pro_gate', 'type' => 'pro_gate', 'label' => 'Pro feature'],
+                            ['key' => 'editor.dynamic_blocks', 'type' => 'toggle', 'default' => true],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $clean = $schema->sanitize(['editor' => ['_pro_gate' => 'anything', 'dynamic_blocks' => false]]);
+
+    expect($clean)->toBe(['editor' => ['dynamic_blocks' => false]]);
+});
+
 it('caches defaults after first call', function () {
     $schema = new Schema([
         'tabs' => [
