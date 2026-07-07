@@ -17,6 +17,7 @@
 
 import { createElement, createPortal, useEffect, useState } from '@wordpress/element';
 import { useSettings } from './SettingsProvider.jsx';
+import resolveCustomComponent from '../utils/resolveCustomComponent.js';
 
 const FooterRenderer = () => {
 	const { status, settings, triggerAction, isLoading } = useSettings();
@@ -38,11 +39,7 @@ const FooterRenderer = () => {
 
 	return slots.map( ( el, i ) => {
 		const componentName = el.getAttribute( 'data-component' );
-		if ( ! componentName ) {
-			return null;
-		}
-		const Component =
-			window.MilliBase?.customComponents?.[ componentName ];
+		const Component = resolveCustomComponent( componentName );
 		if ( ! Component ) {
 			return null;
 		}

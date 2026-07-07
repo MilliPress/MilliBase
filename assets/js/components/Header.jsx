@@ -20,6 +20,7 @@ import {
 import * as wpIcons from '@wordpress/icons';
 import { useSettings } from './SettingsProvider.jsx';
 import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
+import resolveCustomComponent from '../utils/resolveCustomComponent.js';
 
 const Header = () => {
 	const {
@@ -44,8 +45,7 @@ const Header = () => {
 	const renderCustomButton = ( btn, idx ) => {
 		// If button has a registered component, render it.
 		if ( btn.component ) {
-			const CustomBtn =
-				window.MilliBase?.customComponents?.[ btn.component ];
+			const CustomBtn = resolveCustomComponent( btn.component );
 			if ( CustomBtn ) {
 				return createElement( CustomBtn, {
 					key: idx,
