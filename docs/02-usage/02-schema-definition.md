@@ -34,7 +34,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `sections` | `array` | No | Section definitions (for standard tabs) |
 | `type` | `string` | No | Set to `'custom'` to render a custom component |
 | `component` | `string` | No | Name of a registered custom component |
-| `intro` | `string` | No | Introductory text shown above sections |
+| `intro` | `string` | No | Introductory text shown above sections — plain text, limited HTML, or a registered component name |
 | `accordion` | `bool` | No | When `true`, only one section can be open at a time (see [Accordion Mode](#accordion-mode)) |
 
 ## Section Structure
@@ -62,7 +62,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `id`      | `string`        | Yes       | Unique identifier within the tab, used for overrides                                                    |
 | `title`   | `string`        | Yes       | Panel heading                                                                                           |
 | `icon`    | `string`        | No        | Icon name                                                                                               |
-| `intro`   | `string`        | No        | Intro text or registered component name                                                                 |
+| `intro`   | `string`        | No        | Intro text, limited HTML, or registered component name                                                  |
 | `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
 | `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                          |
 | `status`  | `array`         | No        | Runtime status badge config (see below)                                                                 |
@@ -70,7 +70,16 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `fields`  | `array`         | Yes       | Field definitions                                                                                       |
 
 > [!TIP]
-> The `intro` property can reference a registered custom component name. If `window.MilliBase.customComponents` contains a matching entry, it renders the component instead of plain text. This is useful for dynamic section descriptions.
+> The `intro` property (on tabs and sections) accepts three forms:
+>
+> 1. **Plain text** — rendered as a simple paragraph.
+> 2. **Limited HTML** — strings containing markup are rendered as HTML, sanitized server-side to an allowlist of `p`, `br`, `strong`, `em`, `code`, `a`, `ul`, `ol`, and `li`. Useful for multi-paragraph intros with links and emphasis, without building a component.
+> 3. **Registered component name** — if `window.MilliBase.customComponents` contains a matching entry, that component renders instead. Useful for fully dynamic intros.
+>
+> ```php
+> 'intro' => '<p>Requires an <strong>API key</strong> from your account.</p>
+>             <p>See the <a href="https://example.com/docs">setup guide</a> for details.</p>',
+> ```
 
 ### Section Active Toggle
 

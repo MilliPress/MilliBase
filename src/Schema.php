@@ -363,8 +363,8 @@ final class Schema {
 				$client_tab['accordion'] = true;
 			}
 
-			if ( isset( $tab['intro'] ) ) {
-				$client_tab['intro'] = $tab['intro'];
+			if ( isset( $tab['intro'] ) && is_string( $tab['intro'] ) ) {
+				$client_tab['intro'] = $this->sanitize_intro( $tab['intro'] );
 			}
 
 			if ( isset( $tab['sections'] ) && is_array( $tab['sections'] ) ) {
@@ -402,8 +402,8 @@ final class Schema {
 						$client_section['status'] = $section['status'];
 					}
 
-					if ( isset( $section['intro'] ) ) {
-						$client_section['intro'] = $section['intro'];
+					if ( isset( $section['intro'] ) && is_string( $section['intro'] ) ) {
+						$client_section['intro'] = $this->sanitize_intro( $section['intro'] );
 					}
 
 					$active = $this->normalize_active( $section['active'] ?? null );
@@ -596,6 +596,43 @@ final class Schema {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Sanitize an intro string for the client.
+	 *
+	 * Strings containing markup are reduced to a limited inline-HTML
+	 * allowlist; plain text and component names pass through untouched.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $intro The intro string from the schema.
+	 *
+	 * @return string
+	 */
+	private function sanitize_intro( string $intro ): string {
+		if ( false === strpos( $intro, '<' ) ) {
+			return $intro;
+		}
+
+		return wp_kses(
+			$intro,
+			array(
+				'p'      => array(),
+				'br'     => array(),
+				'strong' => array(),
+				'em'     => array(),
+				'code'   => array(),
+				'a'      => array(
+					'href'   => true,
+					'target' => true,
+					'rel'    => true,
+				),
+				'ul'     => array(),
+				'ol'     => array(),
+				'li'     => array(),
+			)
+		);
 	}
 
 	/**

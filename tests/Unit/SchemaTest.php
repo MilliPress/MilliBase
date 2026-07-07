@@ -448,6 +448,34 @@ it('handles custom tab types, intro text, and icons', function () {
     expect($tab['sections'][0]['intro'])->toBe('Section intro');
 });
 
+it('sanitizes HTML intros to the allowlist and passes plain strings through', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'intro' => '<p>Hello <script>alert(1)</script><strong>world</strong></p>',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'intro' => 'MyIntroComponent',
+                        'fields' => [],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $client = $schema->to_client_array();
+    $tab = $client['tabs'][0];
+
+    expect($tab['intro'])->not->toContain('<script>');
+    expect($tab['intro'])->toContain('<strong>world</strong>');
+    // Plain strings (text or component names) pass through untouched.
+    expect($tab['sections'][0]['intro'])->toBe('MyIntroComponent');
+});
+
 it('passes status config through to the client and defaults open to error', function () {
     $schema = new Schema([
         'tabs' => [

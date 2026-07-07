@@ -2,8 +2,9 @@
  * Renders a PanelBody with grouped fields from a section definition.
  */
 
-import { createElement, useState, useMemo } from '@wordpress/element';
+import { useState, useMemo } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem, FormToggle } from '@wordpress/components';
+import Intro from './Intro.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
 import evaluateCondition, { resolveDotPath } from '../utils/evaluateCondition.js';
@@ -206,13 +207,16 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 
 	const renderContent = () => (
 		<>
-			{ section.intro && ( () => {
-				const CustomDesc =
-					window.MilliBase?.customComponents?.[ section.intro ];
-				return CustomDesc
-					? createElement( CustomDesc, context )
-					: <p className="millibase-section-intro">{ section.intro }</p>;
-			} )() }
+			{ section.intro && (
+				<Intro
+					text={ section.intro }
+					render={ ( content ) => (
+						<div className="millibase-section-intro">
+							{ content }
+						</div>
+					) }
+				/>
+			) }
 			<Flex direction="column" gap="4">
 				{ rows.map( ( row ) => {
 					if ( row.length === 1 ) {

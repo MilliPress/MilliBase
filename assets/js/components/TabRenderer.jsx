@@ -6,8 +6,10 @@
 
 import { createElement, useState, useCallback } from '@wordpress/element';
 import { Panel, PanelBody, PanelRow } from '@wordpress/components';
+import Intro from './Intro.jsx';
 import SectionRenderer from './SectionRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
+import resolveCustomComponent from '../utils/resolveCustomComponent.js';
 
 /**
  * Group consecutive sections by their `group` property.
@@ -75,8 +77,7 @@ const TabRenderer = ( { tab } ) => {
 
 	// Custom component tab.
 	if ( tab.type === 'custom' && tab.component ) {
-		const CustomComponent =
-			window.MilliBase?.customComponents?.[ tab.component ];
+		const CustomComponent = resolveCustomComponent( tab.component );
 		if ( CustomComponent ) {
 			return createElement( CustomComponent, {
 				status: context.status,
@@ -94,13 +95,18 @@ const TabRenderer = ( { tab } ) => {
 
 		return (
 			<div className="millibase-tab-content">
-				{ tab.intro && ( () => {
-					const CustomDesc =
-						window.MilliBase?.customComponents?.[ tab.intro ];
-					return CustomDesc
-						? createElement( CustomDesc, context )
-						: <Panel><PanelBody><PanelRow>{ tab.intro }</PanelRow></PanelBody></Panel>;
-				} )() }
+				{ tab.intro && (
+					<Intro
+						text={ tab.intro }
+						render={ ( content ) => (
+							<Panel>
+								<PanelBody>
+									<PanelRow>{ content }</PanelRow>
+								</PanelBody>
+							</Panel>
+						) }
+					/>
+				) }
 				{ groups.map( ( group, index ) => (
 					<SectionGroup
 						key={ group.label || `group-${ index }` }

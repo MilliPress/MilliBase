@@ -225,6 +225,34 @@ body:has(.millibase-page) .components-modal__frame {
 
 	.millibase-section-intro {
 		margin: 0 0 16px;
+
+		// Spacing for limited-HTML intros (see Schema::sanitize_intro()).
+		p {
+			margin: 0 0 8px;
+		}
+
+		ul,
+		ol {
+			margin: 0 0 8px 18px;
+		}
+
+		// wp-admin resets list-style globally; restore the markers.
+		ul {
+			list-style: disc outside;
+		}
+
+		ol {
+			list-style: decimal outside;
+		}
+
+		p,
+		ul,
+		ol {
+
+			&:last-child {
+				margin-bottom: 0;
+			}
+		}
 	}
 
 	// Inactive section: muted title text.

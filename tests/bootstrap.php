@@ -341,6 +341,16 @@ if (! function_exists('esc_attr')) {
     }
 }
 
+if (! function_exists('wp_kses')) {
+    function wp_kses(string $content, array $allowed_html): string
+    {
+        // Minimal stub: strip tags outside the allowlist. Attribute
+        // filtering is not emulated — tests only verify disallowed tags
+        // are removed and allowed ones survive.
+        return strip_tags($content, array_keys($allowed_html));
+    }
+}
+
 if (! function_exists('wp_kses_post')) {
     function wp_kses_post(string $html): string
     {
