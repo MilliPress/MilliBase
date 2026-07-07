@@ -46,6 +46,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
         'title'        => 'Cache Settings', // Collapsible panel title
         'icon'         => 'settings',       // Optional icon name
         'intro'        => 'Configure caching behavior.', // Optional intro text
+        'badge'        => 'Beta',           // Optional static label pill next to the title
         'open' => true,             // Whether panel starts open (default: true)
         'status'       => [                 // Optional runtime status badge
             'key'   => 'storage.connected',
@@ -63,6 +64,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
 | `title`   | `string`        | Yes       | Panel heading                                                                                           |
 | `icon`    | `string`        | No        | Icon name                                                                                               |
 | `intro`   | `string`        | No        | Intro text, limited HTML, or registered component name                                                  |
+| `badge`   | `string`        | No        | Static label pill rendered next to the title (e.g. `'Beta'`)                                            |
 | `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
 | `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                          |
 | `status`  | `array`         | No        | Runtime status badge config (see below)                                                                 |

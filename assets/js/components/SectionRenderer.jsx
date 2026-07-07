@@ -4,6 +4,7 @@
 
 import { useState, useMemo } from '@wordpress/element';
 import { PanelBody, Flex, FlexItem, FormToggle } from '@wordpress/components';
+import Badge from './Badge.jsx';
 import Intro from './Intro.jsx';
 import FieldRenderer from './FieldRenderer.jsx';
 import { useSettings } from './SettingsProvider.jsx';
@@ -137,7 +138,13 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		? resolveDotPath( status, statusConfig.key ) === statusConfig.ok
 		: true;
 
-	const statusColor = isOk ? '#00a32a' : '#d63638';
+	// The label for the current state; an empty label hides the badge, so a
+	// section can show e.g. "Connected" without a counterpart in the other state.
+	let statusBadgeLabel = '';
+	if ( hasStatus && statusConfig.badge ) {
+		statusBadgeLabel =
+			( isOk ? statusConfig.badge.ok : statusConfig.badge.error ) || '';
+	}
 
 	// Active-toggle element for section header.
 	const activeToggleElement = active ? (
@@ -167,25 +174,16 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		</span>
 	) : null;
 
-	// Build a custom title element when status or active toggle is configured.
-	const title = ( hasStatus || active ) ? (
+	// Build a custom title element when status, active toggle, or badge is configured.
+	const title = ( hasStatus || active || section.badge ) ? (
 		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px', width: '100%' } }>
 			{ activeToggleElement }
 			<span>{ section.title }</span>
-			{ hasStatus && statusConfig.badge && (
-				<span
-					style={ {
-						fontSize: '11px',
-						lineHeight: '1',
-						padding: '4px 8px',
-						borderRadius: '9999px',
-						backgroundColor: isOk ? '#e3f5e1' : '#fcecec',
-						color: statusColor,
-						fontWeight: 500,
-					} }
-				>
-					{ isOk ? statusConfig.badge.ok : statusConfig.badge.error }
-				</span>
+			{ section.badge && <Badge>{ section.badge }</Badge> }
+			{ !! statusBadgeLabel && (
+				<Badge tone={ isOk ? 'ok' : 'error' }>
+					{ statusBadgeLabel }
+				</Badge>
 			) }
 		</span>
 	) : section.title;

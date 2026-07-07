@@ -406,6 +406,10 @@ final class Schema {
 						$client_section['intro'] = $this->sanitize_intro( $section['intro'] );
 					}
 
+					if ( isset( $section['badge'] ) && is_string( $section['badge'] ) && '' !== $section['badge'] ) {
+						$client_section['badge'] = $section['badge'];
+					}
+
 					$active = $this->normalize_active( $section['active'] ?? null );
 					if ( $active ) {
 						$client_section['active'] = $active;
