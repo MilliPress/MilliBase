@@ -256,6 +256,12 @@ if (! function_exists('update_option')) {
         $existed = array_key_exists($key, $GLOBALS['__milli_test_options']);
         $old     = $GLOBALS['__milli_test_options'][$key] ?? false;
 
+        // Mirror WordPress: an unchanged value short-circuits before any
+        // hooks fire and reports false (no DB write happened).
+        if ($existed && $old === $value) {
+            return false;
+        }
+
         $GLOBALS['__milli_test_options'][$key] = $value;
 
         // Fire the matching lifecycle action so registered Settings hooks run.
@@ -290,6 +296,12 @@ if (! function_exists('update_site_option')) {
     {
         $existed = array_key_exists($key, $GLOBALS['__milli_test_site_options']);
         $old     = $GLOBALS['__milli_test_site_options'][$key] ?? false;
+
+        // Mirror WordPress: an unchanged value short-circuits before any
+        // hooks fire and reports false (no DB write happened).
+        if ($existed && $old === $value) {
+            return false;
+        }
 
         $GLOBALS['__milli_test_site_options'][$key] = $value;
 

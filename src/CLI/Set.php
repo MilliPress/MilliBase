@@ -52,17 +52,22 @@ final class Set extends Command {
 
 		$parts       = explode( '.', $key, 2 );
 		$setting_key = $parts[1] ?? '';
-		$source      = $settings->get_source( $parts[0], $setting_key );
+
+		if ( '' === $setting_key ) {
+			WP_CLI::error( "Invalid key '{$key}'. Key must use dot notation (module.key)." );
+		}
+
+		$source = $settings->get_source( $parts[0], $setting_key );
 
 		if ( 'constant' === $source ) {
 			WP_CLI::error( "Cannot set '{$key}' because it is defined as a constant." );
 		}
 
 		if ( ! $settings->set( $key, $value ) ) {
-			WP_CLI::error( "Failed to set '{$key}'. Key must use dot notation (module.key)." );
+			WP_CLI::error( "Failed to set '{$key}'." );
 		}
 
-		$display_value = ( '' !== $setting_key && strpos( $setting_key, 'enc_' ) === 0 )
+		$display_value = ( strpos( $setting_key, 'enc_' ) === 0 )
 			? '***'
 			: $this->stringify( $value );
 

@@ -673,3 +673,29 @@ it('fires setting-changed hooks on an ordinary option write (recorder sanity che
 
     expect($GLOBALS['__milli_test_actions_fired'])->toContain('test_setting_changed');
 });
+
+// ─── set() treats an unchanged value as success ───────────────────────
+
+it('returns true when setting a key to its current stored value', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['cache' => ['ttl' => 99]];
+
+    expect($settings->set('cache.ttl', 99))->toBeTrue();
+    expect($GLOBALS['__milli_test_options']['test']['cache']['ttl'])->toBe(99);
+});
+
+it('returns true and persists when setting a key to a new value', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['cache' => ['ttl' => 99]];
+
+    expect($settings->set('cache.ttl', 100))->toBeTrue();
+    expect($GLOBALS['__milli_test_options']['test']['cache']['ttl'])->toBe(100);
+});
+
+it('returns false for a key without dot notation', function () {
+    $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
+
+    expect($settings->set('cache', 99))->toBeFalse();
+});

@@ -602,7 +602,7 @@ final class Settings {
 	 * @param string $key   Dot notation key (e.g., 'cache.ttl'). Minimum 2 levels (module.key).
 	 * @param mixed  $value The value to set.
 	 *
-	 * @return bool True if the value was set successfully.
+	 * @return bool True if the value was set successfully or already stored.
 	 */
 	public function set( string $key, $value ): bool {
 		$keys = explode( '.', $key );
@@ -611,6 +611,7 @@ final class Settings {
 			return false;
 		}
 
+		$last_key = array_pop( $keys );
 		$module   = array_shift( $keys );
 		$settings = $this->resolve( null, true );
 
@@ -618,14 +619,19 @@ final class Settings {
 			$settings[ $module ] = array();
 		}
 
-		$ref      = &$settings[ $module ];
-		$last_key = array_pop( $keys );
+		$ref = &$settings[ $module ];
 
 		foreach ( $keys as $k ) {
 			if ( ! isset( $ref[ $k ] ) || ! is_array( $ref[ $k ] ) ) {
 				$ref[ $k ] = array();
 			}
 			$ref = &$ref[ $k ];
+		}
+
+		// update_option() returns false when the value is unchanged, which is
+		// indistinguishable from a writing failure — treat a no-op set as success.
+		if ( array_key_exists( $last_key, $ref ) && $ref[ $last_key ] === $value ) {
+			return true;
 		}
 
 		$ref[ $last_key ] = $value;
