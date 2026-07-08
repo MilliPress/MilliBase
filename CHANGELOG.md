@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.6.5](https://github.com/MilliPress/MilliBase/compare/v2.6.4...v2.6.5) (2026-06-24)
+
+
+### Bug Fixes
+
+* **footer:** let footer.right fully replace the right slot ([53ff164](https://github.com/MilliPress/MilliBase/commit/53ff1640267ed47809c4a477a51981c71bfa94d6))
+* **footer:** show pretty version instead of normalized 4-segment version ([d7d43d0](https://github.com/MilliPress/MilliBase/commit/d7d43d090685127bb150e64631201b8843d4a86d))
+* **schema:** support presentation-only underscore-prefixed keys ([fc6c2b2](https://github.com/MilliPress/MilliBase/commit/fc6c2b241dd8408ab0a59ccc8b92aeb413420757))
+
 ## [2.6.4](https://github.com/MilliPress/MilliBase/compare/v2.6.3...v2.6.4) (2026-06-22)
 
 
