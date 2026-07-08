@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.7](https://github.com/MilliPress/MilliBase/compare/v2.6.6...v2.6.7) (2026-07-08)
+
+
+### Bug Fixes
+
+* **cli:** treat unchanged value as success in config set ([d0aa603](https://github.com/MilliPress/MilliBase/commit/d0aa60381cb3a2518b5784622111c25c61a1c687))
+
 ## [2.6.6](https://github.com/MilliPress/MilliBase/compare/v2.6.5...v2.6.6) (2026-07-08)
 
 
