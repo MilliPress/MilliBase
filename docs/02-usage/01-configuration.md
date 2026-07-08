@@ -252,9 +252,13 @@ Configures the header section of the settings page:
 - **`title`** — page heading
 - **`links`** — array of `{label, url}` objects rendered as external links
 - **`buttons`** — custom buttons with `{label, action, variant, component}`
-- **`menu_items`** — items in the "More Actions" dropdown with `{label, action, url, icon}`
+- **`menu_items`** — items in the "More Actions" dropdown with `{label, action, url, icon, position}`
 
 Available dropdown icons: `lifesaver`, `backup`, `flipVertical`.
+
+Menu items are ordered by `position` (lower = higher up, like hook priorities).
+Custom items default to `10`; the built-in Reset and Restore (`100`)
+actions sit at the bottom. Items sharing a position keep their definition order.
 
 ### `footer`
 

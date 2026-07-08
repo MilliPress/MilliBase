@@ -134,68 +134,91 @@ const Header = () => {
 									aria-expanded={ isOpen }
 								/>
 							) }
-							renderContent={ ( { onClose } ) => (
-								<MenuGroup
-									label={ __( 'More Actions', 'millibase' ) }
-								>
-									{ /* Custom menu items (filtered by condition) */ }
-									{ menuItems.filter( ( item ) => {
-										if ( ! item.condition ) {
-											return true;
-										}
-										if ( typeof item.condition === 'string' ) {
-											return !! resolveDotPath( settings, item.condition );
-										}
-										return evaluateCondition( item.condition, settings );
-									} ).map( ( item, idx ) => (
+							renderContent={ ( { onClose } ) => {
+								// Menu entries carry a position (lower = higher up).
+								// Custom items default to 10; the built-in
+								// last-resort actions sit at 100.
+								const entries = [];
+
+								// Custom menu items (filtered by condition).
+								menuItems.filter( ( item ) => {
+									if ( ! item.condition ) {
+										return true;
+									}
+									if ( typeof item.condition === 'string' ) {
+										return !! resolveDotPath( settings, item.condition );
+									}
+									return evaluateCondition( item.condition, settings );
+								} ).forEach( ( item, idx ) => {
+									entries.push( {
+										position:
+											typeof item.position === 'number'
+												? item.position
+												: 10,
+										element: (
+											<MenuItem
+												key={ `custom-${ idx }` }
+												__next40pxDefaultSize
+												icon={
+													wpIcons[ item.icon ] ||
+													null
+												}
+												iconPosition="left"
+												onClick={ () => {
+													onClose();
+													if ( item.url ) {
+														window.open(
+															item.url,
+															'_blank'
+														);
+													} else if ( item.action ) {
+														triggerAction(
+															item.action
+														);
+													}
+												} }
+											>
+												{ item.label }
+											</MenuItem>
+										),
+									} );
+								} );
+
+								// Built-in: Reset.
+								entries.push( {
+									position: 100,
+									element: (
 										<MenuItem
-											key={ idx }
+											key="reset"
 											__next40pxDefaultSize
-											icon={
-												wpIcons[ item.icon ] || null
-											}
+											icon={ wpIcons.flipVertical }
 											iconPosition="left"
 											onClick={ () => {
 												onClose();
-												if ( item.url ) {
-													window.open(
-														item.url,
-														'_blank'
-													);
-												} else if ( item.action ) {
-													triggerAction(
-														item.action
-													);
-												}
+												triggerAction( '__reset' );
 											} }
+											disabled={
+												status.settings?.has_defaults
+											}
 										>
-											{ item.label }
+											{ __(
+												'Reset all Settings',
+												'millibase'
+											) }
 										</MenuItem>
-									) ) }
+									),
+								} );
 
-									{ /* Built-in: Reset */ }
-									<MenuItem
-										__next40pxDefaultSize
-										icon={ wpIcons.flipVertical }
-										iconPosition="left"
-										onClick={ () => {
-											onClose();
-											triggerAction( '__reset' );
-										} }
-										disabled={
-											status.settings?.has_defaults
-										}
-									>
-										{ __(
-											'Reset all Settings',
-											'millibase'
-										) }
-									</MenuItem>
-
-									{ /* Built-in: Restore (shown conditionally) */ }
-									{ status.settings?.has_backup &&
-										status.settings?.has_defaults && (
+								// Built-in: Restore (shown conditionally).
+								if (
+									status.settings?.has_backup &&
+									status.settings?.has_defaults
+								) {
+									entries.push( {
+										position: 100,
+										element: (
 											<MenuItem
+												key="restore"
 												__next40pxDefaultSize
 												icon={ wpIcons.backup }
 												iconPosition="left"
@@ -209,9 +232,25 @@ const Header = () => {
 													'millibase'
 												) }
 											</MenuItem>
+										),
+									} );
+								}
+
+								entries.sort(
+									( a, b ) => a.position - b.position
+								);
+
+								return (
+									<MenuGroup
+										label={ __(
+											'More Actions',
+											'millibase'
 										) }
-								</MenuGroup>
-							) }
+									>
+										{ entries.map( ( e ) => e.element ) }
+									</MenuGroup>
+								);
+							} }
 						/>
 					</FlexItem>
 				</Flex>
