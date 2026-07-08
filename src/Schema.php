@@ -406,8 +406,9 @@ final class Schema {
 						$client_section['intro'] = $this->sanitize_intro( $section['intro'] );
 					}
 
-					if ( isset( $section['badge'] ) && is_string( $section['badge'] ) && '' !== $section['badge'] ) {
-						$client_section['badge'] = $section['badge'];
+					$badge = $this->normalize_badge( $section['badge'] ?? null );
+					if ( $badge ) {
+						$client_section['badge'] = $badge;
 					}
 
 					$active = $this->normalize_active( $section['active'] ?? null );
@@ -636,6 +637,35 @@ final class Schema {
 				'ol'     => array(),
 				'li'     => array(),
 			)
+		);
+	}
+
+	/**
+	 * Normalize a section badge definition to `label` + `tone`.
+	 *
+	 * Accepts a plain string label or an array with `label` and an
+	 * optional `tone`; unknown tones fall back to `info`.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param mixed $badge The badge definition from the schema.
+	 *
+	 * @return array{label: string, tone: string}|null
+	 */
+	private function normalize_badge( $badge ): ?array {
+		if ( is_string( $badge ) ) {
+			$badge = array( 'label' => $badge );
+		}
+
+		if ( ! is_array( $badge ) || ! is_string( $badge['label'] ?? null ) || '' === $badge['label'] ) {
+			return null;
+		}
+
+		$tone = $badge['tone'] ?? '';
+
+		return array(
+			'label' => $badge['label'],
+			'tone'  => in_array( $tone, array( 'info', 'warning', 'ok', 'error' ), true ) ? $tone : 'info',
 		);
 	}
 

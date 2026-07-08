@@ -476,6 +476,35 @@ it('sanitizes HTML intros to the allowlist and passes plain strings through', fu
     expect($tab['sections'][0]['intro'])->toBe('MyIntroComponent');
 });
 
+it('normalizes section badges to label and tone', function () {
+    $schema = new Schema([
+        'tabs' => [
+            [
+                'name' => 'general',
+                'title' => 'General',
+                'sections' => [
+                    ['id' => 'a', 'title' => 'A', 'badge' => 'Beta', 'fields' => []],
+                    ['id' => 'b', 'title' => 'B', 'badge' => ['label' => 'Deprecated', 'tone' => 'warning'], 'fields' => []],
+                    ['id' => 'c', 'title' => 'C', 'badge' => ['label' => 'Odd', 'tone' => 'sparkly'], 'fields' => []],
+                    ['id' => 'd', 'title' => 'D', 'badge' => '', 'fields' => []],
+                    ['id' => 'e', 'title' => 'E', 'badge' => ['tone' => 'warning'], 'fields' => []],
+                ],
+            ],
+        ],
+    ]);
+
+    $sections = $schema->to_client_array()['tabs'][0]['sections'];
+
+    // Plain string → info tone.
+    expect($sections[0]['badge'])->toBe(['label' => 'Beta', 'tone' => 'info']);
+    expect($sections[1]['badge'])->toBe(['label' => 'Deprecated', 'tone' => 'warning']);
+    // Unknown tone falls back to info.
+    expect($sections[2]['badge'])->toBe(['label' => 'Odd', 'tone' => 'info']);
+    // Empty or label-less badges are dropped.
+    expect($sections[3])->not->toHaveKey('badge');
+    expect($sections[4])->not->toHaveKey('badge');
+});
+
 it('passes status config through to the client and defaults open to error', function () {
     $schema = new Schema([
         'tabs' => [

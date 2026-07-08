@@ -179,7 +179,11 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 		<span style={ { display: 'inline-flex', alignItems: 'center', gap: '8px', width: '100%' } }>
 			{ activeToggleElement }
 			<span>{ section.title }</span>
-			{ section.badge && <Badge>{ section.badge }</Badge> }
+			{ section.badge && (
+				<Badge tone={ section.badge.tone }>
+					{ section.badge.label }
+				</Badge>
+			) }
 			{ !! statusBadgeLabel && (
 				<Badge tone={ isOk ? 'ok' : 'error' }>
 					{ statusBadgeLabel }

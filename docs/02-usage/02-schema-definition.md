@@ -47,6 +47,7 @@ The `tabs` array in the configuration defines the structure of your settings pag
         'icon'         => 'settings',       // Optional icon name
         'intro'        => 'Configure caching behavior.', // Optional intro text
         'badge'        => 'Beta',           // Optional static label pill next to the title
+        // or with a tone: 'badge' => ['label' => 'Deprecated', 'tone' => 'warning'],
         'open' => true,             // Whether panel starts open (default: true)
         'status'       => [                 // Optional runtime status badge
             'key'   => 'storage.connected',
@@ -58,18 +59,18 @@ The `tabs` array in the configuration defines the structure of your settings pag
 ],
 ```
 
-| Property  | Type            | Required  | Description                                                                                             |
-|-----------|-----------------|-----------|---------------------------------------------------------------------------------------------------------|
-| `id`      | `string`        | Yes       | Unique identifier within the tab, used for overrides                                                    |
-| `title`   | `string`        | Yes       | Panel heading                                                                                           |
-| `icon`    | `string`        | No        | Icon name                                                                                               |
-| `intro`   | `string`        | No        | Intro text, limited HTML, or registered component name                                                  |
-| `badge`   | `string`        | No        | Static label pill rendered next to the title (e.g. `'Beta'`)                                            |
-| `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set) |
-| `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                          |
-| `status`  | `array`         | No        | Runtime status badge config (see below)                                                                 |
-| `group`   | `string`        | No        | Group label — consecutive sections with the same group are visually batched (see [Section Groups](#section-groups)) |
-| `fields`  | `array`         | Yes       | Field definitions                                                                                       |
+| Property  | Type            | Required  | Description                                                                                                                            |
+|-----------|-----------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `id`      | `string`        | Yes       | Unique identifier within the tab, used for overrides                                                                                   |
+| `title`   | `string`        | Yes       | Panel heading                                                                                                                          |
+| `icon`    | `string`        | No        | Icon name                                                                                                                              |
+| `intro`   | `string`        | No        | Intro text, limited HTML, or registered component name                                                                                 |
+| `badge`   | `string\|array` | No        | Static label pill next to the title: `'Beta'` or `['label' => ..., 'tone' => 'info'\|'warning'\|'ok'\|'error']` (default tone: `info`) |
+| `open`    | `bool\|string`  | No        | Start expanded: `true`, `false`, `'ok'`, or `'error'` (default: `true`; `'error'` when `status` is set)                                |
+| `active`  | `string\|array` | No        | Active toggle config — adds an on/off toggle to the section header (see below)                                                         |
+| `status`  | `array`         | No        | Runtime status badge config (see below)                                                                                                |
+| `group`   | `string`        | No        | Group label — consecutive sections with the same group are visually batched (see [Section Groups](#section-groups))                    |
+| `fields`  | `array`         | Yes       | Field definitions                                                                                                                      |
 
 > [!TIP]
 > The `intro` property (on tabs and sections) accepts three forms:
