@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.6.6](https://github.com/MilliPress/MilliBase/compare/v2.6.5...v2.6.6) (2026-07-08)
+
+
+### Features
+
+* **schema:** add static badge label to section headers ([4efd64f](https://github.com/MilliPress/MilliBase/commit/4efd64fa22d81f8316c1aa2950899fecd14ebed7))
+* **schema:** configurable badge tone with warning variant ([207f09d](https://github.com/MilliPress/MilliBase/commit/207f09d0502fabff588295e1b07cd71c2d9d6918))
+* **schema:** support limited HTML in tab and section intros ([768f5f1](https://github.com/MilliPress/MilliBase/commit/768f5f1e2c735f88339e2035da8eeb85288f2378))
+
+
+### Refactoring
+
+* **js:** extract resolveCustomComponent helper ([b40b753](https://github.com/MilliPress/MilliBase/commit/b40b753a56e8402d852dd8e81623a58fe0442439))
+
+
+### Miscellaneous
+
+* release 2.6.6 ([7871bf5](https://github.com/MilliPress/MilliBase/commit/7871bf5f7a81683b627cd93e3acdbc00786068ba))
+
 ## [2.6.5](https://github.com/MilliPress/MilliBase/compare/v2.6.4...v2.6.5) (2026-06-24)
 
 
