@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.6.8](https://github.com/MilliPress/MilliBase/compare/v2.6.7...v2.6.8) (2026-07-09)
+
+
+### Features
+
+* **header:** order dropdown menu items by configurable position ([90df769](https://github.com/MilliPress/MilliBase/commit/90df769f69f5831647bd5b14b8de7530396d060e))
+
+
+### Miscellaneous
+
+* pin next release to 2.6.8 ([5f6bc17](https://github.com/MilliPress/MilliBase/commit/5f6bc177e6c2d30d2645aac793dd146ec33f43a7))
+
 ## [2.6.7](https://github.com/MilliPress/MilliBase/compare/v2.6.6...v2.6.7) (2026-07-08)
 
 
