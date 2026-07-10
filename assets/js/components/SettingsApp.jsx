@@ -67,7 +67,7 @@ const RecoveryDisplay = ( {
 const ErrorDisplay = ( { error, onRetry, isRetrying, troubleshooting } ) => (
 	<Banner
 		icon={ caution }
-		iconColor="#dc3232"
+		iconColor="currentColor"
 		title={ __( 'Connection Error', 'millibase' ) }
 		message={ error }
 		actions={

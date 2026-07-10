@@ -17,11 +17,11 @@ const Banner = ( { icon, iconColor = '#646970', title, message, actions, footer 
 		} }
 	>
 		{ icon && (
-			<div style={ { marginBottom: '24px' } }>
+			<div style={ { marginBottom: '12px' } }>
 				<Icon
 					icon={ icon }
 					size={ 48 }
-					style={ { color: iconColor, opacity: 0.85 } }
+					style={ { color: iconColor } }
 				/>
 			</div>
 		) }
