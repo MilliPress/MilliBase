@@ -27,15 +27,16 @@ The `tabs` array in the configuration defines the structure of your settings pag
 ],
 ```
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `name` | `string` | Yes | Unique identifier, used for tab keying and overrides |
-| `title` | `string` | Yes | Display label shown in the tab bar |
-| `sections` | `array` | No | Section definitions (for standard tabs) |
-| `type` | `string` | No | Set to `'custom'` to render a custom component |
-| `component` | `string` | No | Name of a registered custom component |
-| `intro` | `string` | No | Introductory text shown above sections — plain text, limited HTML, or a registered component name |
-| `accordion` | `bool` | No | When `true`, only one section can be open at a time (see [Accordion Mode](#accordion-mode)) |
+| Property   | Type     | Required   | Description                                                                                                                                    |
+|------------|----------|------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`     | `string` | Yes        | Unique identifier, used for tab keying and overrides                                                                                           |
+| `title`    | `string` | Yes        | Display label shown in the tab bar                                                                                                             |
+| `sections` | `array`  | No         | Section definitions (for standard tabs)                                                                                                        |
+| `type`     | `string` | No         | Set to `'custom'` to render a custom component                                                                                                 |
+| `component` | `string` | No         | Name of a registered custom component                                                                                                          |
+| `intro`    | `string` | No         | Introductory text shown above sections — plain text, limited HTML, or a registered component name                                              |
+| `accordion` | `bool`   | No         | When `true`, only one section can be open at a time (see [Accordion Mode](#accordion-mode))                                                    |
+| `position` | `int`    | No         | Sort position in the tab bar (default `10`, lower renders first; ties keep definition order). Lets extensions slot tabs without index splicing |
 
 ## Section Structure
 

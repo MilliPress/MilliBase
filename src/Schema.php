@@ -755,6 +755,16 @@ final class Schema {
 	}
 
 	/**
+	 * Default tab position when a tab does not declare one.
+	 *
+	 * Matches the header menu-item convention: lower renders first, ties
+	 * keep definition order.
+	 *
+	 * @since 2.6.9
+	 */
+	private const DEFAULT_TAB_POSITION = 10;
+
+	/**
 	 * Normalize tabs into an associative array keyed by tab name, and
 	 * sections within each tab keyed by section id.
 	 *
@@ -762,7 +772,12 @@ final class Schema {
 	 * allows add-on plugins to override tabs or individual sections via
 	 * the `{$slug}_schema` filter.
 	 *
+	 * Tabs are ordered by their optional numeric `position` (default 10,
+	 * lower first); ties keep definition order. Extensions can slot their
+	 * tabs declaratively.
+	 *
 	 * @since 1.1.0
+	 * @since 2.6.9 Sorts tabs by `position`.
 	 *
 	 * @param array<array-key, mixed> $tabs The tabs array (numeric or associative).
 	 *
@@ -799,6 +814,22 @@ final class Schema {
 				$keyed[ $name ]  = $tab;
 			}
 		}
+
+		$definition_order = array_flip( array_keys( $keyed ) );
+
+		uasort(
+			$keyed,
+			static function ( array $a, array $b ) use ( $definition_order ): int {
+				$pa = is_numeric( $a['position'] ?? null ) ? (float) $a['position'] : self::DEFAULT_TAB_POSITION;
+				$pb = is_numeric( $b['position'] ?? null ) ? (float) $b['position'] : self::DEFAULT_TAB_POSITION;
+
+				if ( $pa !== $pb ) {
+					return $pa <=> $pb;
+				}
+
+				return $definition_order[ $a['name'] ] <=> $definition_order[ $b['name'] ];
+			}
+		);
 
 		return $keyed;
 	}

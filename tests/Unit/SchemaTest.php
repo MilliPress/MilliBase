@@ -1517,3 +1517,66 @@ it('ignores falsy preserve values and fields without a string key', function () 
 
     expect($keys)->toBe(['a.keep']);
 });
+
+// ─── Tab position ordering ──────────────────────────────────────────
+
+it('orders tabs by position, lower first', function () {
+    $schema = new Schema([
+        'tabs' => [
+            ['name' => 'settings', 'title' => 'Settings', 'position' => 90],
+            ['name' => 'entries', 'title' => 'Entries', 'position' => 20],
+            ['name' => 'status', 'title' => 'Status', 'position' => 10],
+        ],
+    ]);
+
+    expect(array_column($schema->to_client_array()['tabs'], 'name'))
+        ->toBe(['status', 'entries', 'settings']);
+});
+
+it('defaults position to 10 and keeps definition order on ties', function () {
+    $schema = new Schema([
+        'tabs' => [
+            ['name' => 'status', 'title' => 'Status'],
+            ['name' => 'general', 'title' => 'General'],
+            ['name' => 'settings', 'title' => 'Settings', 'position' => 90],
+            ['name' => 'rules', 'title' => 'Rules', 'position' => 30],
+        ],
+    ]);
+
+    expect(array_column($schema->to_client_array()['tabs'], 'name'))
+        ->toBe(['status', 'general', 'rules', 'settings']);
+});
+
+it('lets a same-name merge override the position', function () {
+    $schema = new Schema([
+        'tabs' => [
+            ['name' => 'status', 'title' => 'Status', 'position' => 10],
+            ['name' => 'settings', 'title' => 'Settings', 'position' => 90],
+            ['name' => 'status', 'title' => 'Status Pro', 'position' => 95],
+        ],
+    ]);
+
+    expect(array_column($schema->to_client_array()['tabs'], 'name'))
+        ->toBe(['settings', 'status']);
+});
+
+it('keeps a merged tab position when the fragment declares none', function () {
+    $schema = new Schema([
+        'tabs' => [
+            ['name' => 'status', 'title' => 'Status', 'position' => 10],
+            ['name' => 'settings', 'title' => 'Settings', 'position' => 90],
+            [
+                'name' => 'settings',
+                'title' => 'Settings',
+                'sections' => [
+                    ['id' => 'license', 'title' => 'License'],
+                ],
+            ],
+        ],
+    ]);
+
+    $tabs = $schema->to_client_array()['tabs'];
+
+    expect(array_column($tabs, 'name'))->toBe(['status', 'settings']);
+    expect($tabs[1]['sections'][0]['id'])->toBe('license');
+});
