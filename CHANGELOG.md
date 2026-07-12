@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.6.9](https://github.com/MilliPress/MilliBase/compare/v2.6.8...v2.6.9) (2026-07-12)
+
+
+### Features
+
+* **schema:** sort tabs by configurable position ([f796376](https://github.com/MilliPress/MilliBase/commit/f79637610968c742a7e09371b474877096b926ca))
+
+
+### Bug Fixes
+
+* **banner:** use currentColor and tighter spacing for error icon ([613b5c1](https://github.com/MilliPress/MilliBase/commit/613b5c14e03f83c7fc0143699995d3ee5750e182))
+
 ## [2.6.8](https://github.com/MilliPress/MilliBase/compare/v2.6.7...v2.6.8) (2026-07-09)
 
 
