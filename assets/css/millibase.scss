@@ -294,10 +294,19 @@ body:has(.millibase-page) .components-modal__frame {
 		visibility: hidden;
 	}
 
+	// Button fields fill the width of their column (the whole section when
+	// standalone, or their FlexItem when inline) with a centered label.
 	.millibase-button-field__button {
 		height: 42px; // Field Size + 2px Border
 		width: 100%;
 		justify-content: center;
+	}
+
+	// Opt-in (`width: 'auto'`): size the button to its label and align it to
+	// the start of the column instead of filling the width.
+	.millibase-button-field__button--auto {
+		width: auto;
+		align-self: flex-start;
 	}
 
 	// WordPress component overrides.

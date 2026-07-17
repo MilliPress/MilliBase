@@ -44,7 +44,11 @@ const ButtonField = ( { field, disabled } ) => {
 			label={ field.tooltip }
 			showTooltip={ !! field.tooltip }
 			onClick={ onClick }
-			className={ field.inline ? 'millibase-button-field__button' : undefined }
+			className={
+				field.width === 'auto'
+					? 'millibase-button-field__button millibase-button-field__button--auto'
+					: 'millibase-button-field__button'
+			}
 		>
 			{ field.label }
 		</Button>
