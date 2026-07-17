@@ -276,7 +276,8 @@ final class AdminPage {
 	 * @return string
 	 */
 	private static function millibase_version(): string {
-		if ( class_exists( '\Composer\InstalledVersions' ) ) {
+		if ( class_exists( '\Composer\InstalledVersions' )
+			&& \Composer\InstalledVersions::isInstalled( 'millipress/millibase' ) ) {
 			$version = \Composer\InstalledVersions::getPrettyVersion( 'millipress/millibase' );
 			if ( is_string( $version ) && '' !== $version ) {
 				return $version;
