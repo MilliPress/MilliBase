@@ -78,6 +78,7 @@ $manager->settings()->get('general.enabled'); // true
 - **Tab overrides** — add-on plugins can extend or replace tabs and sections via filters
 - **REST API** — namespaced `GET/POST /{namespace}/v1/settings` + custom action endpoints
 - **WP-CLI** — auto-registered `wp <slug> config` commands; two Managers sharing a `cli.slug` auto-merge into one tree
+- **Logging** — channel-prefixed `Logger` with level gating (`error`/`warning`/`debug`) and a shared `millibase_log` action; safe before WordPress loads
 
 ## Documentation
 

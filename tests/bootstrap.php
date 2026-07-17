@@ -34,6 +34,14 @@ if (! function_exists('sanitize_file_name')) {
     }
 }
 
+// Stub wp_json_encode().
+if (! function_exists('wp_json_encode')) {
+    function wp_json_encode($data, int $options = 0, int $depth = 512)
+    {
+        return json_encode($data, $options, $depth);
+    }
+}
+
 // Stub ABSPATH constant.
 if (! defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wp/');

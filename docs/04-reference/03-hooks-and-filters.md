@@ -179,6 +179,29 @@ WordPress core action. MilliBase hooks into this to sync settings to the config 
 
 WordPress core action. MilliBase hooks into this to delete the config file when the matching option is deleted.
 
+---
+
+### `millibase_log`
+
+Fires for every entry written by the [`Logger`](../02-usage/03-programmatic-access.md#logging). Unlike the hooks above, this action is **not** `{slug}`-prefixed — it is shared across every plugin that uses MilliBase's logger, and the `$channel` argument identifies the source. Use it to mirror entries into an additional sink, such as a persistent store backing a dashboard log view.
+
+```php
+add_action('millibase_log', function (string $channel, string $level, string $message, array $context): void {
+    if ($level === \MilliBase\Logger::ERROR) {
+        // Persist errors for a dashboard, forward to an external service, etc.
+    }
+}, 10, 4);
+```
+
+**Parameters:**
+- `string $channel` — the channel name (typically the plugin name, e.g. `'MilliCache'`)
+- `string $level` — the entry level (`'error'`, `'warning'`, or `'debug'`)
+- `string $message` — the log message
+- `array $context` — structured context, or an empty array
+
+> [!NOTE]
+> Because `debug` entries are gated behind `WP_DEBUG`, this action does **not** fire for them unless `WP_DEBUG` is enabled. `error` and `warning` entries always fire.
+
 ## REST Endpoints
 
 MilliBase registers these REST routes:

@@ -180,6 +180,35 @@ Settings::coerce_value('3.14');    // float 3.14
 Settings::coerce_value('hello');   // string 'hello'
 ```
 
+## Logging
+
+The `Logger` class provides a channel-prefixed wrapper around `error_log()` so consuming plugins never call `error_log()` directly — keeping PHPCS and Plugin Check findings confined to one auditable location. Create one instance per plugin with a channel name (typically the plugin name):
+
+```php
+$log = new \MilliBase\Logger('MilliCache');
+
+$log->error('Storage connection lost');
+$log->warning('Falling back to disk cache', ['reason' => 'timeout']);
+$log->debug('Cache key resolved', ['key' => 'home']);
+```
+
+Each entry is written as `[{channel}] [{level}] {message}`, with any structured context appended as JSON:
+
+```
+[MilliCache] [error] Storage connection lost
+[MilliCache] [warning] Falling back to disk cache {"reason":"timeout"}
+```
+
+| Method | Level | When written |
+|--------|-------|--------------|
+| `error()`   | `error`   | Always — signals an incident needing attention |
+| `warning()` | `warning` | Always — recoverable or degraded-operation notice |
+| `debug()`   | `debug`   | Only when `WP_DEBUG` is enabled |
+
+The logger is safe to use before WordPress has fully loaded (e.g. from an `advanced-cache.php` drop-in): WordPress functions such as `wp_json_encode()` and `do_action()` are feature-detected and skipped when unavailable.
+
+Every written entry also fires the [`millibase_log`](../04-reference/03-hooks-and-filters.md#millibase_log) action, so a dashboard or external service can capture entries without parsing `debug.log`.
+
 ## Next Steps
 
 - **[Custom Field Types](../03-customization/01-custom-field-types.md)** — extend the UI with custom fields
