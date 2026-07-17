@@ -1067,6 +1067,18 @@ final class Settings {
 	}
 
 	/**
+	 * Load WordPress's bundled sodium_compat polyfill when the native
+	 * ext-sodium extension is unavailable.
+	 *
+	 * @since 2.7.0
+	 */
+	private static function maybe_load_sodium_compat(): void {
+		if ( ! function_exists( 'sodium_crypto_secretbox' ) && defined( 'ABSPATH' ) ) {
+			require_once ABSPATH . 'wp-includes/sodium_compat/autoload.php';
+		}
+	}
+
+	/**
 	 * Encrypt a value using sodium.
 	 *
 	 * Uses `AUTH_KEY` and `SECURE_AUTH_KEY` as the key material. Values
@@ -1085,6 +1097,8 @@ final class Settings {
 		if ( empty( $value ) || strpos( $value, 'ENC:' ) === 0 ) {
 			return $value;
 		}
+
+		self::maybe_load_sodium_compat();
 
 		$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		$key   = sodium_crypto_generichash( AUTH_KEY . SECURE_AUTH_KEY, '', SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES ); // @phpstan-ignore-line
@@ -1108,11 +1122,7 @@ final class Settings {
 	 * @throws \SodiumException If decryption fails.
 	 */
 	public static function decrypt_value( string $encrypted_value ): string {
-		if ( ! function_exists( 'sodium_crypto_secretbox_open' ) ) {
-			if ( defined( 'ABSPATH' ) ) {
-				require_once ABSPATH . 'wp-includes/sodium_compat/autoload.php';
-			}
-		}
+		self::maybe_load_sodium_compat();
 
 		if ( strpos( $encrypted_value, 'ENC:' ) !== 0 ) {
 			return $encrypted_value;
