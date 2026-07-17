@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.7.0](https://github.com/MilliPress/MilliBase/compare/v2.6.9...v2.7.0) (2026-07-17)
+
+
+### Features
+
+* **fields:** style standalone button fields with a width opt-in ([43c55e9](https://github.com/MilliPress/MilliBase/commit/43c55e9ce12805d367f0237fc460d75259be274e))
+* **logger:** add channel-prefixed logger with level gating ([9561c2c](https://github.com/MilliPress/MilliBase/commit/9561c2c16f92decccd3e32167ad75d6c01a45a15))
+
+
+### Bug Fixes
+
+* **admin:** Ensure millibase version is only retrieved if installed ([94ab349](https://github.com/MilliPress/MilliBase/commit/94ab349abd4fa8deb90e32155f1682a48e7c58b9))
+* **controller:** Add PHPCS ignore comments for dynamic hook naming conventions ([5995ff5](https://github.com/MilliPress/MilliBase/commit/5995ff557cc56a04860fdef9c3974c645a19ec15))
+* **settings:** load sodium_compat polyfill in encrypt path ([557ec32](https://github.com/MilliPress/MilliBase/commit/557ec328c8be9a2ff2d9c1490d5140978485d541))
+
 ## [2.6.9](https://github.com/MilliPress/MilliBase/compare/v2.6.8...v2.6.9) (2026-07-12)
 
 
