@@ -226,6 +226,7 @@ final class Controller {
 		 * @param string[] $allowed Array of allowed action slugs.
 		 */
 		$allowed = apply_filters(
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 			"{$slug}_rest_settings_allowed_actions",
 			array( '__reset', '__restore' )
 		);
@@ -276,6 +277,7 @@ final class Controller {
 		 * @param array            $params  The request parameters.
 		 * @param \WP_REST_Request $request The REST request.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 		do_action( "{$slug}_rest_settings_action_performed", $action, $request->get_params(), $request );
 
 		return rest_ensure_response(
@@ -400,6 +402,7 @@ final class Controller {
 			 * @param \WP_REST_Request $request    The REST request.
 			 * @param bool             $is_network Whether this Controller is network-scoped.
 			 */
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 			$status_data = apply_filters( "{$slug}_rest_status_response", $status_data, $request, $is_network );
 
 			return new \WP_REST_Response( $status_data );

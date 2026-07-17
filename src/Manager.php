@@ -500,6 +500,7 @@ final class Manager {
 		}
 
 		$config = function_exists( 'apply_filters' )
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 			? apply_filters( "{$this->slug}_settings_schema", array( 'tabs' => array() ), $this->settings->is_network() )
 			: array( 'tabs' => array() );
 
@@ -562,6 +563,7 @@ final class Manager {
 			 * @param bool                 $is_network Whether this MilliBase Manager runs in network mode.
 			 */
 			$this->config = apply_filters(
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 				"{$this->slug}_settings_schema",
 				$this->config,
 				! empty( $this->config['network'] )

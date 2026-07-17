@@ -787,6 +787,7 @@ final class Settings {
 			 * @param array<string, array<string, mixed>> $defaults   Default settings.
 			 * @param bool                                $is_network Whether this Settings instance is network-scoped.
 			 */
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 			$defaults = apply_filters( "{$this->slug}_settings_defaults", $defaults, $this->network );
 		}
 
@@ -1621,6 +1622,7 @@ final class Settings {
 			 * @param mixed  $old_value The old value (null if added).
 			 * @param string $key       The dot-notation key that changed.
 			 */
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 			do_action( "{$this->slug}_setting_changed/{$key}", $change['new'], $change['old'], $key );
 		}
 
@@ -1633,6 +1635,7 @@ final class Settings {
 		 * @param array<string, mixed>                         $new_settings The full new settings.
 		 * @param array<string, mixed>                         $old_settings The full old settings.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hook prefix IS the consuming plugin's slug; per-plugin prefixing is the framework contract.
 		do_action( "{$this->slug}_setting_changed", $changes, $new_settings, $old_settings );
 	}
 
