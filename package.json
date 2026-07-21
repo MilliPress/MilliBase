@@ -23,6 +23,7 @@
         "fix:js": "wp-scripts lint-js assets/js --fix",
         "lint:style": "wp-scripts lint-style assets/css/**/*.scss",
         "fix:style": "wp-scripts lint-style assets/css/**/*.scss --fix",
-        "test:js": "wp-scripts test-unit-js"
+        "test:js": "wp-scripts test-unit-js",
+        "translate": "wp i18n make-pot . assets/lang/millibase.pot --domain=millibase --package-name=\"MilliBase\" --exclude=vendor,node_modules,build,tests,bin"
     }
 }
