@@ -349,11 +349,33 @@ final class AdminPage {
 		if ( '' !== $build_url ) {
 			wp_enqueue_style( 'millibase', $build_url . '/millibase.css', array(), $asset['version'] );
 			wp_enqueue_script( 'millibase', $build_url . '/millibase.js', $js_deps, $asset['version'], $js_in_foot );
+			$this->set_script_translations();
 			return;
 		}
 
 		// Fallback: inline the assets when the build directory is not web-accessible.
 		$this->enqueue_inline_assets( $build_dir, $asset['version'], $js_deps, $js_in_foot );
+	}
+
+	/**
+	 * Bind the `millibase` text domain to the enqueued script so its JS
+	 * strings localize from the shared system languages folder
+	 * (wp-content/languages/plugins/), matching the language-pack delivery
+	 * model used across MilliPress plugins.
+	 *
+	 * MilliBase is vendored into host plugins, so its build lives outside the
+	 * web root; the path is pinned to WP_LANG_DIR/plugins rather than derived
+	 * from the (non-web) script src. PHP strings load via JIT and need no
+	 * equivalent; only the React field components require this binding.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return void
+	 */
+	private function set_script_translations(): void {
+		if ( function_exists( 'wp_set_script_translations' ) ) {
+			wp_set_script_translations( 'millibase', 'millibase', WP_LANG_DIR . '/plugins' );
+		}
 	}
 
 	/**
@@ -385,6 +407,7 @@ final class AdminPage {
 		if ( file_exists( $js_file ) ) {
 			wp_register_script( 'millibase', false, $js_deps, $version, $js_args );
 			wp_enqueue_script( 'millibase' );
+			$this->set_script_translations();
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local build asset.
 			wp_add_inline_script( 'millibase', (string) file_get_contents( $js_file ), 'before' );
 		}
