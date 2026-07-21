@@ -1,0 +1,267 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: MilliBase\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-21T13:12:31+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.13.0-alpha-30473e0\n"
+"X-Domain: millibase\n"
+"Language: de_DE\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#. translators: %s: the human-readable plugin name.
+#: src/Abilities/Controller.php:107
+#, php-format
+msgid "Operations exposed by %s."
+msgstr ""
+
+#. translators: 1: ability id as supplied; 2: host plugin slug.
+#: src/Abilities/Controller.php:178
+#, php-format
+msgid "Ability id \"%1$s\" contains a forward slash. Use bare ids; MilliBase auto-prefixes them with \"%2$s/\"."
+msgstr ""
+
+#: src/Abilities/Controller.php:272
+msgid "The ability callback threw an exception."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:63
+msgid "Export Network Settings"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:64
+msgid "Export Settings"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:66
+msgid "Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:67
+msgid "Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:82
+msgid "Settings keyed by module name; each module is an object of key/value pairs."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:110
+msgid "Reset Network Settings to Defaults"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:111
+msgid "Reset Settings to Defaults"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:113
+msgid "Reset the network settings to their defaults (site settings are not affected). An automatic backup is created before the reset."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:114
+msgid "Reset the site settings to their defaults. An automatic backup is created before the reset."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:155
+msgid "Back Up Network Settings"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:156
+msgid "Back Up Settings"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:158
+msgid "Take a backup of the current network settings (site settings are not included). The backup expires after 3 days."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:159
+msgid "Take a backup of the current site settings. The backup expires after 3 days."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:201
+msgid "Restore Network Settings from Backup"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:202
+msgid "Restore Settings from Backup"
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:204
+msgid "Restore the most recent network settings backup (site settings are not affected). Returns success: false when no backup is available."
+msgstr ""
+
+#: src/Abilities/FrameworkAbilities.php:205
+msgid "Restore the most recent site settings backup. Returns success: false when no backup is available."
+msgstr ""
+
+#: src/Manager.php:180
+msgid "MilliBase\\Manager requires a non-empty slug; nothing will be registered for this consumer."
+msgstr ""
+
+#. translators: 1: slug, 2: network-mode value (true/false).
+#: src/Manager.php:340
+#, php-format
+msgid "A MilliBase Manager is already registered for slug \"%1$s\" with network=%2$s. Two Managers sharing a primary slug must differ in `network` mode (one per-site, one network). Use distinct slugs otherwise."
+msgstr ""
+
+#: src/REST/Controller.php:195
+msgid "Invalid nonce."
+msgstr ""
+
+#: src/REST/Controller.php:237
+msgid "Invalid settings action."
+msgstr ""
+
+#: src/REST/Controller.php:248
+msgid "Settings reset successfully."
+msgstr ""
+
+#: src/REST/Controller.php:257
+msgid "No backup of settings found or backup has expired."
+msgstr ""
+
+#: src/REST/Controller.php:262
+msgid "Settings successfully restored from backup."
+msgstr ""
+
+#: src/REST/Controller.php:268
+msgid "Failed to perform settings action: "
+msgstr ""
+
+#: src/REST/Controller.php:346
+msgid "Settings payload must be an object."
+msgstr ""
+
+#: assets/js/components/fields/ButtonField.jsx:85
+msgid "Cancel"
+msgstr ""
+
+#: assets/js/components/fields/KeyField.jsx:39
+#: assets/js/components/fields/PasswordField.jsx:33
+msgid "Clear stored value"
+msgstr ""
+
+#: assets/js/components/Header.jsx:113
+msgid "Saving…"
+msgstr ""
+
+#: assets/js/components/Header.jsx:114
+msgid "Save Settings"
+msgstr ""
+
+#: assets/js/components/Header.jsx:131
+#: assets/js/components/Header.jsx:245
+msgid "More Actions"
+msgstr ""
+
+#: assets/js/components/Header.jsx:204
+msgid "Reset all Settings"
+msgstr ""
+
+#: assets/js/components/Header.jsx:230
+msgid "Restore previous Settings"
+msgstr ""
+
+#: assets/js/components/InfoPopover.jsx:57
+msgid "About this metric"
+msgstr ""
+
+#: assets/js/components/InfoPopover.jsx:98
+msgid "Learn more"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:30
+msgid "Settings could not be loaded"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:41
+msgid "Resetting..."
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:42
+msgid "Reset to defaults"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:51
+msgid "Reloading..."
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:52
+msgid "Reload"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:58
+msgid "Resetting will replace the stored settings with the defaults. Your current settings — including the corrupt value — will be backed up automatically and can be restored later from the header menu."
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:71
+msgid "Connection Error"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:81
+msgid "Retrying..."
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:82
+msgid "Try Again"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:89
+msgid "Need help fixing this issue?"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:99
+msgid "View Troubleshooting Guide"
+msgstr ""
+
+#: assets/js/components/SettingsApp.jsx:164
+msgid "Loading settings..."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:61
+msgid "An unexpected error occurred."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:68
+msgid "API endpoint not found."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:71
+msgid "Access denied."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:74
+msgid "Security check failed. Please refresh."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:82
+msgid "API request failed."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:248
+msgid "Action failed"
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:399
+msgid "Settings saved successfully."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:406
+msgid "Storage settings updated. Testing connection…"
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:422
+msgid "Storage connection lost."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:429
+msgid "Storage connection established."
+msgstr ""
+
+#: assets/js/components/SettingsProvider.jsx:447
+msgid "Failed to save settings."
+msgstr ""
