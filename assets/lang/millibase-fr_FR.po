@@ -1,0 +1,305 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: MilliBase\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: Philipp Wellmer <philipp@millipress.com>\n"
+"Language-Team: French (France) <https://translate.millipress.com/projects/"
+"millicache/millibase/fr_FR/>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-21T13:12:31+00:00\n"
+"PO-Revision-Date: 2026-07-22 14:32+0000\n"
+"X-Generator: Weblate 2026.7.1\n"
+"X-Domain: millibase\n"
+"Language: fr_FR\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+
+#. translators: %s: the human-readable plugin name.
+#: src/Abilities/Controller.php:107
+#, php-format
+msgid "Operations exposed by %s."
+msgstr "Opérations exposées par %s."
+
+#. translators: 1: ability id as supplied; 2: host plugin slug.
+#: src/Abilities/Controller.php:178
+#, php-format
+msgid "Ability id \"%1$s\" contains a forward slash. Use bare ids; MilliBase auto-prefixes them with \"%2$s/\"."
+msgstr ""
+"L’ID d’ability « %1$s » contient une barre oblique. Utilisez des IDs sans "
+"préfixe ; MilliBase les préfixe automatiquement avec « %2$s/ »."
+
+#: src/Abilities/Controller.php:272
+msgid "The ability callback threw an exception."
+msgstr "Le callback de l’ability a levé une exception."
+
+#: src/Abilities/FrameworkAbilities.php:63
+msgid "Export Network Settings"
+msgstr "Exporter les réglages du réseau"
+
+#: src/Abilities/FrameworkAbilities.php:64
+msgid "Export Settings"
+msgstr "Exporter les réglages"
+
+#: src/Abilities/FrameworkAbilities.php:66
+msgid "Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true."
+msgstr ""
+"Exporte les réglages du réseau sous forme d’objet indexé par nom de module "
+"(les réglages du site ne sont pas inclus). L’argument facultatif `module` "
+"limite les modules renseignés ; la réponse a toujours la forme module → "
+"réglages. Les valeurs chiffrées sont retirées, sauf si `include_encrypted` "
+"vaut true."
+
+#: src/Abilities/FrameworkAbilities.php:67
+msgid "Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true."
+msgstr ""
+"Exporte les réglages du site sous forme d’objet indexé par nom de module. "
+"L’argument facultatif `module` limite les modules renseignés ; la réponse a "
+"toujours la forme module → réglages. Les valeurs chiffrées sont retirées, "
+"sauf si `include_encrypted` vaut true."
+
+#: src/Abilities/FrameworkAbilities.php:82
+msgid "Settings keyed by module name; each module is an object of key/value pairs."
+msgstr ""
+"Réglages indexés par nom de module ; chaque module est un objet de paires "
+"clé/valeur."
+
+#: src/Abilities/FrameworkAbilities.php:110
+msgid "Reset Network Settings to Defaults"
+msgstr "Réinitialiser les réglages du réseau aux valeurs par défaut"
+
+#: src/Abilities/FrameworkAbilities.php:111
+msgid "Reset Settings to Defaults"
+msgstr "Réinitialiser les réglages aux valeurs par défaut"
+
+#: src/Abilities/FrameworkAbilities.php:113
+msgid "Reset the network settings to their defaults (site settings are not affected). An automatic backup is created before the reset."
+msgstr ""
+"Réinitialise les réglages du réseau à leurs valeurs par défaut (les réglages "
+"du site ne sont pas affectés). Une sauvegarde automatique est créée avant la "
+"réinitialisation."
+
+#: src/Abilities/FrameworkAbilities.php:114
+msgid "Reset the site settings to their defaults. An automatic backup is created before the reset."
+msgstr ""
+"Réinitialise les réglages du site à leurs valeurs par défaut. Une sauvegarde "
+"automatique est créée avant la réinitialisation."
+
+#: src/Abilities/FrameworkAbilities.php:155
+msgid "Back Up Network Settings"
+msgstr "Sauvegarder les réglages du réseau"
+
+#: src/Abilities/FrameworkAbilities.php:156
+msgid "Back Up Settings"
+msgstr "Sauvegarder les réglages"
+
+#: src/Abilities/FrameworkAbilities.php:158
+msgid "Take a backup of the current network settings (site settings are not included). The backup expires after 3 days."
+msgstr ""
+"Crée une sauvegarde des réglages actuels du réseau (les réglages du site ne "
+"sont pas inclus). La sauvegarde expire après 3 jours."
+
+#: src/Abilities/FrameworkAbilities.php:159
+msgid "Take a backup of the current site settings. The backup expires after 3 days."
+msgstr ""
+"Crée une sauvegarde des réglages actuels du site. La sauvegarde expire après "
+"3 jours."
+
+#: src/Abilities/FrameworkAbilities.php:201
+msgid "Restore Network Settings from Backup"
+msgstr "Restaurer les réglages du réseau depuis la sauvegarde"
+
+#: src/Abilities/FrameworkAbilities.php:202
+msgid "Restore Settings from Backup"
+msgstr "Restaurer les réglages depuis la sauvegarde"
+
+#: src/Abilities/FrameworkAbilities.php:204
+msgid "Restore the most recent network settings backup (site settings are not affected). Returns success: false when no backup is available."
+msgstr ""
+"Restaure la sauvegarde la plus récente des réglages du réseau (les réglages "
+"du site ne sont pas affectés). Renvoie success: false lorsqu’aucune "
+"sauvegarde n’est disponible."
+
+#: src/Abilities/FrameworkAbilities.php:205
+msgid "Restore the most recent site settings backup. Returns success: false when no backup is available."
+msgstr ""
+"Restaure la sauvegarde la plus récente des réglages du site. Renvoie "
+"success: false lorsqu’aucune sauvegarde n’est disponible."
+
+#: src/Manager.php:180
+msgid "MilliBase\\Manager requires a non-empty slug; nothing will be registered for this consumer."
+msgstr ""
+"MilliBase\\Manager requiert un slug non vide ; rien ne sera enregistré pour "
+"ce consommateur."
+
+#. translators: 1: slug, 2: network-mode value (true/false).
+#: src/Manager.php:340
+#, php-format
+msgid "A MilliBase Manager is already registered for slug \"%1$s\" with network=%2$s. Two Managers sharing a primary slug must differ in `network` mode (one per-site, one network). Use distinct slugs otherwise."
+msgstr ""
+"Un Manager MilliBase est déjà enregistré pour le slug « %1$s » avec "
+"network=%2$s. Deux Managers partageant le même slug primaire doivent "
+"différer par leur mode `network` (l’un par site, l’autre pour le réseau). "
+"Sinon, utilisez des slugs distincts."
+
+#: src/REST/Controller.php:195
+msgid "Invalid nonce."
+msgstr "Nonce non valide."
+
+#: src/REST/Controller.php:237
+msgid "Invalid settings action."
+msgstr "Action de réglages non valide."
+
+#: src/REST/Controller.php:248
+msgid "Settings reset successfully."
+msgstr "Les réglages ont été réinitialisés."
+
+#: src/REST/Controller.php:257
+msgid "No backup of settings found or backup has expired."
+msgstr "Aucune sauvegarde des réglages trouvée, ou la sauvegarde a expiré."
+
+#: src/REST/Controller.php:262
+msgid "Settings successfully restored from backup."
+msgstr "Les réglages ont été restaurés depuis la sauvegarde."
+
+#: src/REST/Controller.php:268
+msgid "Failed to perform settings action: "
+msgstr "Impossible d’exécuter l’action de réglages : "
+
+#: src/REST/Controller.php:346
+msgid "Settings payload must be an object."
+msgstr "Le payload des réglages doit être un objet."
+
+#: assets/js/components/fields/ButtonField.jsx:85
+msgid "Cancel"
+msgstr "Annuler"
+
+#: assets/js/components/fields/KeyField.jsx:39
+#: assets/js/components/fields/PasswordField.jsx:33
+msgid "Clear stored value"
+msgstr "Effacer la valeur enregistrée"
+
+#: assets/js/components/Header.jsx:113
+msgid "Saving…"
+msgstr "Enregistrement…"
+
+#: assets/js/components/Header.jsx:114
+msgid "Save Settings"
+msgstr "Enregistrer les réglages"
+
+#: assets/js/components/Header.jsx:131
+#: assets/js/components/Header.jsx:245
+msgid "More Actions"
+msgstr "Plus d’actions"
+
+#: assets/js/components/Header.jsx:204
+msgid "Reset all Settings"
+msgstr "Réinitialiser tous les réglages"
+
+#: assets/js/components/Header.jsx:230
+msgid "Restore previous Settings"
+msgstr "Restaurer les réglages précédents"
+
+#: assets/js/components/InfoPopover.jsx:57
+msgid "About this metric"
+msgstr "À propos de cet indicateur"
+
+#: assets/js/components/InfoPopover.jsx:98
+msgid "Learn more"
+msgstr "En savoir plus"
+
+#: assets/js/components/SettingsApp.jsx:30
+msgid "Settings could not be loaded"
+msgstr "Impossible de charger les réglages"
+
+#: assets/js/components/SettingsApp.jsx:41
+msgid "Resetting..."
+msgstr "Réinitialisation..."
+
+#: assets/js/components/SettingsApp.jsx:42
+msgid "Reset to defaults"
+msgstr "Réinitialiser aux valeurs par défaut"
+
+#: assets/js/components/SettingsApp.jsx:51
+msgid "Reloading..."
+msgstr "Rechargement..."
+
+#: assets/js/components/SettingsApp.jsx:52
+msgid "Reload"
+msgstr "Recharger"
+
+#: assets/js/components/SettingsApp.jsx:58
+msgid "Resetting will replace the stored settings with the defaults. Your current settings — including the corrupt value — will be backed up automatically and can be restored later from the header menu."
+msgstr ""
+"La réinitialisation remplacera les réglages enregistrés par les valeurs par "
+"défaut. Vos réglages actuels (y compris la valeur corrompue) seront "
+"sauvegardés automatiquement et pourront être restaurés plus tard depuis le "
+"menu de l’en-tête."
+
+#: assets/js/components/SettingsApp.jsx:71
+msgid "Connection Error"
+msgstr "Erreur de connexion"
+
+#: assets/js/components/SettingsApp.jsx:81
+msgid "Retrying..."
+msgstr "Nouvelle tentative..."
+
+#: assets/js/components/SettingsApp.jsx:82
+msgid "Try Again"
+msgstr "Réessayer"
+
+#: assets/js/components/SettingsApp.jsx:89
+msgid "Need help fixing this issue?"
+msgstr "Besoin d’aide pour résoudre ce problème ?"
+
+#: assets/js/components/SettingsApp.jsx:99
+msgid "View Troubleshooting Guide"
+msgstr "Consulter le guide de dépannage"
+
+#: assets/js/components/SettingsApp.jsx:164
+msgid "Loading settings..."
+msgstr "Chargement des réglages..."
+
+#: assets/js/components/SettingsProvider.jsx:61
+msgid "An unexpected error occurred."
+msgstr "Une erreur inattendue est survenue."
+
+#: assets/js/components/SettingsProvider.jsx:68
+msgid "API endpoint not found."
+msgstr "Point de terminaison de l’API introuvable."
+
+#: assets/js/components/SettingsProvider.jsx:71
+msgid "Access denied."
+msgstr "Accès refusé."
+
+#: assets/js/components/SettingsProvider.jsx:74
+msgid "Security check failed. Please refresh."
+msgstr "La vérification de sécurité a échoué. Veuillez recharger la page."
+
+#: assets/js/components/SettingsProvider.jsx:82
+msgid "API request failed."
+msgstr "La requête API a échoué."
+
+#: assets/js/components/SettingsProvider.jsx:248
+msgid "Action failed"
+msgstr "Échec de l’action"
+
+#: assets/js/components/SettingsProvider.jsx:399
+msgid "Settings saved successfully."
+msgstr "Réglages enregistrés."
+
+#: assets/js/components/SettingsProvider.jsx:406
+msgid "Storage settings updated. Testing connection…"
+msgstr "Réglages de stockage mis à jour. Test de la connexion…"
+
+#: assets/js/components/SettingsProvider.jsx:422
+msgid "Storage connection lost."
+msgstr "Connexion au stockage perdue."
+
+#: assets/js/components/SettingsProvider.jsx:429
+msgid "Storage connection established."
+msgstr "Connexion au stockage établie."
+
+#: assets/js/components/SettingsProvider.jsx:447
+msgid "Failed to save settings."
+msgstr "Impossible d’enregistrer les réglages."
