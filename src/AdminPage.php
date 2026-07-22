@@ -363,12 +363,7 @@ final class AdminPage {
 	 * (wp-content/languages/plugins/), matching the language-pack delivery
 	 * model used across MilliPress plugins.
 	 *
-	 * MilliBase is vendored into host plugins, so its build lives outside the
-	 * web root; the path is pinned to WP_LANG_DIR/plugins rather than derived
-	 * from the (non-web) script src. PHP strings load via JIT and need no
-	 * equivalent; only the React field components require this binding.
-	 *
-	 * @since 2.8.0
+	 * @since 2.7.1
 	 *
 	 * @return void
 	 */
@@ -408,6 +403,13 @@ final class AdminPage {
 			wp_register_script( 'millibase', false, $js_deps, $version, $js_args );
 			wp_enqueue_script( 'millibase' );
 			$this->set_script_translations();
+
+			// Print the locale data before the inlined bundle.
+			$translations = wp_scripts()->print_translations( 'millibase', false );
+			if ( $translations ) {
+				wp_add_inline_script( 'millibase', $translations, 'before' );
+			}
+
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local build asset.
 			wp_add_inline_script( 'millibase', (string) file_get_contents( $js_file ), 'before' );
 		}
