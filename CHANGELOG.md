@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.7.1](https://github.com/MilliPress/MilliBase/compare/v2.7.0...v2.7.1) (2026-07-22)
+
+
+### Features
+
+* **i18n:** bind millibase text domain to the settings script ([58ae67b](https://github.com/MilliPress/MilliBase/commit/58ae67bed30423f0336f05c304f4de71683784a0))
+* **i18n:** make MilliBase translation-ready (millibase domain) ([5abaedb](https://github.com/MilliPress/MilliBase/commit/5abaedb510ca6da80e152574b2703f9db81938a0))
+
+
+### Bug Fixes
+
+* **i18n:** print script translations for the inline (src-less) handle ([fc631cd](https://github.com/MilliPress/MilliBase/commit/fc631cdd9e7cb370a47d68db943bb8760b8ea6d0))
+* **i18n:** print script translations for the inline (src-less) handle ([25e125b](https://github.com/MilliPress/MilliBase/commit/25e125b8b67ee3c54a2d0a9dc7651ae1d26513f0))
+* **i18n:** serve JS translations as handle-named full catalogs ([13afbae](https://github.com/MilliPress/MilliBase/commit/13afbae634e9aedad91b700a6b7ccc207db71162))
+
+
+### Miscellaneous
+
+* **release:** pin next release to 2.7.1 ([ae18a18](https://github.com/MilliPress/MilliBase/commit/ae18a189e361a45f50c87a0b599aca59adba8b5d))
+
 ## [2.7.0](https://github.com/MilliPress/MilliBase/compare/v2.6.9...v2.7.0) (2026-07-17)
 
 
