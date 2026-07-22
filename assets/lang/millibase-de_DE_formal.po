@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-07-21T13:12:31+00:00\n"
-"PO-Revision-Date: 2026-07-22 09:12+0000\n"
+"PO-Revision-Date: 2026-07-22 09:17+0000\n"
 "X-Generator: Weblate 2026.7.1\n"
 "X-Domain: millibase\n"
 "Language: de_DE_formal\n"
@@ -19,7 +19,7 @@ msgstr ""
 #: src/Abilities/Controller.php:107
 #, php-format
 msgid "Operations exposed by %s."
-msgstr ""
+msgstr "Von %s bereitgestellte Operationen."
 
 #. translators: 1: ability id as supplied; 2: host plugin slug.
 #: src/Abilities/Controller.php:178
@@ -33,7 +33,7 @@ msgstr ""
 
 #: src/Abilities/FrameworkAbilities.php:63
 msgid "Export Network Settings"
-msgstr ""
+msgstr "Netzwerkeinstellungen exportieren"
 
 #: src/Abilities/FrameworkAbilities.php:64
 msgid "Export Settings"
