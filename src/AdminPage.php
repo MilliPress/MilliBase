@@ -408,6 +408,13 @@ final class AdminPage {
 			wp_register_script( 'millibase', false, $js_deps, $version, $js_args );
 			wp_enqueue_script( 'millibase' );
 			$this->set_script_translations();
+
+			// Print the locale data before the inlined bundle.
+			$translations = wp_scripts()->print_translations( 'millibase', false );
+			if ( $translations ) {
+				wp_add_inline_script( 'millibase', $translations, 'before' );
+			}
+
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local build asset.
 			wp_add_inline_script( 'millibase', (string) file_get_contents( $js_file ), 'before' );
 		}
