@@ -130,21 +130,35 @@ final class ConfigFile {
 		$content .= "defined( 'ABSPATH' ) || exit;\n\n";
 		$content .= 'return ' . $this->export_array( $settings ) . ";\n";
 
-		global $wp_filesystem;
+		// Temp file + rename.
+		$temp = $file . '.tmp.' . uniqid( '', true );
 
-		if ( ! $wp_filesystem ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			WP_Filesystem();
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Pre-WordPress config file needs direct access.
+		$written = file_put_contents( $temp, $content );
+
+		if ( strlen( $content ) !== $written ) {
+			if ( false !== $written ) {
+				wp_delete_file( $temp );
+			}
+			return false;
 		}
 
-		$result = $wp_filesystem->put_contents( $file, $content, FS_CHMOD_FILE );
+		$mode = defined( 'FS_CHMOD_FILE' ) ? FS_CHMOD_FILE : ( fileperms( ABSPATH . 'index.php' ) & 0777 | 0644 );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod -- Companion to the direct write above.
+		chmod( $temp, $mode );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Atomic swap; WP_Filesystem::move() is not atomic.
+		if ( ! rename( $temp, $file ) ) {
+			wp_delete_file( $temp );
+			return false;
+		}
 
 		// Invalidate OPcache for this file.
 		if ( function_exists( 'opcache_invalidate' ) ) {
 			opcache_invalidate( $file, true );
 		}
 
-		return (bool) $result;
+		return true;
 	}
 
 	/**
