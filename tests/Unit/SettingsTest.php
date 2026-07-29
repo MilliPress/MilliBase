@@ -158,6 +158,36 @@ it('filters constants by module', function () {
     expect($result)->not->toHaveKey('debug');
 });
 
+it('normalizes hyphenated module keys to underscore constant names', function () {
+    if (! defined('TEST7_OBJECT_CACHE_ACTIVE')) {
+        define('TEST7_OBJECT_CACHE_ACTIVE', true);
+    }
+
+    $settings = new Settings([
+        'slug' => 'test',
+        'defaults' => ['object-cache' => ['active' => false]],
+        'constant_prefix' => 'test7',
+    ]);
+
+    $result = $settings->get_settings_from_constants();
+
+    expect($result['object-cache']['active'])->toBeTrue();
+});
+
+it('ignores the hyphenated constant spelling (underscore form only)', function () {
+    if (! defined('TEST8_OBJECT-CACHE_ACTIVE')) {
+        define('TEST8_OBJECT-CACHE_ACTIVE', true);
+    }
+
+    $settings = new Settings([
+        'slug' => 'test',
+        'defaults' => ['object-cache' => ['active' => false]],
+        'constant_prefix' => 'test8',
+    ]);
+
+    expect($settings->get_settings_from_constants())->toBe([]);
+});
+
 // ─── filter_settings_by_constants() ─────────────────────────────────
 
 it('merges defaults and removes obsolete keys and modules', function () {
@@ -501,6 +531,52 @@ it('returns the fallback when the key resolves nowhere', function () {
     $settings = new Settings(['slug' => 'test', 'defaults' => ['cache' => ['ttl' => 3600]]]);
 
     expect($settings->get_raw('nope.missing', 'FB'))->toBe('FB');
+});
+
+it('resolves a constant-only key before its defaults are registered', function () {
+    if (! defined('TEST9_LICENSE_KEY')) {
+        define('TEST9_LICENSE_KEY', 'CONST-KEY');
+    }
+
+    // No defaults and no row — the pre-init state of a constant-only key.
+    $settings = new Settings([
+        'slug' => 'test',
+        'defaults' => ['cache' => ['ttl' => 3600]],
+        'constant_prefix' => 'test9',
+    ]);
+
+    expect($settings->get_raw('license.enc_key', ''))->toBe('CONST-KEY');
+    expect($settings->get('license.enc_key', ''))->toBe('');
+});
+
+it('lets a constant outrank the stored row in get_raw()', function () {
+    if (! defined('TEST10_LICENSE_KEY')) {
+        define('TEST10_LICENSE_KEY', 'CONST-WINS');
+    }
+
+    $settings = new Settings([
+        'slug' => 'test',
+        'defaults' => ['cache' => ['ttl' => 3600]],
+        'constant_prefix' => 'test10',
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['license' => ['enc_key' => 'ROW-KEY']];
+
+    expect($settings->get_raw('license.enc_key', ''))->toBe('CONST-WINS');
+});
+
+it('resolves a hyphenated module via get_raw() with the underscore constant', function () {
+    if (! defined('TEST11_OBJECT_CACHE_ACTIVE')) {
+        define('TEST11_OBJECT_CACHE_ACTIVE', true);
+    }
+
+    $settings = new Settings([
+        'slug' => 'test',
+        'defaults' => ['cache' => ['ttl' => 3600]],
+        'constant_prefix' => 'test11',
+    ]);
+
+    expect($settings->get_raw('object-cache.active', false))->toBeTrue();
 });
 
 // ─── reset() with preserved keys ────────────────────────────────────

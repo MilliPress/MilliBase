@@ -234,6 +234,14 @@ final class Manager {
 		$this->rest_controller->register_hooks();
 
 		$this->register_abilities( $settings );
+
+		// Apply constant/config-file overrides as writes (fires the standard
+		// change events once per drift) — after migrations, on admin_init.
+		if ( function_exists( 'did_action' ) && did_action( 'admin_init' ) ) {
+			$settings->reconcile_overrides();
+		} else {
+			add_action( 'admin_init', array( $settings, 'reconcile_overrides' ) );
+		}
 	}
 
 	/**

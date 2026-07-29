@@ -163,6 +163,26 @@ final class Settings {
 	private bool $suppress_change_hooks = false;
 
 	/**
+	 * When true, option writes do not sync to the config file — the
+	 * {@see self::reconcile_overrides()} row write treats the file as a
+	 * source, never a target.
+	 *
+	 * @since 2.7.0
+	 * @var bool
+	 */
+	private bool $suppress_file_sync = false;
+
+	/**
+	 * When true, decryption is skipped. Lets {@see self::read_stored()}
+	 * return enc_ values at rest so the config-file heal never writes
+	 * plaintext.
+	 *
+	 * @since 2.7.0
+	 * @var bool
+	 */
+	private bool $bypass_decryption = false;
+
+	/**
 	 * Create a new Settings instance.
 	 *
 	 * @since 1.0.0
@@ -679,7 +699,11 @@ final class Settings {
 	 * filter, before defaults exist). Never use for REST/config output. Pairs
 	 * with read_raw(); decryption and the network/site branch are inherited.
 	 *
+	 * Constants outrank the stored row and are checked by name, so a
+	 * constant-only value resolves before its key is in the defaults.
+	 *
 	 * @since 2.6.2
+	 * @since 2.7.0 Resolves constant overrides before the stored row.
 	 *
 	 * @param string $key      Dot-notation key.
 	 * @param mixed  $fallback Returned when the key resolves nowhere.
@@ -687,6 +711,16 @@ final class Settings {
 	 * @return mixed
 	 */
 	public function get_raw( string $key, $fallback = null ) {
+		$segments = explode( '.', $key );
+		if ( count( $segments ) >= 2 ) {
+			$module   = array_shift( $segments );
+			$constant = $this->defined_constant_name( $module, implode( '_', $segments ) );
+
+			if ( null !== $constant ) {
+				return constant( $constant );
+			}
+		}
+
 		$sentinel = "\0milli_get_raw_absent\0";
 		$raw      = $this->dig( $this->read_raw(), $key, $sentinel );
 
@@ -733,17 +767,7 @@ final class Settings {
 		// Prefer file over DB; the file is authoritative when present.
 		$config_settings = ! empty( $file_settings ) ? $file_settings : $this->get_settings_from_db( $module );
 
-		foreach ( $config_settings as $module_key => $module_settings ) {
-			// @phpstan-ignore function.alreadyNarrowedType (defensive: file/DB-stored option data may be malformed at runtime)
-			if ( ! is_array( $module_settings ) ) {
-				continue;
-			}
-			foreach ( $module_settings as $key => $value ) {
-				if ( isset( $settings[ $module_key ] ) && array_key_exists( $key, $settings[ $module_key ] ) ) {
-					$settings[ $module_key ][ $key ] = $value;
-				}
-			}
-		}
+		$settings = self::overlay_known( $settings, $config_settings );
 
 		// Constants override.
 		if ( ! $skip_constants && '' !== $this->constant_prefix ) {
@@ -756,6 +780,31 @@ final class Settings {
 		}
 
 		$this->resolved[ $cache_key ] = $settings;
+
+		return $settings;
+	}
+
+	/**
+	 * Overlay stored values onto a defaults-shaped tree, keeping only keys
+	 * the defaults know (the defaults-gate).
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<string, array<string, mixed>> $settings Defaults-shaped tree.
+	 * @param array<string, mixed>                $values   Stored values to overlay.
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function overlay_known( array $settings, array $values ): array {
+		foreach ( $values as $module_key => $module_settings ) {
+			if ( ! is_array( $module_settings ) ) {
+				continue;
+			}
+			foreach ( $module_settings as $key => $value ) {
+				if ( isset( $settings[ $module_key ] ) && array_key_exists( $key, $settings[ $module_key ] ) ) {
+					$settings[ $module_key ][ $key ] = $value;
+				}
+			}
+		}
 
 		return $settings;
 	}
@@ -818,8 +867,9 @@ final class Settings {
 	/**
 	 * Get settings from wp-config.php constants.
 	 *
-	 * Builds constant names from the prefix, module key, and setting key
-	 * (e.g. prefix `MC` + module `storage` + key `host` → `MC_STORAGE_HOST`).
+	 * Builds constant names from the prefix, module key, and setting key via
+	 * {@see self::defined_constant_name()} (e.g. `MC` + `storage` + `host`
+	 * → `MC_STORAGE_HOST`).
 	 *
 	 * @since 1.0.0
 	 *
@@ -839,21 +889,49 @@ final class Settings {
 
 		foreach ( $modules_to_check as $module_key => $module_settings ) {
 			foreach ( $module_settings as $key => $value ) {
-				$constant = strtoupper( "{$this->constant_prefix}_{$module_key}_{$key}" );
+				$constant = $this->defined_constant_name( (string) $module_key, (string) $key );
 
-				if ( defined( $constant ) ) {
+				if ( null !== $constant ) {
 					$result[ $module_key ][ $key ] = constant( $constant );
-				} elseif ( self::is_enc_key( $key ) ) {
-					// For encrypted fields, also check without the enc_ prefix.
-					$enc_constant = str_replace( 'ENC_', '', $constant );
-					if ( defined( $enc_constant ) ) {
-						$result[ $module_key ][ $key ] = constant( $enc_constant );
-					}
 				}
 			}
 		}
 
 		return $result;
+	}
+
+	/**
+	 * The defined constant overriding a module/key pair, or null when none is.
+	 *
+	 * Hyphens normalize to underscores (`object-cache` + `active` →
+	 * `MC_OBJECT_CACHE_ACTIVE`), and encrypted fields also answer without the
+	 * `ENC_` marker (`license.enc_key` → `MC_LICENSE_KEY`).
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $module Module key.
+	 * @param string $key    Setting key within the module.
+	 * @return ?string
+	 */
+	private function defined_constant_name( string $module, string $key ): ?string {
+		if ( '' === $this->constant_prefix ) {
+			return null;
+		}
+
+		$constant   = str_replace( '-', '_', strtoupper( "{$this->constant_prefix}_{$module}_{$key}" ) );
+		$candidates = array( $constant );
+
+		if ( self::is_enc_key( $key ) ) {
+			$candidates[] = str_replace( 'ENC_', '', $constant );
+		}
+
+		foreach ( $candidates as $candidate ) {
+			if ( defined( $candidate ) ) {
+				return $candidate;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -1042,7 +1120,7 @@ final class Settings {
 	 * @return false|array<string, array<string, mixed>>
 	 */
 	public function decrypt_sensitive_settings_data( $settings ) {
-		if ( ! is_array( $settings ) ) {
+		if ( $this->bypass_decryption || ! is_array( $settings ) ) {
 			return $settings;
 		}
 
@@ -1216,14 +1294,36 @@ final class Settings {
 	 * full reset deliberately keeps, so a lingering license key must not make
 	 * an otherwise-default install read as customized. See {@see self::reset()}.
 	 *
+	 * Constant-defined keys are stripped too: {@see self::reconcile_overrides()}
+	 * mirrors them into the row, and a mirror must not read as customization.
+	 *
 	 * @since 1.0.0
 	 * @since 2.6.4 Ignores preserve-flagged keys.
+	 * @since 2.7.0 Ignores row values mirroring constants.
 	 *
 	 * @return bool
 	 */
 	public function has_default_settings(): bool {
-		return $this->without_preserved_keys( $this->resolve( null, true ) )
-			=== $this->without_preserved_keys( $this->get_default_settings() );
+		return $this->without_preserved_keys( $this->without_constant_keys( $this->resolve( null, true ) ) )
+			=== $this->without_preserved_keys( $this->without_constant_keys( $this->get_default_settings() ) );
+	}
+
+	/**
+	 * Return a copy of a settings tree with constant-defined keys removed.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<string, array<string, mixed>> $tree Settings tree to strip.
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function without_constant_keys( array $tree ): array {
+		foreach ( $this->get_settings_from_constants() as $module => $keys ) {
+			foreach ( array_keys( $keys ) as $key ) {
+				unset( $tree[ $module ][ $key ] );
+			}
+		}
+
+		return $tree;
 	}
 
 	/**
@@ -1551,8 +1651,8 @@ final class Settings {
 	public function on_add_option( string $option, array $settings ): void {
 		$this->resolved = array();
 
-		if ( $this->config_file ) {
-			$this->config_file->write( $settings );
+		if ( $this->config_file && ! $this->suppress_file_sync ) {
+			$this->record_config_sync( $this->config_file->write( $settings ) );
 		}
 
 		$this->fire_setting_changed_hooks( array(), $settings );
@@ -1571,8 +1671,8 @@ final class Settings {
 	public function on_update_option( array $old_settings, array $settings ): void {
 		$this->resolved = array();
 
-		if ( $this->config_file ) {
-			$this->config_file->write( $settings );
+		if ( $this->config_file && ! $this->suppress_file_sync ) {
+			$this->record_config_sync( $this->config_file->write( $settings ) );
 		}
 
 		$this->fire_setting_changed_hooks( $old_settings, $settings );
@@ -1595,8 +1695,188 @@ final class Settings {
 		$this->resolved = array();
 
 		if ( $this->config_file ) {
+			// A file surviving the delete stays authoritative and would let
+			// reconcile_overrides() resurrect the deleted settings — mark it.
 			$this->config_file->delete();
+			$this->record_config_sync( ! $this->config_file->exists() );
 		}
+	}
+
+	// ─── Override reconciliation ────────────────────────────────────────
+
+	/**
+	 * Apply constant/config-file overrides as if they were written: fire the
+	 * standard `{slug}_setting_changed` events for every drifted key, then
+	 * sync the values into the row — the "last applied" memory — so each
+	 * change applies exactly once. The row write neither re-fires the events
+	 * nor rewrites the config file (a deployed file must stay untouched).
+	 *
+	 * Wired to `admin_init` by the Manager; only defaults-known keys are
+	 * considered, so a pre-defaults call is a safe no-op.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function reconcile_overrides(): void {
+		if ( $this->standalone || ! function_exists( 'update_option' ) ) {
+			return;
+		}
+
+		// A failed sync left the file STALE, not deployed — reconciling
+		// against it would regress the row. Heal first; while that fails, bail.
+		if ( null !== $this->config_sync_failed_at() && ! $this->heal_config_file() ) {
+			return;
+		}
+
+		$stored    = $this->read_raw();
+		$base      = self::overlay_known( $this->get_default_settings(), $stored );
+		$effective = $this->resolve();
+
+		$changes = self::flatten_diff( $base, $effective );
+		if ( array() === $changes ) {
+			return;
+		}
+
+		// Sync at module.key granularity so changed sub-arrays land whole.
+		$row = $stored;
+		foreach ( array_keys( $changes ) as $dot_key ) {
+			$parts = explode( '.', $dot_key );
+			if ( count( $parts ) < 2 ) {
+				continue;
+			}
+			list( $module, $key ) = $parts;
+
+			if ( ! isset( $row[ $module ] ) || ! is_array( $row[ $module ] ) ) {
+				$row[ $module ] = array();
+			}
+			$row[ $module ][ $key ] = $effective[ $module ][ $key ] ?? null;
+		}
+
+		$this->suppress_change_hooks = true;
+		$this->suppress_file_sync    = true;
+		try {
+			$this->update( $row );
+		} finally {
+			$this->suppress_change_hooks = false;
+			$this->suppress_file_sync    = false;
+		}
+
+		// Fire after the write (native order): listener writes land on top and win.
+		$this->fire_setting_changed_hooks( $base, $effective );
+	}
+
+	/**
+	 * Unix timestamp of the last failed config-file sync, or null when healthy.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return ?int
+	 */
+	public function config_sync_failed_at(): ?int {
+		if ( $this->standalone || ! function_exists( 'get_option' ) ) {
+			return null;
+		}
+
+		$at = $this->network
+			? get_site_option( $this->config_sync_marker_name(), null )
+			: get_option( $this->config_sync_marker_name(), null );
+
+		return is_numeric( $at ) ? (int) $at : null;
+	}
+
+	/**
+	 * Record a config-file sync outcome: failure sets the marker, success
+	 * clears it.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param bool $synced Whether the file now reflects the row.
+	 */
+	private function record_config_sync( bool $synced ): void {
+		if ( ! $synced ) {
+			if ( $this->network ) {
+				update_site_option( $this->config_sync_marker_name(), time() );
+			} else {
+				update_option( $this->config_sync_marker_name(), time() );
+			}
+			return;
+		}
+
+		if ( null !== $this->config_sync_failed_at() ) {
+			if ( $this->network ) {
+				delete_site_option( $this->config_sync_marker_name() );
+			} else {
+				delete_option( $this->config_sync_marker_name() );
+			}
+		}
+	}
+
+	/**
+	 * Marker option name for a failed config-file sync.
+	 *
+	 * @since 2.7.0
+	 */
+	private function config_sync_marker_name(): string {
+		return $this->option_name . '_config_sync_failed';
+	}
+
+	/**
+	 * Retry the config-file sync: rewrite the file from the row's at-rest
+	 * form, or delete it when no row exists; clears the marker on success.
+	 * Deliberately last-writer-wins — a file deployed during a marked window
+	 * is overwritten by the row state.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return bool Whether the file now reflects the row.
+	 */
+	private function heal_config_file(): bool {
+		if ( ! $this->config_file ) {
+			$this->record_config_sync( true );
+			return true;
+		}
+
+		$stored = $this->read_stored();
+
+		if ( array() === $stored ) {
+			$this->config_file->delete();
+			$healed = ! $this->config_file->exists();
+		} else {
+			$healed = $this->config_file->write( $stored );
+		}
+
+		$this->record_config_sync( $healed );
+
+		return $healed;
+	}
+
+	/**
+	 * The stored row exactly as persisted — no stripping, no decryption —
+	 * so the config-file heal never writes plaintext secrets.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function read_stored(): array {
+		if ( $this->standalone || ! function_exists( 'get_option' ) ) {
+			return array();
+		}
+
+		$this->bypass_schema_filter = true;
+		$this->bypass_decryption    = true;
+
+		try {
+			$value = $this->network
+				? get_site_option( $this->option_name, array() )
+				: get_option( $this->option_name, array() );
+		} finally {
+			$this->bypass_schema_filter = false;
+			$this->bypass_decryption    = false;
+		}
+
+		return is_array( $value ) ? $value : array();
 	}
 
 	// ─── Setting change notifications ──────────────────────────────────

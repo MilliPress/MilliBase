@@ -52,18 +52,25 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 	// Active-toggle configuration.
 	const active = section.active || null;
 	let activeModule, activeKey, isActive;
+	let activeConstant = false;
 	if ( active ) {
 		const activeParts = active.key.split( '.' );
 		activeModule = activeParts[ 0 ];
 		activeKey = activeParts[ 1 ];
-		isActive = settings?.[ activeModule ]?.[ activeKey ] ?? active.default;
+		// Pinned by a wp-config constant — same authoritative check as fields.
+		activeConstant =
+			!! constants?.[ activeModule ] &&
+			activeKey in constants[ activeModule ];
+		isActive = activeConstant
+			? ( constants[ activeModule ][ activeKey ] ?? active.default )
+			: ( settings?.[ activeModule ]?.[ activeKey ] ?? active.default );
 	}
 
-	// Symmetric with field `lock`: a truthy `lock` condition makes the
-	// active toggle read-only. Evaluated against the same `effective` data.
-	const activeLocked = !! (
-		active?.lock && evaluateCondition( active.lock, effective )
-	);
+	// Symmetric with field `lock`: a constant pin or a truthy `lock`
+	// condition makes the active toggle read-only.
+	const activeLocked =
+		activeConstant ||
+		!! ( active?.lock && evaluateCondition( active.lock, effective ) );
 
 	const renderField = ( field ) => {
 		// Symmetric with show/hide: a truthy `lock` condition makes

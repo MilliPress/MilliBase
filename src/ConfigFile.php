@@ -183,6 +183,17 @@ final class ConfigFile {
 	}
 
 	/**
+	 * Whether the config file currently exists on disk.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return bool
+	 */
+	public function exists(): bool {
+		return file_exists( $this->get_file_path() );
+	}
+
+	/**
 	 * Get the full file path for the config file.
 	 *
 	 * @since 1.0.0

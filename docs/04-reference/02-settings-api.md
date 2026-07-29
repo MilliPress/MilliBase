@@ -61,6 +61,12 @@ $settings->get('cache.ttl', 7200);         // 7200 if not set
 
 To inspect which source provided a value (useful for "show editable vs read-only" UI logic), use `get_source()` instead — there's no public flag to skip a single source from the merged view.
 
+### Override Reconciliation
+
+Constants and config-file values are applied like writes: on `admin_init`, MilliBase compares each key's effective value against the stored row, fires the standard `{slug}_setting_changed` events for every difference, and syncs the values into the row. Defining a constant sets and locks the value; removing it unlocks the setting but keeps its last value. The same applies to values changed in a deployed config file.
+
+If the config file cannot be written (for example, a read-only `wp-content`), the failed write is recorded and reconciliation pauses. A stale file never overwrites newer database state. Once the directory is writable again, the file is repaired from the database on the next admin visit. `config_sync_failed_at()` exposes the failure timestamp for status surfaces.
+
 ### `get_default_settings(?string $module = null): array`
 
 Get default settings. Applies the `{slug}_settings_defaults` filter.
