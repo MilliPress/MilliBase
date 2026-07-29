@@ -244,7 +244,13 @@ const SectionRenderer = ( { section, accordion, accordionOpen, onAccordionToggle
 									isBlock={ ! field.width }
 									style={
 										field.width
-											? { width: field.width }
+											? // Buttons: width is a floor, the label may grow it.
+											  ( field.type === 'button'
+													? {
+															minWidth:
+																field.width,
+													  }
+													: { width: field.width } )
 											: undefined
 									}
 								>

@@ -338,7 +338,7 @@ Place a button anywhere in `fields`. Combine with `inline: true` to position it 
 | `confirm`       | `string`                                           | —             | Optional. If set, the button opens a `<Modal>` with this prompt and Cancel/Confirm buttons before triggering the action. |
 | `tooltip`       | `string`                                           | —             | Hover tooltip text.                                                                                                      |
 | `inline`        | `bool`                                             | `false`       | Place the button on the same row as the previous field.                                                                  |
-| `width`         | `string`                                           | —             | CSS width applied to the inline-row flex item (e.g. `'200px'`, `'30%'`).                                                 |
+| `width`         | `string`                                           | —             | Minimum width of the inline-row flex item (e.g. `'200px'`); the button still grows with longer (translated) labels.      |
 | `show` / `hide` | `[field, op, value]`                               | —             | Conditional visibility against the current settings (e.g. `['license.is_valid', '=', true]`).                            |
 | `lock`          | `[field, op, value]`                               | —             | Conditionally render the button disabled — same condition syntax as `show`/`hide`.                                       |
 
