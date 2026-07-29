@@ -167,7 +167,7 @@ final class Settings {
 	 * {@see self::reconcile_overrides()} row write treats the file as a
 	 * source, never a target.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 * @var bool
 	 */
 	private bool $suppress_file_sync = false;
@@ -177,7 +177,7 @@ final class Settings {
 	 * return enc_ values at rest so the config-file heal never writes
 	 * plaintext.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 * @var bool
 	 */
 	private bool $bypass_decryption = false;
@@ -703,7 +703,7 @@ final class Settings {
 	 * constant-only value resolves before its key is in the defaults.
 	 *
 	 * @since 2.6.2
-	 * @since 2.7.0 Resolves constant overrides before the stored row.
+	 * @since 2.8.0 Resolves constant overrides before the stored row.
 	 *
 	 * @param string $key      Dot-notation key.
 	 * @param mixed  $fallback Returned when the key resolves nowhere.
@@ -788,7 +788,7 @@ final class Settings {
 	 * Overlay stored values onto a defaults-shaped tree, keeping only keys
 	 * the defaults know (the defaults-gate).
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @param array<string, array<string, mixed>> $settings Defaults-shaped tree.
 	 * @param array<string, mixed>                $values   Stored values to overlay.
@@ -907,7 +907,7 @@ final class Settings {
 	 * `MC_OBJECT_CACHE_ACTIVE`), and encrypted fields also answer without the
 	 * `ENC_` marker (`license.enc_key` → `MC_LICENSE_KEY`).
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @param string $module Module key.
 	 * @param string $key    Setting key within the module.
@@ -1148,7 +1148,7 @@ final class Settings {
 	 * Load WordPress's bundled sodium_compat polyfill when the native
 	 * ext-sodium extension is unavailable.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 */
 	private static function maybe_load_sodium_compat(): void {
 		if ( ! function_exists( 'sodium_crypto_secretbox' ) && defined( 'ABSPATH' ) ) {
@@ -1299,7 +1299,7 @@ final class Settings {
 	 *
 	 * @since 1.0.0
 	 * @since 2.6.4 Ignores preserve-flagged keys.
-	 * @since 2.7.0 Ignores row values mirroring constants.
+	 * @since 2.8.0 Ignores row values mirroring constants.
 	 *
 	 * @return bool
 	 */
@@ -1311,7 +1311,7 @@ final class Settings {
 	/**
 	 * Return a copy of a settings tree with constant-defined keys removed.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @param array<string, array<string, mixed>> $tree Settings tree to strip.
 	 * @return array<string, array<string, mixed>>
@@ -1714,7 +1714,7 @@ final class Settings {
 	 * Wired to `admin_init` by the Manager; only defaults-known keys are
 	 * considered, so a pre-defaults call is a safe no-op.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @return void
 	 */
@@ -1769,7 +1769,7 @@ final class Settings {
 	/**
 	 * Unix timestamp of the last failed config-file sync, or null when healthy.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @return ?int
 	 */
@@ -1789,7 +1789,7 @@ final class Settings {
 	 * Record a config-file sync outcome: failure sets the marker, success
 	 * clears it.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @param bool $synced Whether the file now reflects the row.
 	 */
@@ -1815,7 +1815,7 @@ final class Settings {
 	/**
 	 * Marker option name for a failed config-file sync.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 */
 	private function config_sync_marker_name(): string {
 		return $this->option_name . '_config_sync_failed';
@@ -1827,7 +1827,7 @@ final class Settings {
 	 * Deliberately last-writer-wins — a file deployed during a marked window
 	 * is overwritten by the row state.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @return bool Whether the file now reflects the row.
 	 */
@@ -1855,7 +1855,7 @@ final class Settings {
 	 * The stored row exactly as persisted — no stripping, no decryption —
 	 * so the config-file heal never writes plaintext secrets.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @return array<string, mixed>
 	 */

@@ -185,7 +185,7 @@ final class ConfigFile {
 	/**
 	 * Whether the config file currently exists on disk.
 	 *
-	 * @since 2.7.0
+	 * @since 2.8.0
 	 *
 	 * @return bool
 	 */
