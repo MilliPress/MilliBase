@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.8.0](https://github.com/MilliPress/MilliBase/compare/v2.7.1...v2.8.0) (2026-07-29)
+
+
+### Features
+
+* **settings:** apply constant and config-file changes like real settings updates ([fc68e75](https://github.com/MilliPress/MilliBase/commit/fc68e7595eecb87030510b7a6ef7c590a0e0c016))
+
+
+### Bug Fixes
+
+* **config:** write the settings sync file directly and atomically ([4676039](https://github.com/MilliPress/MilliBase/commit/46760398778d0ec701a579c66beb2156ee68476b))
+* **settings:** let buttons grow with longer translated labels ([290fb47](https://github.com/MilliPress/MilliBase/commit/290fb477bc5ecbb11021b4d0794c88a356d68044))
+
 ## [2.7.1](https://github.com/MilliPress/MilliBase/compare/v2.7.0...v2.7.1) (2026-07-22)
 
 
