@@ -86,7 +86,7 @@ jobs:
           # rebuild commit lands on the right ref. Fork PR / push: default ref.
           ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || github.ref }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
