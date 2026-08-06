@@ -80,6 +80,13 @@ add_filter('my_plugin_rest_status_response', function (array $status, \WP_REST_R
 - `\WP_REST_Request $request` — the REST request object
 - `bool $is_network` — whether this Controller is network-scoped (since 2.5.1)
 
+**Reserved keys:**
+- `poll_interval` (int, seconds) — requests a faster status-poll cadence from the settings UI while background work is in flight. Clamped to 2–60 seconds client-side; omit it to use the 15-second default. When several producers set it, use `min()` against the existing value so the fastest request wins:
+
+```php
+$status['poll_interval'] = min($status['poll_interval'] ?? 15, 5);
+```
+
 ---
 
 ### `option_{option_name}`

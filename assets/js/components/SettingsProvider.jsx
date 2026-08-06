@@ -320,7 +320,17 @@ export const SettingsProvider = ( { config, children } ) => {
 	useEffect( () => {
 		fetchSettings();
 		fetchStatus();
+	}, [ fetchSettings, fetchStatus ] );
 
+	// Status producers may request a faster poll cadence via `poll_interval`
+	// (seconds, clamped 2-60; default 15).
+	const pollSeconds = Number( status?.poll_interval );
+	const pollInterval =
+		Number.isFinite( pollSeconds ) && pollSeconds > 0
+			? Math.min( Math.max( pollSeconds, 2 ), 60 ) * 1000
+			: 15000;
+
+	useEffect( () => {
 		if ( statusIntervalRef.current ) {
 			clearInterval( statusIntervalRef.current );
 		}
@@ -329,14 +339,14 @@ export const SettingsProvider = ( { config, children } ) => {
 			if ( ! errorRef.current ) {
 				fetchStatus();
 			}
-		}, 15000 );
+		}, pollInterval );
 
 		return () => {
 			if ( statusIntervalRef.current ) {
 				clearInterval( statusIntervalRef.current );
 			}
 		};
-	}, [ fetchSettings, fetchStatus ] );
+	}, [ fetchStatus, pollInterval ] );
 
 	// Sync the active tab from the URL hash for deep links and in-app hash
 	// navigation (e.g. ?page=millicache#settings). Unknown/empty hashes fall
@@ -472,6 +482,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			updateSetting,
 			saveSettings,
 			triggerAction,
+			fetchStatus,
 			activeTab,
 			setActiveTab: setActiveTabWithHash,
 			retryConnection,
@@ -493,6 +504,7 @@ export const SettingsProvider = ( { config, children } ) => {
 			updateSetting,
 			saveSettings,
 			triggerAction,
+			fetchStatus,
 			setActiveTabWithHash,
 			retryConnection,
 			isRetrying,
@@ -514,6 +526,7 @@ export const SettingsProvider = ( { config, children } ) => {
  * - updateSetting (useCallback, [])
  * - saveSettings (useCallback, stable deps)
  * - triggerAction (useCallback, stable deps)
+ * - fetchStatus (useCallback, stable deps)
  * - retryConnection (useCallback)
  *
  * The context value itself is memoized and only updates when
