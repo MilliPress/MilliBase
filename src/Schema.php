@@ -546,7 +546,7 @@ final class Schema {
 	 *
 	 * @since 1.1.0
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<int, array<int|string, mixed>>
 	 */
 	public function get_all_sections(): array {
 		$sections = array();
