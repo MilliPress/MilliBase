@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.8.2](https://github.com/MilliPress/MilliBase/compare/v2.8.1...v2.8.2) (2026-08-07)
+
+
+### Features
+
+* **header:** hide the save button on tabs without settings ([7d8b40c](https://github.com/MilliPress/MilliBase/commit/7d8b40c11798138318b1a3767982f96fc8d69bec))
+
+
+### Bug Fixes
+
+* **header:** relocate admin notices into the header after mount ([7d8b40c](https://github.com/MilliPress/MilliBase/commit/7d8b40c11798138318b1a3767982f96fc8d69bec))
+
+
+### Miscellaneous
+
+* release 2.8.2 ([6682e5b](https://github.com/MilliPress/MilliBase/commit/6682e5bb9570373b00012ada953c890ce5266ba8))
+
 ## [2.8.1](https://github.com/MilliPress/MilliBase/compare/v2.8.0...v2.8.1) (2026-08-07)
 
 
