@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.8.1](https://github.com/MilliPress/MilliBase/compare/v2.8.0...v2.8.1) (2026-08-07)
+
+
+### Features
+
+* **settings:** on-demand status refresh and server-driven poll cadence ([759160f](https://github.com/MilliPress/MilliBase/commit/759160f7829d98c3eed4b9582039dc9a249f4fd5))
+
+
+### Miscellaneous
+
+* set next release version to 2.8.1 ([c010b17](https://github.com/MilliPress/MilliBase/commit/c010b171bf382708726cdf18075bf62e18769f94))
+
 ## [2.8.0](https://github.com/MilliPress/MilliBase/compare/v2.7.1...v2.8.0) (2026-07-29)
 
 
