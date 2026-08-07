@@ -56,6 +56,8 @@ Reference your component in a tab definition:
 
 The `type` must be `'custom'` and `component` must match the name passed to `registerComponent()`.
 
+Since custom tabs have no schema fields, the header's **Save Settings** button is hidden while such a tab is active. It reappears when the user has unsaved changes from another tab, so pending edits always stay saveable.
+
 ## Section Intro Components
 
 You can also use registered components as section introductions. When the `intro` property of a section matches a registered component name, it renders the component instead of plain text:
