@@ -4,7 +4,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { createElement, useState } from '@wordpress/element';
+import { createElement, useEffect, useRef, useState } from '@wordpress/element';
 import {
 	Animate,
 	Button,
@@ -32,6 +32,7 @@ const Header = () => {
 		isLoading,
 		hasChanges,
 		triggerAction,
+		activeTab,
 	} = useSettings();
 
 	const header = config.header || {};
@@ -41,6 +42,40 @@ const Header = () => {
 
 	// Track which custom button modals are open.
 	const [ openModals, setOpenModals ] = useState( {} );
+
+	// Custom-component tabs have nothing to save; hide the save button
+	// there unless another tab's edits are still unsaved.
+	const tabs = config.schema?.tabs || [];
+	const currentTab =
+		tabs.find( ( tab ) => tab.name === activeTab ) || tabs[ 0 ];
+	const showSaveButton =
+		! currentTab || !! currentTab.sections?.length || hasChanges;
+
+	// Core's notice relocation runs on DOM-ready, before the wp-header-end
+	// marker exists; pull stray admin notices in ourselves once mounted.
+	const noticesRef = useRef( null );
+
+	useEffect( () => {
+		const container = noticesRef.current;
+		if ( ! container ) {
+			return;
+		}
+
+		document
+			.querySelectorAll(
+				'#wpbody-content div.notice, #wpbody-content div.updated, #wpbody-content div.error'
+			)
+			.forEach( ( notice ) => {
+				if (
+					notice.classList.contains( 'inline' ) ||
+					notice.classList.contains( 'below-h2' ) ||
+					container.contains( notice )
+				) {
+					return;
+				}
+				container.appendChild( notice );
+			} );
+	}, [] );
 
 	const renderCustomButton = ( btn, idx ) => {
 		// If button has a registered component, render it.
@@ -78,6 +113,11 @@ const Header = () => {
 		<>
 			<PanelBody className="millibase-header">
 				<hr className="wp-header-end" />
+				{ /* Non-React container for relocated notices. */ }
+				<div
+					className="millibase-header-notices"
+					ref={ noticesRef }
+				/>
 				<Flex align="center">
 					<FlexItem>
 						<h1 style={ { padding: '0' } }>
@@ -100,19 +140,20 @@ const Header = () => {
 						) }
 					</FlexItem>
 					<FlexItem align="end">
-						{ /* Save button — always present */ }
-						<Button
-							__next40pxDefaultSize
-							style={ { marginRight: '10px' } }
-							isBusy={ isSaving }
-							isPrimary
-							onClick={ saveSettings }
-							disabled={ ! hasChanges || isSaving }
-						>
-							{ isSaving
-								? __( 'Saving…', 'millibase' )
-								: __( 'Save Settings', 'millibase' ) }
-						</Button>
+						{ showSaveButton && (
+							<Button
+								__next40pxDefaultSize
+								style={ { marginRight: '10px' } }
+								isBusy={ isSaving }
+								isPrimary
+								onClick={ saveSettings }
+								disabled={ ! hasChanges || isSaving }
+							>
+								{ isSaving
+									? __( 'Saving…', 'millibase' )
+									: __( 'Save Settings', 'millibase' ) }
+							</Button>
+						) }
 
 						{ /* Custom buttons from header config */ }
 						{ buttons.map( ( btn, idx ) =>

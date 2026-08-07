@@ -107,6 +107,12 @@ body:has(.millibase-page) .components-modal__frame {
 		padding-left: 20px;
 	}
 
+	// Relocated admin notices (see Header.jsx); core's margins assume the
+	// page context, not the header panel.
+	.millibase-header-notices .notice {
+		margin: 5px 0 15px;
+	}
+
 	// Mobile-friendly header: stack title and buttons vertically.
 	@media screen and (max-width: 782px) {
 
