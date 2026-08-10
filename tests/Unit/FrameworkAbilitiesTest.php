@@ -107,7 +107,8 @@ it('builds export with the documented schema and readonly annotation', function 
     $entry = ability_by_id(FrameworkAbilities::settings(make_settings_fake()), 'settings-export');
 
     expect($entry['input_schema']['type'])->toBe('object');
-    expect($entry['input_schema']['properties'])->toHaveKeys(['module', 'include_encrypted']);
+    expect($entry['input_schema']['properties'])->toHaveKeys(['module']);
+    expect($entry['input_schema']['properties'])->not->toHaveKey('include_encrypted');
     expect($entry['output_schema']['type'])->toBe('object');
     expect($entry['output_schema']['additionalProperties']['type'])->toBe('object');
     expect($entry['meta']['annotations']['readonly'])->toBeTrue();
@@ -147,33 +148,28 @@ it('omits show_in_rest by default — plugins opt in per-ability', function () {
     }
 });
 
-it('forwards module and include_encrypted from input to Settings::export', function () {
+it('forwards module to Settings::export', function () {
     $fake     = make_settings_fake(['export' => ['ok' => true]]);
     $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];
 
-    $result = $callback(['module' => 'cache', 'include_encrypted' => true]);
+    $result = $callback(['module' => 'cache']);
 
     expect($fake->calls)->toBe([
-        ['method' => 'export', 'module' => 'cache', 'include_encrypted' => true],
+        ['method' => 'export', 'module' => 'cache', 'include_encrypted' => false],
     ]);
     expect($result)->toBe(['ok' => true]);
 });
 
-it('coerces stringified booleans correctly for include_encrypted', function () {
-    $fake     = make_settings_fake();
+it('never decrypts on export, even when the caller asks for it', function () {
+    // The ability is reachable over REST and MCP, so a decrypted storage
+    // password would leave the site. `wp config export --include-encrypted`
+    // remains the admin path and bypasses the ability entirely.
+    $fake     = make_settings_fake(['export' => ['ok' => true]]);
     $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];
 
-    $callback(['include_encrypted' => 'false']);
-    $callback(['include_encrypted' => 'true']);
-    $callback(['include_encrypted' => '0']);
-    $callback(['include_encrypted' => '1']);
+    $callback(['module' => 'cache', 'include_encrypted' => true]);
 
-    expect($fake->calls)->toBe([
-        ['method' => 'export', 'module' => null, 'include_encrypted' => false],
-        ['method' => 'export', 'module' => null, 'include_encrypted' => true],
-        ['method' => 'export', 'module' => null, 'include_encrypted' => false],
-        ['method' => 'export', 'module' => null, 'include_encrypted' => true],
-    ]);
+    expect($fake->calls[0]['include_encrypted'])->toBeFalse();
 });
 
 it('treats non-array input to export as no input', function () {

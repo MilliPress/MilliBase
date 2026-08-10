@@ -586,3 +586,79 @@ it('defaults input_schema to the empty-object schema when the host omits it', fu
     expect($args)->not->toHaveKey('output_schema');
     expect($args)->not->toHaveKey('meta');
 });
+
+it('sets show_in_rest and mcp.public from the abilities allowlists', function () {
+    $config = [
+        'abilities' => [
+            'extend' => [valid_ability(['id' => 'foo']), valid_ability(['id' => 'bar'])],
+            'rest'   => ['foo'],
+            'mcp'    => ['foo'],
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    [$foo, $bar] = abilities_calls('wp_register_ability');
+
+    expect($foo['args']['meta'])->toBe(['show_in_rest' => true, 'mcp' => ['public' => true]]);
+    expect($bar['args'])->not->toHaveKey('meta');
+});
+
+it('treats rest and mcp as independent switches', function () {
+    // An MCP server reads the registry directly, so REST exposure neither
+    // implies nor is implied by MCP exposure.
+    $config = [
+        'abilities' => [
+            'extend' => [valid_ability(['id' => 'foo'])],
+            'rest'   => ['foo'],
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    $args = abilities_calls('wp_register_ability')[0]['args'];
+
+    expect($args['meta'])->toBe(['show_in_rest' => true]);
+});
+
+it('exposes every ability when an allowlist is true', function () {
+    $config = [
+        'abilities' => [
+            'extend' => [valid_ability(['id' => 'foo']), valid_ability(['id' => 'bar'])],
+            'rest'   => true,
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+
+    foreach (abilities_calls('wp_register_ability') as $call) {
+        expect($call['args']['meta']['show_in_rest'])->toBeTrue();
+    }
+});
+
+it('lets an explicit meta flag win over the allowlist', function () {
+    // Destructive abilities opt out by declaring the flag themselves; the
+    // allowlist must never silently re-enable them.
+    $config = [
+        'abilities' => [
+            'extend' => [valid_ability(['id' => 'foo', 'meta' => ['show_in_rest' => false]])],
+            'rest'   => true,
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+    $args = abilities_calls('wp_register_ability')[0]['args'];
+
+    expect($args['meta']['show_in_rest'])->toBeFalse();
+});
+
+it('matches allowlist ids literally, so network ids need their prefix', function () {
+    $config = [
+        'abilities' => [
+            'extend' => [valid_ability(['id' => 'network-foo'])],
+            'rest'   => ['foo'],
+        ],
+    ];
+
+    make_abilities_controller($config)->register_abilities();
+
+    expect(abilities_calls('wp_register_ability')[0]['args'])->not->toHaveKey('meta');
+});

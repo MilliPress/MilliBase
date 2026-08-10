@@ -138,7 +138,7 @@ final class Controller {
 		$entries = is_array( $config['extend'] ?? null ) ? array_values( $config['extend'] ) : array();
 
 		// Append, not prepend — host entries register first, framework duplicates skip via wp_has_ability().
-		if ( self::should_expose_preset( $config['expose'] ?? false, 'settings' ) ) {
+		if ( self::matches_exposure_list( $config['expose'] ?? false, 'settings' ) ) {
 			$entries = array_merge( $entries, FrameworkAbilities::settings( $this->settings ) );
 		}
 
@@ -219,30 +219,86 @@ final class Controller {
 				$args['meta'] = $ability['meta'];
 			}
 
+			$meta = self::apply_exposure(
+				is_array( $args['meta'] ?? null ) ? $args['meta'] : array(),
+				$id,
+				$config
+			);
+
+			// Stays absent when nothing set it, so core applies its own defaults.
+			if ( array() !== $meta ) {
+				$args['meta'] = $meta;
+			}
+
 			wp_register_ability( $name, $args );
 		}
 	}
 
 	/**
-	 * Whether the given framework preset should be exposed.
+	 * Whether an allowlist config value covers the given name.
 	 *
-	 * `true` exposes every built-in preset (including ones added in future
-	 * MilliBase releases). An array of names exposes only those listed. Any
-	 * other value (false, null, omitted) exposes nothing.
+	 * Used for `abilities.expose` (preset names) as well as the two
+	 * client-exposure allowlists (ability ids).
+	 *
+	 * `true` covers everything, including presets added in future MilliBase
+	 * releases. An array covers only the names it lists. Any other value
+	 * (false, null, omitted) covers nothing.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param mixed  $expose The `abilities.expose` config value.
-	 * @param string $preset The preset name to test for.
+	 * @param mixed  $allowed The config value to test.
+	 * @param string $name    The name to look for.
 	 * @return bool
 	 */
-	private static function should_expose_preset( $expose, string $preset ): bool {
-		if ( true === $expose ) {
+	private static function matches_exposure_list( $allowed, string $name ): bool {
+		if ( true === $allowed ) {
 			return true;
 		}
-		return is_array( $expose ) && in_array( $preset, $expose, true );
+		return is_array( $allowed ) && in_array( $name, $allowed, true );
+	}
+
+	/**
+	 * Fill in the two independent client-exposure flags from the config.
+	 *
+	 * `abilities.rest` drives core's `meta.show_in_rest`, which gates the
+	 * `/wp-abilities/v1/` list and run controllers. `abilities.mcp` drives
+	 * `meta.mcp.public`, which the MCP Adapter reads straight from the
+	 * registry. Neither implies the other: an MCP server reaches abilities
+	 * without going through REST, so both are set explicitly.
+	 *
+	 * Both accept `true` (every ability this Manager registers) or an array
+	 * of bare ability ids. Ids are matched literally, so a network Manager
+	 * lists `network-`-prefixed ids or, more usually, omits the key and
+	 * exposes nothing.
+	 *
+	 * An ability that sets the flag in its own `meta` keeps that value; the
+	 * config only fills in what the ability left unspecified.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param array<string, mixed> $meta   The ability's meta so far.
+	 * @param string               $id     The bare ability id (no namespace).
+	 * @param array<string, mixed> $config The `abilities` config array.
+	 * @return array<string, mixed>
+	 */
+	private static function apply_exposure( array $meta, string $id, array $config ): array {
+		if ( ! isset( $meta['show_in_rest'] ) && self::matches_exposure_list( $config['rest'] ?? false, $id ) ) {
+			$meta['show_in_rest'] = true;
+		}
+
+		$mcp = is_array( $meta['mcp'] ?? null ) ? $meta['mcp'] : array();
+
+		if ( ! isset( $mcp['public'] ) && self::matches_exposure_list( $config['mcp'] ?? false, $id ) ) {
+			$mcp['public'] = true;
+		}
+
+		if ( array() !== $mcp ) {
+			$meta['mcp'] = $mcp;
+		}
+
+		return $meta;
 	}
 
 	/**

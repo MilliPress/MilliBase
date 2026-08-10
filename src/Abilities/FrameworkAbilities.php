@@ -63,18 +63,22 @@ final class FrameworkAbilities {
 				? __( 'Export Network Settings', 'millibase' )
 				: __( 'Export Settings', 'millibase' ),
 			'description'   => $is_network
-				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' )
-				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values are stripped unless `include_encrypted` is true.', 'millibase' ),
+				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
+				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped.', 'millibase' )
+				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
+				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped.', 'millibase' ),
+			// No `include_encrypted` passthrough: this ability is reachable by
+			// REST clients and MCP servers, and a decrypted storage password
+			// would land in a third-party model's context. Admins who need the
+			// full export use `wp <slug> config export --include-encrypted`,
+			// which calls Settings::export() directly.
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
-				$module            = self::input_string( $input, 'module' );
-				$include_encrypted = self::input_bool( $input, 'include_encrypted' );
-				return $settings->export( $module, $include_encrypted );
+				return $settings->export( self::input_string( $input, 'module' ), false );
 			},
 			'input_schema'  => array(
 				'type'       => 'object',
 				'properties' => array(
-					'module'            => array( 'type' => 'string' ),
-					'include_encrypted' => array( 'type' => 'boolean' ),
+					'module' => array( 'type' => 'string' ),
 				),
 			),
 			'output_schema' => array(
@@ -110,7 +114,9 @@ final class FrameworkAbilities {
 				? __( 'Reset Network Settings to Defaults', 'millibase' )
 				: __( 'Reset Settings to Defaults', 'millibase' ),
 			'description'   => $is_network
+				/* translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable. */
 				? __( 'Reset the network settings to their defaults (site settings are not affected). An automatic backup is created before the reset.', 'millibase' )
+				/* translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable. */
 				: __( 'Reset the site settings to their defaults. An automatic backup is created before the reset.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
@@ -155,7 +161,9 @@ final class FrameworkAbilities {
 				? __( 'Back Up Network Settings', 'millibase' )
 				: __( 'Back Up Settings', 'millibase' ),
 			'description'   => $is_network
+				/* translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change. */
 				? __( 'Take a backup of the current network settings (site settings are not included). The backup expires after 3 days.', 'millibase' )
+				/* translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change. */
 				: __( 'Take a backup of the current site settings. The backup expires after 3 days.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				$module = self::input_string( $input, 'module' );
@@ -201,7 +209,9 @@ final class FrameworkAbilities {
 				? __( 'Restore Network Settings from Backup', 'millibase' )
 				: __( 'Restore Settings from Backup', 'millibase' ),
 			'description'   => $is_network
+				/* translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for. */
 				? __( 'Restore the most recent network settings backup (site settings are not affected). Returns success: false when no backup is available.', 'millibase' )
+				/* translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for. */
 				: __( 'Restore the most recent site settings backup. Returns success: false when no backup is available.', 'millibase' ),
 			'callback'      => static function () use ( $settings ): array {
 				return array( 'success' => $settings->restore_backup() );
@@ -243,21 +253,5 @@ final class FrameworkAbilities {
 			return null;
 		}
 		return $value;
-	}
-
-	/**
-	 * Extract a boolean field from ability input — uses FILTER_VALIDATE_BOOLEAN to handle stringified booleans.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @param mixed  $input The ability input as received by execute_callback.
-	 * @param string $key   The field name to extract.
-	 * @return bool
-	 */
-	private static function input_bool( $input, string $key ): bool {
-		if ( ! is_array( $input ) ) {
-			return false;
-		}
-		return (bool) filter_var( $input[ $key ] ?? false, FILTER_VALIDATE_BOOLEAN );
 	}
 }
