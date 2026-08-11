@@ -81,8 +81,6 @@ final class Import extends Command {
 			WP_CLI::confirm( 'Import will replace all existing settings. Continue?', $assoc_args );
 		}
 
-		$settings->backup();
-
 		/** @var array<string, mixed> $data */
 		if ( ! $settings->import( $data, (bool) $merge ) ) {
 			WP_CLI::error( 'Import failed. No valid modules found in the provided data.' );

@@ -16,7 +16,7 @@ use MilliBase\Settings;
  *
  * @since 2.5.0
  */
-final class FrameworkAbilities {
+final class Framework {
 
 	/**
 	 * Build the four standard settings abilities for a plugin.
@@ -64,16 +64,12 @@ final class FrameworkAbilities {
 				: __( 'Export Settings', 'millibase' ),
 			'description'   => $is_network
 				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
-				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped.', 'millibase' )
+				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one.', 'millibase' )
 				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
-				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped.', 'millibase' ),
-			// No `include_encrypted` passthrough: this ability is reachable by
-			// REST clients and MCP servers, and a decrypted storage password
-			// would land in a third-party model's context. Admins who need the
-			// full export use `wp <slug> config export --include-encrypted`,
-			// which calls Settings::export() directly.
+				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one.', 'millibase' ),
+			// Masked, never decrypted: this leaves the site over REST and MCP.
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
-				return $settings->export( self::input_string( $input, 'module' ), false );
+				return self::as_objects( $settings->export( self::input_string( $input, 'module' ), 'mask' ) );
 			},
 			'input_schema'  => array(
 				'type'       => 'object',
@@ -94,6 +90,29 @@ final class FrameworkAbilities {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Turn empty module arrays into objects.
+	 *
+	 * PHP cannot tell an empty map from an empty list, so an emptied module
+	 * serializes to `[]`, contradicting the declared
+	 * `additionalProperties: {type: object}` and reading to a model as a list
+	 * rather than as "module present, nothing in it".
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param array<string, mixed> $tree Module → settings tree.
+	 * @return array<string, mixed>
+	 */
+	private static function as_objects( array $tree ): array {
+		foreach ( $tree as $module => $settings ) {
+			if ( array() === $settings ) {
+				$tree[ $module ] = (object) array();
+			}
+		}
+
+		return $tree;
 	}
 
 	/**
@@ -162,13 +181,18 @@ final class FrameworkAbilities {
 				: __( 'Back Up Settings', 'millibase' ),
 			'description'   => $is_network
 				/* translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change. */
-				? __( 'Take a backup of the current network settings (site settings are not included). The backup expires after 3 days.', 'millibase' )
+				? __( 'Take a backup of the current network settings (site settings are not included). There is one backup slot, so this replaces any earlier backup, and settings-restore always restores this one. The response reports when it expires.', 'millibase' )
 				/* translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change. */
-				: __( 'Take a backup of the current site settings. The backup expires after 3 days.', 'millibase' ),
+				: __( 'Take a backup of the current site settings. There is one backup slot, so this replaces any earlier backup, and settings-restore always restores this one. The response reports when it expires.', 'millibase' ),
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
-				$module = self::input_string( $input, 'module' );
-				$settings->backup( $module );
-				return array( 'success' => $settings->has_backup() );
+				$module     = self::input_string( $input, 'module' );
+				$expires_at = $settings->backup( $module );
+
+				return array(
+					'success'    => $settings->has_backup(),
+					'module'     => $module ?? '',
+					'expires_at' => $expires_at > 0 ? gmdate( 'c', $expires_at ) : '',
+				);
 			},
 			'input_schema'  => array(
 				'type'       => 'object',
@@ -179,7 +203,15 @@ final class FrameworkAbilities {
 			'output_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
-					'success' => array( 'type' => 'boolean' ),
+					'success'    => array( 'type' => 'boolean' ),
+					'module'     => array(
+						'type'        => 'string',
+						'description' => __( 'The module that was backed up, or empty for all of them.', 'millibase' ),
+					),
+					'expires_at' => array(
+						'type'        => 'string',
+						'description' => __( 'ISO 8601 timestamp after which the backup is gone and settings-restore has nothing to restore.', 'millibase' ),
+					),
 				),
 				'required'   => array( 'success' ),
 			),

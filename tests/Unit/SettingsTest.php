@@ -775,3 +775,54 @@ it('returns false for a key without dot notation', function () {
 
     expect($settings->set('cache', 99))->toBeFalse();
 });
+
+// ─── import() ───────────────────────────────────────────────────────
+
+it('never lets a masked secret overwrite the stored one', function () {
+    // A `mask` export reads enc_ fields back as bullets. Importing that
+    // verbatim would destroy the real password with no way back.
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => ['storage' => ['enc_password' => '', 'host' => '']],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = [
+        'storage' => ['enc_password' => 'ENC:real-secret', 'host' => 'old.example.com'],
+    ];
+
+    $settings->import([
+        'storage' => [
+            'enc_password' => str_repeat('•', 20),
+            'host'         => 'new.example.com',
+        ],
+    ]);
+
+    $stored = $GLOBALS['__milli_test_options']['test'];
+
+    expect($stored['storage']['enc_password'])->toBe('ENC:real-secret');
+    expect($stored['storage']['host'])->toBe('new.example.com');
+});
+
+it('backs up the current settings before importing over them', function () {
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+
+    $GLOBALS['__milli_test_options']['test'] = ['cache' => ['ttl' => 60]];
+
+    $settings->import(['cache' => ['ttl' => 999]]);
+
+    expect($GLOBALS['__milli_test_options']['test']['cache']['ttl'])->toBe(999);
+    expect($GLOBALS['__milli_test_transients']['test_backup']['cache']['ttl'])->toBe(60);
+});
+
+it('does not back up when the payload holds no known module', function () {
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => ['cache' => ['ttl' => 3600]],
+    ]);
+
+    expect($settings->import(['nonsense' => ['a' => 1]]))->toBeFalse();
+    expect($GLOBALS['__milli_test_transients']['test_backup'] ?? null)->toBeNull();
+});
