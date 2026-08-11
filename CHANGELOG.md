@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.9.0](https://github.com/MilliPress/MilliBase/compare/v2.8.2...v2.9.0) (2026-08-11)
+
+
+### Features
+
+* **abilities:** expose abilities to REST and MCP clients ([0c43859](https://github.com/MilliPress/MilliBase/commit/0c43859e96f477420962e4f334236193dd65d76c))
+* **abilities:** let plugins expose abilities to REST and MCP clients ([d1e5075](https://github.com/MilliPress/MilliBase/commit/d1e50759264ffe0c01eb1a9aaebdb55cb53ae716))
+
+
+### Bug Fixes
+
+* **abilities:** mask secrets in the settings export instead of dropping them ([755612d](https://github.com/MilliPress/MilliBase/commit/755612dc0029840f05f40fc597c3914439c452e7))
+* **abilities:** never return decrypted secrets from the settings export ([4c88cd4](https://github.com/MilliPress/MilliBase/commit/4c88cd49349345a3573b424fa25f46f4ed829386))
+* **settings:** guard the import path instead of trusting its callers ([6dfdbb0](https://github.com/MilliPress/MilliBase/commit/6dfdbb056378286e1ebafd6d0046d5f662066afb))
+* **settings:** never let a masked secret reach storage ([5478128](https://github.com/MilliPress/MilliBase/commit/5478128308c9645df59ec4fa69c2b63298303516))
+
 ## [2.8.2](https://github.com/MilliPress/MilliBase/compare/v2.8.1...v2.8.2) (2026-08-07)
 
 
