@@ -1538,7 +1538,23 @@ final class Settings {
 	 * Only modules present in the defaults are accepted; unknown modules
 	 * are silently discarded.
 	 *
+	 * Two guards apply to every import, so no caller has to remember them:
+	 *
+	 *  - Masked secrets never reach storage. A `mask` export reads enc_ fields
+	 *    back as {@see self::SECRET_MASK}, and importing that verbatim would
+	 *    overwrite a real password with bullet characters, unrecoverably —
+	 *    {@see self::preserve_secret_writes()} restores the stored value.
+	 *  - The current settings are backed up first, so a bad import can be
+	 *    rolled back with {@see self::restore_backup()}, as with
+	 *    {@see self::reset()}.
+	 *
+	 * A `strip` export omits enc_ fields entirely. Merging leaves the stored
+	 * secrets alone, but replacing drops them along with everything else the
+	 * export left out — export with `mask` when the result is meant to be
+	 * imported back.
+	 *
 	 * @since 1.0.0
+	 * @since 2.9.0 Preserves masked secrets and backs up before writing.
 	 *
 	 * @param array<string, mixed> $settings The settings to import.
 	 * @param bool                 $merge    Whether to merge with existing.
@@ -1559,9 +1575,16 @@ final class Settings {
 			return false;
 		}
 
+		$filtered_settings = $this->preserve_secret_writes( $filtered_settings );
+
+		$this->backup();
+
 		if ( $merge ) {
 			$current = $this->resolve( null, true );
 			foreach ( $filtered_settings as $module => $module_settings ) {
+				if ( ! is_array( $module_settings ) ) {
+					continue;
+				}
 				if ( ! isset( $current[ $module ] ) ) {
 					$current[ $module ] = array();
 				}
