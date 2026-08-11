@@ -604,8 +604,7 @@ it('sets show_in_rest and mcp.public from the abilities allowlists', function ()
 });
 
 it('treats rest and mcp as independent switches', function () {
-    // An MCP server reads the registry directly, so REST exposure neither
-    // implies nor is implied by MCP exposure.
+    // An MCP server reads the registry directly, bypassing REST.
     $config = [
         'abilities' => [
             'extend' => [valid_ability(['id' => 'foo'])],
@@ -635,8 +634,7 @@ it('exposes every ability when an allowlist is true', function () {
 });
 
 it('lets an explicit meta flag win over the allowlist', function () {
-    // Destructive abilities opt out by declaring the flag themselves; the
-    // allowlist must never silently re-enable them.
+    // How a destructive ability opts out of a blanket allowlist.
     $config = [
         'abilities' => [
             'extend' => [valid_ability(['id' => 'foo', 'meta' => ['show_in_rest' => false]])],

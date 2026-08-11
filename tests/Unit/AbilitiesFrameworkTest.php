@@ -1,6 +1,6 @@
 <?php
 
-use MilliBase\Abilities\FrameworkAbilities;
+use MilliBase\Abilities\Framework;
 
 
 function make_settings_fake(array $stubs = []): object
@@ -26,9 +26,10 @@ function make_settings_fake(array $stubs = []): object
             return (bool) $this->stubs['is_network'];
         }
 
-        public function backup(?string $module = null): void
+        public function backup(?string $module = null): int
         {
             $this->calls[] = ['method' => 'backup', 'module' => $module];
+            return (int) ($this->stubs['backup'] ?? 0);
         }
 
         public function reset(?string $module = null): bool
@@ -49,13 +50,9 @@ function make_settings_fake(array $stubs = []): object
             return (bool) $this->stubs['restore_backup'];
         }
 
-        public function export(?string $module = null, bool $include_encrypted = false): array
+        public function export(?string $module = null, $secrets = 'strip'): array
         {
-            $this->calls[] = [
-                'method'            => 'export',
-                'module'            => $module,
-                'include_encrypted' => $include_encrypted,
-            ];
+            $this->calls[] = ['method' => 'export', 'module' => $module, 'secrets' => $secrets];
             return (array) $this->stubs['export'];
         }
     };
@@ -73,7 +70,7 @@ function ability_by_id(array $abilities, string $id): array
 
 
 it('returns four entries in the documented order', function () {
-    $abilities = FrameworkAbilities::settings(make_settings_fake());
+    $abilities = Framework::settings(make_settings_fake());
 
     expect($abilities)->toHaveCount(4);
     expect($abilities[0]['id'])->toBe('settings-export');
@@ -83,7 +80,7 @@ it('returns four entries in the documented order', function () {
 });
 
 it('prefixes ids with network- and names the scope explicitly when network-scoped', function () {
-    $abilities = FrameworkAbilities::settings(make_settings_fake(['is_network' => true]));
+    $abilities = Framework::settings(make_settings_fake(['is_network' => true]));
 
     expect($abilities[0]['id'])->toBe('network-settings-export');
     expect($abilities[1]['id'])->toBe('network-settings-reset');
@@ -97,14 +94,14 @@ it('prefixes ids with network- and names the scope explicitly when network-scope
 });
 
 it('gives every entry a non-empty label and description', function () {
-    foreach (FrameworkAbilities::settings(make_settings_fake()) as $entry) {
+    foreach (Framework::settings(make_settings_fake()) as $entry) {
         expect($entry['label'])->toBeString()->not->toBe('');
         expect($entry['description'])->toBeString()->not->toBe('');
     }
 });
 
 it('builds export with the documented schema and readonly annotation', function () {
-    $entry = ability_by_id(FrameworkAbilities::settings(make_settings_fake()), 'settings-export');
+    $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-export');
 
     expect($entry['input_schema']['type'])->toBe('object');
     expect($entry['input_schema']['properties'])->toHaveKeys(['module']);
@@ -115,7 +112,7 @@ it('builds export with the documented schema and readonly annotation', function 
 });
 
 it('builds reset with the documented schema and destructive annotation', function () {
-    $entry = ability_by_id(FrameworkAbilities::settings(make_settings_fake()), 'settings-reset');
+    $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-reset');
 
     expect($entry['input_schema']['type'])->toBe('object');
     expect($entry['input_schema']['properties'])->toHaveKey('module');
@@ -125,7 +122,7 @@ it('builds reset with the documented schema and destructive annotation', functio
 });
 
 it('builds backup with the documented schema and idempotent annotation', function () {
-    $entry = ability_by_id(FrameworkAbilities::settings(make_settings_fake()), 'settings-backup');
+    $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-backup');
 
     expect($entry['input_schema']['properties'])->toHaveKey('module');
     expect($entry['output_schema']['properties']['success']['type'])->toBe('boolean');
@@ -133,7 +130,7 @@ it('builds backup with the documented schema and idempotent annotation', functio
 });
 
 it('builds restore with an empty-object input_schema and a destructive annotation', function () {
-    $entry = ability_by_id(FrameworkAbilities::settings(make_settings_fake()), 'settings-restore');
+    $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-restore');
 
     expect($entry['input_schema']['type'])->toBe('object');
     expect($entry['input_schema']['additionalProperties'])->toBeFalse();
@@ -142,52 +139,60 @@ it('builds restore with an empty-object input_schema and a destructive annotatio
 });
 
 it('omits show_in_rest by default — plugins opt in per-ability', function () {
-    foreach (FrameworkAbilities::settings(make_settings_fake()) as $entry) {
+    foreach (Framework::settings(make_settings_fake()) as $entry) {
         $meta = $entry['meta'] ?? [];
         expect($meta)->not->toHaveKey('show_in_rest');
     }
 });
 
-it('forwards module to Settings::export', function () {
+it('forwards module and asks for the masked export', function () {
     $fake     = make_settings_fake(['export' => ['ok' => true]]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-export')['callback'];
 
     $result = $callback(['module' => 'cache']);
 
     expect($fake->calls)->toBe([
-        ['method' => 'export', 'module' => 'cache', 'include_encrypted' => false],
+        ['method' => 'export', 'module' => 'cache', 'secrets' => 'mask'],
     ]);
     expect($result)->toBe(['ok' => true]);
 });
 
-it('never decrypts on export, even when the caller asks for it', function () {
-    // The ability is reachable over REST and MCP, so a decrypted storage
-    // password would leave the site. `wp config export --include-encrypted`
-    // remains the admin path and bypasses the ability entirely.
+it('never reaches the decrypting export, even when the caller asks for it', function () {
+    // `wp config export --include-encrypted` stays the admin path.
     $fake     = make_settings_fake(['export' => ['ok' => true]]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-export')['callback'];
 
     $callback(['module' => 'cache', 'include_encrypted' => true]);
 
-    expect($fake->calls[0]['include_encrypted'])->toBeFalse();
+    expect(array_column($fake->calls, 'secrets'))->toBe(['mask']);
+});
+
+it('serializes an emptied module as an object, not a list', function () {
+    $fake     = make_settings_fake(['export' => ['license' => [], 'cache' => ['ttl' => 60]]]);
+    $callback = ability_by_id(Framework::settings($fake), 'settings-export')['callback'];
+
+    $result = $callback([]);
+
+    expect($result['license'])->toBeInstanceOf(stdClass::class);
+    expect(json_encode($result))->toBe('{"license":{},"cache":{"ttl":60}}');
 });
 
 it('treats non-array input to export as no input', function () {
     $fake     = make_settings_fake();
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-export')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-export')['callback'];
 
     $callback(null);
     $callback('not-an-array');
 
     expect($fake->calls)->toBe([
-        ['method' => 'export', 'module' => null, 'include_encrypted' => false],
-        ['method' => 'export', 'module' => null, 'include_encrypted' => false],
+        ['method' => 'export', 'module' => null, 'secrets' => 'mask'],
+        ['method' => 'export', 'module' => null, 'secrets' => 'mask'],
     ]);
 });
 
 it('resets the requested module and reports the reset result', function () {
     $fake     = make_settings_fake(['reset' => true]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-reset')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-reset')['callback'];
 
     $result = $callback(['module' => 'cache']);
 
@@ -197,28 +202,39 @@ it('resets the requested module and reports the reset result', function () {
 
 it('reports backup success based on has_backup after the call', function () {
     $fake     = make_settings_fake(['has_backup' => true]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-backup')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-backup')['callback'];
 
     $result = $callback(['module' => 'cache']);
 
     expect($fake->calls[0])->toBe(['method' => 'backup', 'module' => 'cache']);
     expect($fake->calls[1])->toBe(['method' => 'has_backup']);
-    expect($result)->toBe(['success' => true]);
+    expect($result)->toBe(['success' => true, 'module' => 'cache', 'expires_at' => '']);
 });
 
 it('reports backup failure when has_backup returns false', function () {
     $fake     = make_settings_fake(['has_backup' => false]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-backup')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-backup')['callback'];
 
-    expect($callback(null))->toBe(['success' => false]);
+    expect($callback(null))->toBe(['success' => false, 'module' => '', 'expires_at' => '']);
 });
 
 it('returns the restore_backup result wrapped as success', function () {
     $fake     = make_settings_fake(['restore_backup' => false]);
-    $callback = ability_by_id(FrameworkAbilities::settings($fake), 'settings-restore')['callback'];
+    $callback = ability_by_id(Framework::settings($fake), 'settings-restore')['callback'];
 
     $result = $callback();
 
     expect($fake->calls[0])->toBe(['method' => 'restore_backup']);
     expect($result)->toBe(['success' => false]);
+});
+
+it('reports the backup expiry so an agent knows how long it can restore', function () {
+    $fake     = make_settings_fake(['backup' => 1786439176, 'has_backup' => true]);
+    $callback = ability_by_id(Framework::settings($fake), 'settings-backup')['callback'];
+
+    $result = $callback(['module' => 'cache']);
+
+    expect($result['success'])->toBeTrue();
+    expect($result['module'])->toBe('cache');
+    expect($result['expires_at'])->toBe(gmdate('c', 1786439176));
 });

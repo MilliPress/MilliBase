@@ -362,7 +362,7 @@ final class Manager {
 	 *
 	 * Per-Manager registration — each Manager registers its own framework
 	 * abilities scoped to its own Settings. The network Manager's ability
-	 * IDs are suffixed with `-network` by {@see Abilities\FrameworkAbilities}
+	 * IDs are suffixed with `-network` by {@see Abilities\Framework}
 	 * so site and network surfaces never collide on the same ID.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
