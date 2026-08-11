@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-10T12:12:03+00:00\n"
+"POT-Creation-Date: 2026-08-11T10:05:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.13.0-alpha-30473e0\n"
 "X-Domain: millibase\n"
@@ -28,79 +28,87 @@ msgstr ""
 msgid "The ability callback threw an exception."
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:63
+#: src/Abilities/Framework.php:63
 msgid "Export Network Settings"
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:64
+#: src/Abilities/Framework.php:64
 msgid "Export Settings"
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate.
-#: src/Abilities/FrameworkAbilities.php:67
-msgid "Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped."
+#: src/Abilities/Framework.php:67
+msgid "Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one."
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate.
-#: src/Abilities/FrameworkAbilities.php:69
-msgid "Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Encrypted values such as passwords and API keys are always stripped."
+#: src/Abilities/Framework.php:69
+msgid "Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one."
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:86
+#: src/Abilities/Framework.php:82
 msgid "Settings keyed by module name; each module is an object of key/value pairs."
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:114
+#: src/Abilities/Framework.php:133
 msgid "Reset Network Settings to Defaults"
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:115
+#: src/Abilities/Framework.php:134
 msgid "Reset Settings to Defaults"
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/FrameworkAbilities.php:118
+#: src/Abilities/Framework.php:137
 msgid "Reset the network settings to their defaults (site settings are not affected). An automatic backup is created before the reset."
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/FrameworkAbilities.php:120
+#: src/Abilities/Framework.php:139
 msgid "Reset the site settings to their defaults. An automatic backup is created before the reset."
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:161
+#: src/Abilities/Framework.php:180
 msgid "Back Up Network Settings"
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:162
+#: src/Abilities/Framework.php:181
 msgid "Back Up Settings"
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/FrameworkAbilities.php:165
-msgid "Take a backup of the current network settings (site settings are not included). The backup expires after 3 days."
+#: src/Abilities/Framework.php:184
+msgid "Take a backup of the current network settings (site settings are not included). There is one backup slot, so this replaces any earlier backup, and settings-restore always restores this one. The response reports when it expires."
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/FrameworkAbilities.php:167
-msgid "Take a backup of the current site settings. The backup expires after 3 days."
+#: src/Abilities/Framework.php:186
+msgid "Take a backup of the current site settings. There is one backup slot, so this replaces any earlier backup, and settings-restore always restores this one. The response reports when it expires."
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:209
+#: src/Abilities/Framework.php:209
+msgid "The module that was backed up, or empty for all of them."
+msgstr ""
+
+#: src/Abilities/Framework.php:213
+msgid "ISO 8601 timestamp after which the backup is gone and settings-restore has nothing to restore."
+msgstr ""
+
+#: src/Abilities/Framework.php:241
 msgid "Restore Network Settings from Backup"
 msgstr ""
 
-#: src/Abilities/FrameworkAbilities.php:210
+#: src/Abilities/Framework.php:242
 msgid "Restore Settings from Backup"
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/FrameworkAbilities.php:213
+#: src/Abilities/Framework.php:245
 msgid "Restore the most recent network settings backup (site settings are not affected). Returns success: false when no backup is available."
 msgstr ""
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/FrameworkAbilities.php:215
+#: src/Abilities/Framework.php:247
 msgid "Restore the most recent site settings backup. Returns success: false when no backup is available."
 msgstr ""
 

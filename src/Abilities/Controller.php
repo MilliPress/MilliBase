@@ -139,7 +139,7 @@ final class Controller {
 
 		// Append, not prepend — host entries register first, framework duplicates skip via wp_has_ability().
 		if ( self::matches_exposure_list( $config['expose'] ?? false, 'settings' ) ) {
-			$entries = array_merge( $entries, FrameworkAbilities::settings( $this->settings ) );
+			$entries = array_merge( $entries, Framework::settings( $this->settings ) );
 		}
 
 		if ( array() === $entries ) {
@@ -225,7 +225,7 @@ final class Controller {
 				$config
 			);
 
-			// Stays absent when nothing set it, so core applies its own defaults.
+			// Absent when unset, so core applies its own defaults.
 			if ( array() !== $meta ) {
 				$args['meta'] = $meta;
 			}

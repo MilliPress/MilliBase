@@ -33,6 +33,14 @@ final class Settings {
 	private const SECRET_MASK = '••••••••••••••••••••';
 
 	/**
+	 * How long a settings backup survives, in seconds.
+	 *
+	 * @since 2.9.0
+	 * @var int
+	 */
+	private const BACKUP_LIFETIME = 3 * DAY_IN_SECONDS;
+
+	/**
 	 * The bullet character used in secret masks (U+2022).
 	 *
 	 * On write its presence in an enc_ value marks the value as a (full or
@@ -1223,27 +1231,31 @@ final class Settings {
 	/**
 	 * Back up current settings to a transient.
 	 *
-	 * The backup expires after 3 days.
+	 * There is one backup slot per scope, so a second call replaces the first.
 	 *
 	 * @since 1.0.0
+	 * @since 2.9.0 Returns the expiry timestamp so callers can report it
+	 *              instead of hard-coding the lifetime.
 	 *
 	 * @param string|null $module Specific module to back up, or null for all.
 	 *
-	 * @return void
+	 * @return int Unix timestamp the backup expires at, or 0 when nothing was stored.
 	 */
-	public function backup( ?string $module = null ): void {
+	public function backup( ?string $module = null ): int {
 		$current = $this->resolve( $module );
 
 		if ( ! $current ) {
-			return;
+			return 0;
 		}
 
 		$key = $this->option_name . '_backup';
 		if ( $this->network ) {
-			set_site_transient( $key, $current, 3 * DAY_IN_SECONDS );
+			set_site_transient( $key, $current, self::BACKUP_LIFETIME );
 		} else {
-			set_transient( $key, $current, 3 * DAY_IN_SECONDS );
+			set_transient( $key, $current, self::BACKUP_LIFETIME );
 		}
+
+		return time() + self::BACKUP_LIFETIME;
 	}
 
 	/**
@@ -1470,18 +1482,38 @@ final class Settings {
 	/**
 	 * Export settings.
 	 *
-	 * Encrypted fields are either decrypted or stripped depending on
-	 * the `$include_encrypted` flag.
+	 * `$secrets` decides what happens to every enc_ field:
+	 *
+	 *  - `strip`   (default) removes the key entirely.
+	 *  - `mask`    keeps the key; a stored secret reads back as
+	 *              {@see self::SECRET_MASK}, an unset one as an empty string.
+	 *              Nothing is decrypted — the resolved tree holds ciphertext
+	 *              and {@see self::mask_secret()} full-masks any `ENC:` value.
+	 *  - `decrypt` returns the plaintext.
+	 *
+	 * Use `mask` for anything that leaves the site: `strip` cannot express the
+	 * difference between "not configured" and "hidden", because the key is not
+	 * there either way.
 	 *
 	 * @since 1.0.0
+	 * @since 2.9.0 `$secrets` replaces the `$include_encrypted` boolean, which
+	 *              is still accepted (`true` = `decrypt`, `false` = `strip`).
 	 *
-	 * @param string|null $module            Module to export, or null for all.
-	 * @param bool        $include_encrypted Whether to include decrypted values.
+	 * @param string|null $module  Module to export, or null for all.
+	 * @param bool|string $secrets One of `strip`, `mask`, `decrypt`; or a legacy boolean.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function export( ?string $module = null, bool $include_encrypted = false ): array {
+	public function export( ?string $module = null, $secrets = 'strip' ): array {
+		if ( is_bool( $secrets ) ) {
+			$secrets = $secrets ? 'decrypt' : 'strip';
+		}
+
 		$settings = $this->resolve( $module, true );
+
+		if ( 'mask' === $secrets ) {
+			return $this->redact_secrets( $settings );
+		}
 
 		foreach ( $settings as $module_key => $module_settings ) {
 			foreach ( $module_settings as $key => $value ) {
@@ -1489,9 +1521,9 @@ final class Settings {
 					continue;
 				}
 
-				if ( $include_encrypted && is_string( $value ) ) {
+				if ( 'decrypt' === $secrets && is_string( $value ) ) {
 					$settings[ $module_key ][ $key ] = self::decrypt_value( $value );
-				} elseif ( ! $include_encrypted ) {
+				} elseif ( 'decrypt' !== $secrets ) {
 					unset( $settings[ $module_key ][ $key ] );
 				}
 			}
