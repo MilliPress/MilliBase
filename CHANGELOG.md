@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.1](https://github.com/MilliPress/MilliBase/compare/v2.9.0...v2.9.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **abilities:** accept a call that carries no input at all ([ab7fd6a](https://github.com/MilliPress/MilliBase/commit/ab7fd6ace48fb3826574c129094458765ff908e4))
+
 ## [2.9.0](https://github.com/MilliPress/MilliBase/compare/v2.8.2...v2.9.0) (2026-08-11)
 
 
