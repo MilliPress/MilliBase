@@ -66,7 +66,7 @@ final class Framework {
 				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
 				? __( 'Export the network settings as an object keyed by module name (site settings are not included). Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one.', 'millibase' )
 				/* translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate. */
-				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one.', 'millibase' ),
+				: __( 'Export the site settings as an object keyed by module name. Pass the optional `module` argument to limit which modules are populated; the response shape is always module → settings. Passwords and API keys are never returned: a configured secret reads back as a row of bullet characters, an unconfigured one as an empty string. Never treat a masked value as the real one.', 'millibase' ) . self::network_caveat(),
 			// Masked, never decrypted: this leaves the site over REST and MCP.
 			'callback'      => static function ( $input = null ) use ( $settings ): array {
 				return self::as_objects( $settings->export( self::input_string( $input, 'module' ), 'mask' ) );
@@ -90,6 +90,25 @@ final class Framework {
 				),
 			),
 		);
+	}
+
+	/**
+	 * A note that a subsite's settings are only half the picture.
+	 *
+	 * Network-owned modules are absent from a site export, and an answer that
+	 * does not say so reads as though they were never configured.
+	 *
+	 * @since 2.9.1
+	 *
+	 * @return string The sentence to append, empty off multisite.
+	 */
+	private static function network_caveat(): string {
+		if ( ! is_multisite() ) {
+			return '';
+		}
+
+		/* translators: An AI reads this. Keep `network-settings-export` verbatim; it is a literal operation name. */
+		return ' ' . __( 'This is a site of a multisite installation, so network-owned modules are absent here rather than unconfigured; read those with `network-settings-export`.', 'millibase' );
 	}
 
 	/**
