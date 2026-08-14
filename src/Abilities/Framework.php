@@ -72,7 +72,7 @@ final class Framework {
 				return self::as_objects( $settings->export( self::input_string( $input, 'module' ), 'mask' ) );
 			},
 			'input_schema'  => array(
-				'type'       => 'object',
+				'type'       => array( 'object', 'null' ),
 				'properties' => array(
 					'module' => array( 'type' => 'string' ),
 				),
@@ -142,7 +142,7 @@ final class Framework {
 				return array( 'success' => $settings->reset( $module ) );
 			},
 			'input_schema'  => array(
-				'type'       => 'object',
+				'type'       => array( 'object', 'null' ),
 				'properties' => array(
 					'module' => array( 'type' => 'string' ),
 				),
@@ -195,7 +195,7 @@ final class Framework {
 				);
 			},
 			'input_schema'  => array(
-				'type'       => 'object',
+				'type'       => array( 'object', 'null' ),
 				'properties' => array(
 					'module' => array( 'type' => 'string' ),
 				),
@@ -249,7 +249,7 @@ final class Framework {
 				return array( 'success' => $settings->restore_backup() );
 			},
 			'input_schema'  => array(
-				'type'                 => 'object',
+				'type'                 => array( 'object', 'null' ),
 				'additionalProperties' => false,
 			),
 			'output_schema' => array(

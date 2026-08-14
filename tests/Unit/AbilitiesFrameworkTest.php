@@ -103,7 +103,7 @@ it('gives every entry a non-empty label and description', function () {
 it('builds export with the documented schema and readonly annotation', function () {
     $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-export');
 
-    expect($entry['input_schema']['type'])->toBe('object');
+    expect($entry['input_schema']['type'])->toBe(['object', 'null']);
     expect($entry['input_schema']['properties'])->toHaveKeys(['module']);
     expect($entry['input_schema']['properties'])->not->toHaveKey('include_encrypted');
     expect($entry['output_schema']['type'])->toBe('object');
@@ -114,7 +114,7 @@ it('builds export with the documented schema and readonly annotation', function 
 it('builds reset with the documented schema and destructive annotation', function () {
     $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-reset');
 
-    expect($entry['input_schema']['type'])->toBe('object');
+    expect($entry['input_schema']['type'])->toBe(['object', 'null']);
     expect($entry['input_schema']['properties'])->toHaveKey('module');
     expect($entry['output_schema']['properties']['success']['type'])->toBe('boolean');
     expect($entry['output_schema']['required'])->toContain('success');
@@ -132,7 +132,7 @@ it('builds backup with the documented schema and idempotent annotation', functio
 it('builds restore with an empty-object input_schema and a destructive annotation', function () {
     $entry = ability_by_id(Framework::settings(make_settings_fake()), 'settings-restore');
 
-    expect($entry['input_schema']['type'])->toBe('object');
+    expect($entry['input_schema']['type'])->toBe(['object', 'null']);
     expect($entry['input_schema']['additionalProperties'])->toBeFalse();
     expect($entry['output_schema']['properties']['success']['type'])->toBe('boolean');
     expect($entry['meta']['annotations']['destructive'])->toBeTrue();
@@ -237,4 +237,11 @@ it('reports the backup expiry so an agent knows how long it can restore', functi
     expect($result['success'])->toBeTrue();
     expect($result['module'])->toBe('cache');
     expect($result['expires_at'])->toBe(gmdate('c', 1786439176));
+});
+
+it('accepts a call that carries no input at all', function () {
+    foreach (Framework::settings(make_settings_fake()) as $entry) {
+        expect($entry['input_schema']['type'])->toContain('null');
+        expect($entry['input_schema'])->not->toHaveKey('required');
+    }
 });
