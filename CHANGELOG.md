@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.10.0](https://github.com/MilliPress/MilliBase/compare/v2.9.1...v2.10.0) (2026-09-06)
+
+
+### Features
+
+* **abilities:** point out that a site export leaves out network settings ([cbf2906](https://github.com/MilliPress/MilliBase/commit/cbf29068be723ffeb48d7d8a87dfd7f538a4945f))
+* **fields:** validate text fields against a pattern on save ([156cfb3](https://github.com/MilliPress/MilliBase/commit/156cfb3b5e231c4ab3b5bcce32b02a9db860304f))
+
 ## [2.9.1](https://github.com/MilliPress/MilliBase/compare/v2.9.0...v2.9.1) (2026-08-14)
 
 
