@@ -1580,3 +1580,65 @@ it('keeps a merged tab position when the fragment declares none', function () {
     expect(array_column($tabs, 'name'))->toBe(['status', 'settings']);
     expect($tabs[1]['sections'][0]['id'])->toBe('license');
 });
+
+// ─── validate() ─────────────────────────────────────────────────────
+
+function pattern_schema(array $extra = []): Schema
+{
+    return new Schema([
+        'tabs' => [
+            [
+                'name' => 'tab',
+                'title' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'sec',
+                        'title' => 'Section',
+                        'fields' => [
+                            array_merge([
+                                'key'     => 'storage.prefix',
+                                'type'    => 'text',
+                                'label'   => 'Key Prefix',
+                                'default' => 'mll',
+                                'pattern' => '^[A-Za-z0-9_-]{1,32}$',
+                            ], $extra),
+                            ['key' => 'storage.host', 'type' => 'text', 'default' => 'localhost'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+}
+
+it('reports a value that does not match the field pattern, with a default message naming the field', function () {
+    $errors = pattern_schema()->validate(['storage' => ['prefix' => 'shop a,b']]);
+
+    expect($errors)->toBe(['storage.prefix' => 'Key Prefix contains characters that are not allowed.']);
+});
+
+it('uses the field pattern_message when declared', function () {
+    $errors = pattern_schema(['pattern_message' => 'Letters, digits, - and _ only.'])
+        ->validate(['storage' => ['prefix' => 'a~b']]);
+
+    expect($errors)->toBe(['storage.prefix' => 'Letters, digits, - and _ only.']);
+});
+
+it('passes matching values, empty values, and fields without a pattern', function () {
+    $schema = pattern_schema();
+
+    expect($schema->validate(['storage' => ['prefix' => 'mc_ab12', 'host' => 'any thing, really']]))->toBe([]);
+    expect($schema->validate(['storage' => ['prefix' => '']]))->toBe([]);
+    expect($schema->validate(['storage' => []]))->toBe([]);
+    expect($schema->validate('nope'))->toBe([]);
+});
+
+it('matches the whole value, not a substring', function () {
+    expect(pattern_schema()->validate(['storage' => ['prefix' => 'ok:not']]))->toHaveKey('storage.prefix');
+});
+
+it('accepts a pattern containing the default delimiter', function () {
+    $errors = pattern_schema(['pattern' => '^[a-z]+/[a-z]+$'])->validate(['storage' => ['prefix' => 'a/b']]);
+
+    expect($errors)->toBe([]);
+});

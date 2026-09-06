@@ -57,6 +57,14 @@ it('includes min/max in number schema when defined', function () {
     expect($schema['maximum'])->toBe(100);
 });
 
+it('includes pattern in text schema when defined', function () {
+    $schema = (new Text())->get_schema(['pattern' => '^[a-z0-9_-]{1,32}$']);
+
+    expect($schema['type'])->toBe('string');
+    expect($schema['pattern'])->toBe('^[a-z0-9_-]{1,32}$');
+    expect((new Text())->get_schema(['pattern' => '']))->not->toHaveKey('pattern');
+});
+
 it('includes enum in select schema', function () {
     $field = [
         'options' => [

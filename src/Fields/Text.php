@@ -40,10 +40,17 @@ final class Text implements FieldInterface {
 	 * {@inheritDoc}
 	 *
 	 * @since 1.0.0
+	 * @since 2.10.0 Emits `pattern`.
 	 *
 	 * @param array<string, mixed> $field The field definition.
 	 */
 	public function get_schema( array $field ): array {
-		return array( 'type' => 'string' );
+		$schema = array( 'type' => 'string' );
+
+		if ( isset( $field['pattern'] ) && is_string( $field['pattern'] ) && '' !== $field['pattern'] ) {
+			$schema['pattern'] = $field['pattern'];
+		}
+
+		return $schema;
 	}
 }

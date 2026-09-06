@@ -567,3 +567,57 @@ it('honors custom first/last alongside the structured flag', function () {
 
     expect($data['license']['enc_key'])->toBe('MILLI-••••-••••-••••-DDDD');
 });
+
+// ─── pattern validation on save ─────────────────────────────────────
+
+function pattern_controller(): RestController
+{
+    $settings = new Settings([
+        'slug'     => 'test',
+        'defaults' => [
+            'storage' => ['prefix' => 'mll'],
+        ],
+    ]);
+
+    return make_controller([
+        'tabs' => [[
+            'name'     => 'settings',
+            'sections' => [[
+                'id'     => 'storage',
+                'fields' => [
+                    [
+                        'key'     => 'storage.prefix',
+                        'type'    => 'text',
+                        'label'   => 'Key Prefix',
+                        'default' => 'mll',
+                        'pattern' => '^[A-Za-z0-9_-]{1,32}$',
+                    ],
+                ],
+            ]],
+        ]],
+    ], $settings);
+}
+
+it('rejects a save whose value fails the field pattern and persists nothing', function () {
+    $GLOBALS['__milli_test_options']['test'] = ['storage' => ['prefix' => 'mll']];
+
+    $result = pattern_controller()->save_settings_value(settings_request(['storage' => ['prefix' => 'bad value']]));
+
+    expect($result)->toBeInstanceOf(WP_Error::class);
+    expect($result->get_error_code())->toBe('invalid_settings_value');
+    expect($result->get_error_message())->toBe('Key Prefix contains characters that are not allowed.');
+    expect($result->get_error_data())->toBe([
+        'status' => 400,
+        'errors' => ['storage.prefix' => 'Key Prefix contains characters that are not allowed.'],
+    ]);
+    expect($GLOBALS['__milli_test_options']['test']['storage']['prefix'])->toBe('mll');
+});
+
+it('persists a save whose value matches the field pattern', function () {
+    $GLOBALS['__milli_test_options']['test'] = ['storage' => ['prefix' => 'mll']];
+
+    $result = pattern_controller()->save_settings_value(settings_request(['storage' => ['prefix' => 'shop_a-1']]));
+
+    expect($result)->toBeInstanceOf(WP_REST_Response::class);
+    expect($GLOBALS['__milli_test_options']['test']['storage']['prefix'])->toBe('shop_a-1');
+});

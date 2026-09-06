@@ -51,6 +51,14 @@ final class Controller {
 	private ?array $mask_map = null;
 
 	/**
+	 * Lazily built Schema (see {@see self::schema()}).
+	 *
+	 * @since 2.10.0
+	 * @var Schema|null
+	 */
+	private ?Schema $schema = null;
+
+	/**
 	 * Create a new RestController instance.
 	 *
 	 * @noinspection PhpMissingParamTypeInspection
@@ -314,22 +322,39 @@ final class Controller {
 	 */
 	private function secret_mask_map(): array {
 		if ( null === $this->mask_map ) {
-			$this->mask_map = ( new Schema( $this->config ) )->get_secret_mask_map();
+			$this->mask_map = $this->schema()->get_secret_mask_map();
 		}
 
 		return $this->mask_map;
 	}
 
 	/**
+	 * The config's Schema, built once.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @return Schema
+	 */
+	private function schema(): Schema {
+		if ( null === $this->schema ) {
+			$this->schema = new Schema( $this->config );
+		}
+
+		return $this->schema;
+	}
+
+	/**
 	 * Persist a complete settings tree submitted by the client.
 	 *
 	 * The body is the settings tree directly (no `option_name` wrapping).
-	 * Sanitization runs via the Schema's `sanitize_option_<name>` callback.
-	 * Masked enc_ fields are reconciled against the stored value so an
-	 * unrelated save cannot wipe a secret — see
-	 * {@see Settings::preserve_secret_writes()}.
+	 * A value failing its field's `pattern` rejects the write with a 400
+	 * carrying per-field messages ({@see Schema::validate()}). Sanitization
+	 * runs via the Schema's `sanitize_option_<name>` callback. Masked enc_
+	 * fields are reconciled against the stored value so an unrelated save
+	 * cannot wipe a secret — see {@see Settings::preserve_secret_writes()}.
 	 *
 	 * @since 2.5.0
+	 * @since 2.10.0 Rejects values that fail their field's `pattern`.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
@@ -351,6 +376,18 @@ final class Controller {
 		/** @var array<string, mixed> $payload */
 		$payload = $value;
 		$value   = $this->settings->preserve_secret_writes( $payload );
+
+		$errors = $this->schema()->validate( $value );
+		if ( array() !== $errors ) {
+			return new \WP_Error(
+				'invalid_settings_value',
+				implode( ' ', $errors ),
+				array(
+					'status' => 400,
+					'errors' => $errors,
+				)
+			);
+		}
 
 		$this->settings->update( $value );
 

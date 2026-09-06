@@ -42,9 +42,12 @@ Standard text input. Sanitized via `sanitize_text_field()`.
 |----------|------|-------------|
 | `placeholder` | `string` | Placeholder text |
 | `tooltip` | `string` | Help text in tooltip icon |
+| `pattern` | `string` | Full-match regular expression (like the HTML `pattern` attribute, no delimiters). A non-empty value that does not match rejects the whole REST save with a 400 and a per-field message; the value is never rewritten. |
+| `pattern_message` | `string` | Message for a `pattern` failure. Default: "*Label* contains characters that are not allowed." |
 
 **Sanitization:** Strips HTML tags and extra whitespace via `sanitize_text_field()`.
-**JSON schema:** `{ "type": "string" }`
+**Validation:** `pattern`, if set, via `Schema::validate()` on REST saves (not on `wp <slug> config set`).
+**JSON schema:** `{ "type": "string" }`, plus `"pattern"` when declared.
 
 ---
 

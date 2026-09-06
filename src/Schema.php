@@ -281,6 +281,76 @@ final class Schema {
 	}
 
 	/**
+	 * Validate a payload against the fields' `pattern` constraints (full-match,
+	 * like the HTML attribute). Never rewrites a value: failures are reported
+	 * so the caller can reject the write. Empty strings pass; a field's
+	 * `pattern_message` overrides the message.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param mixed $values The payload about to be persisted.
+	 *
+	 * @return array<string, string> Messages keyed by dot-notation field key; empty when valid.
+	 */
+	public function validate( $values ): array {
+		if ( ! is_array( $values ) ) {
+			return array();
+		}
+
+		$errors = array();
+
+		foreach ( $this->get_field_index() as $key => $field ) {
+			$pattern = $field['pattern'] ?? null;
+			if ( ! is_string( $pattern ) || '' === $pattern ) {
+				continue;
+			}
+
+			list( $module, $name ) = array_pad( explode( '.', $key, 2 ), 2, '' );
+
+			$module_values = $values[ $module ] ?? null;
+			$value         = is_array( $module_values ) ? ( $module_values[ $name ] ?? null ) : null;
+			if ( ! is_string( $value ) || '' === $value ) {
+				continue;
+			}
+
+			if ( 1 === preg_match( self::full_match_regex( $pattern ), $value ) ) {
+				continue;
+			}
+
+			$message = $field['pattern_message'] ?? null;
+			$label   = is_string( $field['label'] ?? null ) && '' !== $field['label'] ? $field['label'] : $key;
+
+			$errors[ $key ] = is_string( $message ) && '' !== $message
+				? $message
+				/* translators: %s: field label. */
+				: sprintf( __( '%s contains characters that are not allowed.', 'millibase' ), $label );
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * Delimit and anchor a `pattern`, using a delimiter absent from it.
+	 *
+	 * @since 2.10.0
+	 *
+	 * @param string $pattern The field's `pattern` value.
+	 *
+	 * @return string
+	 */
+	private static function full_match_regex( string $pattern ): string {
+		$delimiter = '/';
+		foreach ( array( '/', '#', '~', '%', '@' ) as $candidate ) {
+			if ( false === strpos( $pattern, $candidate ) ) {
+				$delimiter = $candidate;
+				break;
+			}
+		}
+
+		return $delimiter . '^(?:' . $pattern . ')$' . $delimiter . 'u';
+	}
+
+	/**
 	 * Resolve a field-type handler instance, with caching.
 	 *
 	 * @since 2.3.0
