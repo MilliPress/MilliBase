@@ -9,7 +9,7 @@ body.modal-open:has(.millibase-page) {
 }
 
 // Cap modal width for readability on wide screens.
-body:has(.millibase-page) .components-modal__frame {
+body:has(.millibase-page) .components-modal__frame:not(.is-full-screen) {
 	max-width: 800px;
 }
 
