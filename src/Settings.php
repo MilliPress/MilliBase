@@ -623,6 +623,21 @@ final class Settings {
 	}
 
 	/**
+	 * Whether a wp-config constant defines this key. Resolved by name, so it
+	 * works before the defaults are registered.
+	 *
+	 * @since 2.11.0
+	 *
+	 * @param string $key Dot-notation key, e.g. `license.enc_key`.
+	 */
+	public function has_constant( string $key ): bool {
+		$segments = explode( '.', $key );
+		$module   = (string) array_shift( $segments );
+
+		return array() !== $segments && null !== $this->defined_constant_name( $module, implode( '_', $segments ) );
+	}
+
+	/**
 	 * Set a value using dot notation.
 	 *
 	 * @since 1.0.0

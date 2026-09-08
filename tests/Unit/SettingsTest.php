@@ -826,3 +826,21 @@ it('does not back up when the payload holds no known module', function () {
     expect($settings->import(['nonsense' => ['a' => 1]]))->toBeFalse();
     expect($GLOBALS['__milli_test_transients']['test_backup'] ?? null)->toBeNull();
 });
+
+// ─── has_constant() / update() ───────────────────────────────────────
+
+it('has_constant resolves by name, without registered defaults', function () {
+    if (! defined('TEST4_LICENSE_KEY')) {
+        define('TEST4_LICENSE_KEY', 'ABC');
+    }
+
+    $settings = new Settings([
+        'slug' => 'test4',
+        'constant_prefix' => 'test4',
+    ]);
+
+    expect($settings->has_constant('license.enc_key'))->toBeTrue();
+    expect($settings->has_constant('license.key'))->toBeTrue();
+    expect($settings->has_constant('license.other'))->toBeFalse();
+    expect($settings->has_constant('license'))->toBeFalse();
+});

@@ -7,22 +7,24 @@ import { __ } from '@wordpress/i18n';
 import { closeSmall } from '@wordpress/icons';
 import { LabelWithTooltip } from '../LabelWithTooltip.jsx';
 
-// When the server returns a masked value (the full SECRET_MASK for `enc_`
-// passwords) it's shown as the input's placeholder, not its value — so an
-// untouched field round-trips the mask on save and typing a new password
-// replaces the hint without needing to delete bullets first.
 const PasswordField = ( { field, value, onChange, disabled } ) => {
 	const isMasked = typeof value === 'string' && value.includes( '•' );
+	const hintOnly = isMasked && ! disabled;
 	return (
 		<InputControl
 			__next40pxDefaultSize
 			type="password"
-			label={ <LabelWithTooltip label={ field.label } tooltip={ field.tooltip } /> }
+			label={
+				<LabelWithTooltip
+					label={ field.label }
+					tooltip={ field.tooltip }
+				/>
+			}
 			help={ field.help }
-			value={ isMasked ? '' : ( value ?? '' ) }
+			value={ hintOnly ? '' : value ?? '' }
 			disabled={ disabled }
 			onChange={ onChange }
-			placeholder={ isMasked ? value : ( field.placeholder || '' ) }
+			placeholder={ hintOnly ? value : field.placeholder || '' }
 			suffix={
 				isMasked && ! disabled ? (
 					<Button

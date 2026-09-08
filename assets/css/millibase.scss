@@ -347,4 +347,16 @@ body:has(.millibase-page) .components-modal__frame:not(.is-full-screen) {
 	.components-input-control .components-unit-control__select {
 		max-width: unset;
 	}
+
+	// Disabled inputs: WordPress 7.1 falls back to a near-white background
+	// outside the site editor, so pinned fields look editable.
+	.components-input-control__container:has(> .components-input-control__input:disabled),
+	.components-input-control__input:disabled {
+		background-color: var(--wp-components-color-gray-100, #f0f0f0);
+	}
+
+	.components-input-control__input:disabled {
+		color: var(--wp-components-color-foreground, #1e1e1e);
+		opacity: 0.6;
+	}
 }
