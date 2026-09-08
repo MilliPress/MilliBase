@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.11.0](https://github.com/MilliPress/MilliBase/compare/v2.10.0...v2.11.0) (2026-09-08)
+
+
+### Features
+
+* **settings:** tell constant-defined keys apart and show locked inputs as locked ([ee16c75](https://github.com/MilliPress/MilliBase/commit/ee16c75e2408115078eef5dd13070c7a24e4d0e6))
+
+
+### Bug Fixes
+
+* **ui:** keep the snackbar API stable between renders ([ded92b1](https://github.com/MilliPress/MilliBase/commit/ded92b1852fa40f5eeea8a8913134e7757c2993c))
+* **ui:** let full-screen modals use the whole screen ([7d507d9](https://github.com/MilliPress/MilliBase/commit/7d507d9cccdbe6119e5bfe9b503adcd1060f9ae9))
+
 ## [2.10.0](https://github.com/MilliPress/MilliBase/compare/v2.9.1...v2.10.0) (2026-09-06)
 
 
