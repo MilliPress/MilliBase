@@ -1,4 +1,10 @@
-import { createContext, useContext, useState } from '@wordpress/element';
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useMemo,
+	useState,
+} from '@wordpress/element';
 import { SnackbarList } from '@wordpress/components';
 
 const SnackbarContext = createContext();
@@ -6,48 +12,48 @@ const SnackbarContext = createContext();
 export const SnackbarProvider = ( { slug, children } ) => {
 	const [ snackMessages, setSnackMessages ] = useState( [] );
 
-	const showSnackbar = (
-		message,
-		actions = [],
-		timeout = 3000,
-		explicitDismiss = false
-	) => {
-		// Mirror the WP admin sidebar's current width into a CSS custom
-		// property so the snackbar's `left` offset (in millibase.scss) lands
-		// past it. Read on each show — snacks are short-lived, so a live
-		// observer for the rare "collapse during display" case isn't worth
-		// the complexity; the next snack will pick up any change.
-		const adminmenu = document.getElementById( 'adminmenuwrap' );
-		if ( adminmenu ) {
-			document.documentElement.style.setProperty(
-				'--millibase-adminmenu-width',
-				`${ adminmenu.offsetWidth }px`
-			);
-		}
-
-		const id = Math.random().toString( 36 ).slice( 2, 11 );
-		setSnackMessages( ( prev ) => [
-			...prev,
-			{
-				id,
-				content: message,
-				actions,
-				explicitDismiss,
-				spokenMessage: message,
-			},
-		] );
-
-		setTimeout( () => {
-			hideSnackbar( id );
-		}, timeout );
-	};
-
-	const hideSnackbar = ( id ) => {
+	const hideSnackbar = useCallback( ( id ) => {
 		setSnackMessages( ( prev ) => prev.filter( ( msg ) => msg.id !== id ) );
-	};
+	}, [] );
+
+	const showSnackbar = useCallback(
+		( message, actions = [], timeout = 3000, explicitDismiss = false ) => {
+			// Mirror the WP admin sidebar's current width into a CSS custom
+			// property so the snackbar's `left` offset (in millibase.scss) lands
+			// past it. Read on each show — snacks are short-lived, so a live
+			// observer for the rare "collapse during display" case isn't worth
+			// the complexity; the next snack will pick up any change.
+			const adminmenu = document.getElementById( 'adminmenuwrap' );
+			if ( adminmenu ) {
+				document.documentElement.style.setProperty(
+					'--millibase-adminmenu-width',
+					`${ adminmenu.offsetWidth }px`
+				);
+			}
+
+			const id = Math.random().toString( 36 ).slice( 2, 11 );
+			setSnackMessages( ( prev ) => [
+				...prev,
+				{
+					id,
+					content: message,
+					actions,
+					explicitDismiss,
+					spokenMessage: message,
+				},
+			] );
+
+			setTimeout( () => {
+				hideSnackbar( id );
+			}, timeout );
+		},
+		[ hideSnackbar ]
+	);
+
+	const value = useMemo( () => ( { showSnackbar } ), [ showSnackbar ] );
 
 	return (
-		<SnackbarContext.Provider value={ { showSnackbar } }>
+		<SnackbarContext.Provider value={ value }>
 			{ children }
 			<SnackbarList
 				className="millibase-snacks"
