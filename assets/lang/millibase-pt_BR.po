@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MilliBase\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-11T10:05:40+00:00\n"
+"POT-Creation-Date: 2026-09-10T12:23:03+00:00\n"
 "PO-Revision-Date: 2026-09-10 12:22+0000\n"
 "Last-Translator: Philipp Wellmer <philipp@millipress.com>\n"
 "Language-Team: Portuguese (Brazil) <https://translate.millipress.com/"
@@ -85,16 +85,24 @@ msgstr ""
 "Configurações agrupadas por nome de módulo; cada módulo é um objeto de pares "
 "chave/valor."
 
-#: src/Abilities/Framework.php:133
+#. translators: An AI reads this. Keep `network-settings-export` verbatim; it is a literal operation name.
+#: src/Abilities/Framework.php:111
+msgid ""
+"This is a site of a multisite installation, so network-owned modules are "
+"absent here rather than unconfigured; read those with `network-settings-"
+"export`."
+msgstr ""
+
+#: src/Abilities/Framework.php:152
 msgid "Reset Network Settings to Defaults"
 msgstr "Redefinir configurações da rede para os padrões"
 
-#: src/Abilities/Framework.php:134
+#: src/Abilities/Framework.php:153
 msgid "Reset Settings to Defaults"
 msgstr "Redefinir configurações para os padrões"
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/Framework.php:137
+#: src/Abilities/Framework.php:156
 msgid ""
 "Reset the network settings to their defaults (site settings are not "
 "affected). An automatic backup is created before the reset."
@@ -104,7 +112,7 @@ msgstr ""
 "redefinição."
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/Framework.php:139
+#: src/Abilities/Framework.php:158
 msgid ""
 "Reset the site settings to their defaults. An automatic backup is created "
 "before the reset."
@@ -112,16 +120,16 @@ msgstr ""
 "Redefine as configurações do site para os valores padrão. Um backup "
 "automático é criado antes da redefinição."
 
-#: src/Abilities/Framework.php:180
+#: src/Abilities/Framework.php:199
 msgid "Back Up Network Settings"
 msgstr "Fazer backup das configurações da rede"
 
-#: src/Abilities/Framework.php:181
+#: src/Abilities/Framework.php:200
 msgid "Back Up Settings"
 msgstr "Fazer backup das configurações"
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/Framework.php:184
+#: src/Abilities/Framework.php:203
 msgid ""
 "Take a backup of the current network settings (site settings are not "
 "included). There is one backup slot, so this replaces any earlier backup, "
@@ -134,7 +142,7 @@ msgstr ""
 "resposta informa quando ele expira."
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/Framework.php:186
+#: src/Abilities/Framework.php:205
 msgid ""
 "Take a backup of the current site settings. There is one backup slot, so "
 "this replaces any earlier backup, and settings-restore always restores this "
@@ -144,11 +152,11 @@ msgstr ""
 "backup, então este substitui qualquer backup anterior, e settings-restore "
 "sempre restaura este. A resposta informa quando ele expira."
 
-#: src/Abilities/Framework.php:209
+#: src/Abilities/Framework.php:228
 msgid "The module that was backed up, or empty for all of them."
 msgstr "O módulo que foi salvo no backup, ou vazio para todos os módulos."
 
-#: src/Abilities/Framework.php:213
+#: src/Abilities/Framework.php:232
 msgid ""
 "ISO 8601 timestamp after which the backup is gone and settings-restore has "
 "nothing to restore."
@@ -156,16 +164,16 @@ msgstr ""
 "Carimbo de data/hora ISO 8601 após o qual o backup deixa de existir e "
 "settings-restore não tem nada para restaurar."
 
-#: src/Abilities/Framework.php:241
+#: src/Abilities/Framework.php:260
 msgid "Restore Network Settings from Backup"
 msgstr "Restaurar configurações da rede a partir do backup"
 
-#: src/Abilities/Framework.php:242
+#: src/Abilities/Framework.php:261
 msgid "Restore Settings from Backup"
 msgstr "Restaurar configurações a partir do backup"
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/Framework.php:245
+#: src/Abilities/Framework.php:264
 msgid ""
 "Restore the most recent network settings backup (site settings are not "
 "affected). Returns success: false when no backup is available."
@@ -175,7 +183,7 @@ msgstr ""
 "disponível."
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/Framework.php:247
+#: src/Abilities/Framework.php:266
 msgid ""
 "Restore the most recent site settings backup. Returns success: false when no "
 "backup is available."
@@ -204,40 +212,46 @@ msgstr ""
 "diferir no modo `network` (um por site, um por rede). Caso contrário, use "
 "slugs distintos."
 
-#: src/REST/Controller.php:195
+#: src/REST/Controller.php:203
 msgid "Invalid nonce."
 msgstr "Nonce inválido."
 
-#: src/REST/Controller.php:237
+#: src/REST/Controller.php:245
 msgid "Invalid settings action."
 msgstr "Ação de configurações inválida."
 
-#: src/REST/Controller.php:248
+#: src/REST/Controller.php:256
 msgid "Settings reset successfully."
 msgstr "As configurações foram redefinidas."
 
-#: src/REST/Controller.php:257
+#: src/REST/Controller.php:265
 msgid "No backup of settings found or backup has expired."
 msgstr "Nenhum backup das configurações foi encontrado ou o backup expirou."
 
-#: src/REST/Controller.php:262
+#: src/REST/Controller.php:270
 msgid "Settings successfully restored from backup."
 msgstr "As configurações foram restauradas a partir do backup."
 
-#: src/REST/Controller.php:268
+#: src/REST/Controller.php:276
 msgid "Failed to perform settings action: "
 msgstr "Não foi possível executar a ação de configurações: "
 
-#: src/REST/Controller.php:346
+#: src/REST/Controller.php:371
 msgid "Settings payload must be an object."
 msgstr "O payload de configurações deve ser um objeto."
+
+#. translators: %s: field label.
+#: src/Schema.php:326
+#, php-format
+msgid "%s contains characters that are not allowed."
+msgstr ""
 
 #: assets/js/components/fields/ButtonField.jsx:85
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: assets/js/components/fields/KeyField.jsx:39
-#: assets/js/components/fields/PasswordField.jsx:33
+#: assets/js/components/fields/KeyField.jsx:40
+#: assets/js/components/fields/PasswordField.jsx:35
 msgid "Clear stored value"
 msgstr "Limpar o valor armazenado"
 

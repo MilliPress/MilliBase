@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MilliBase\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-11T10:05:40+00:00\n"
+"POT-Creation-Date: 2026-09-10T12:23:03+00:00\n"
 "PO-Revision-Date: 2026-09-10 12:22+0000\n"
 "Last-Translator: Philipp Wellmer <philipp@millipress.com>\n"
 "Language-Team: Spanish (Spain) <https://translate.millipress.com/projects/"
@@ -85,16 +85,24 @@ msgstr ""
 "Ajustes indexados por nombre de módulo; cada módulo es un objeto de pares "
 "clave/valor."
 
-#: src/Abilities/Framework.php:133
+#. translators: An AI reads this. Keep `network-settings-export` verbatim; it is a literal operation name.
+#: src/Abilities/Framework.php:111
+msgid ""
+"This is a site of a multisite installation, so network-owned modules are "
+"absent here rather than unconfigured; read those with `network-settings-"
+"export`."
+msgstr ""
+
+#: src/Abilities/Framework.php:152
 msgid "Reset Network Settings to Defaults"
 msgstr "Restablecer los ajustes de la red a los valores por defecto"
 
-#: src/Abilities/Framework.php:134
+#: src/Abilities/Framework.php:153
 msgid "Reset Settings to Defaults"
 msgstr "Restablecer los ajustes a los valores por defecto"
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/Framework.php:137
+#: src/Abilities/Framework.php:156
 msgid ""
 "Reset the network settings to their defaults (site settings are not "
 "affected). An automatic backup is created before the reset."
@@ -104,7 +112,7 @@ msgstr ""
 "seguridad automática."
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep the automatic-backup promise intact; it is what makes the reset recoverable.
-#: src/Abilities/Framework.php:139
+#: src/Abilities/Framework.php:158
 msgid ""
 "Reset the site settings to their defaults. An automatic backup is created "
 "before the reset."
@@ -112,16 +120,16 @@ msgstr ""
 "Restablece los ajustes del sitio a sus valores por defecto. Antes del "
 "restablecimiento se crea una copia de seguridad automática."
 
-#: src/Abilities/Framework.php:180
+#: src/Abilities/Framework.php:199
 msgid "Back Up Network Settings"
 msgstr "Hacer una copia de seguridad de los ajustes de la red"
 
-#: src/Abilities/Framework.php:181
+#: src/Abilities/Framework.php:200
 msgid "Back Up Settings"
 msgstr "Hacer una copia de seguridad de los ajustes"
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/Framework.php:184
+#: src/Abilities/Framework.php:203
 msgid ""
 "Take a backup of the current network settings (site settings are not "
 "included). There is one backup slot, so this replaces any earlier backup, "
@@ -134,7 +142,7 @@ msgstr ""
 "restaura esta. La respuesta indica cuándo caduca."
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
-#: src/Abilities/Framework.php:186
+#: src/Abilities/Framework.php:205
 msgid ""
 "Take a backup of the current site settings. There is one backup slot, so "
 "this replaces any earlier backup, and settings-restore always restores this "
@@ -145,13 +153,13 @@ msgstr ""
 "anterior y settings-restore siempre restaura esta. La respuesta indica "
 "cuándo caduca."
 
-#: src/Abilities/Framework.php:209
+#: src/Abilities/Framework.php:228
 msgid "The module that was backed up, or empty for all of them."
 msgstr ""
 "El módulo del que se hizo la copia de seguridad, o vacío para todos los "
 "módulos."
 
-#: src/Abilities/Framework.php:213
+#: src/Abilities/Framework.php:232
 msgid ""
 "ISO 8601 timestamp after which the backup is gone and settings-restore has "
 "nothing to restore."
@@ -159,16 +167,16 @@ msgstr ""
 "Marca de tiempo ISO 8601 a partir de la cual la copia de seguridad "
 "desaparece y settings-restore no tiene nada que restaurar."
 
-#: src/Abilities/Framework.php:241
+#: src/Abilities/Framework.php:260
 msgid "Restore Network Settings from Backup"
 msgstr "Restaurar los ajustes de la red desde la copia de seguridad"
 
-#: src/Abilities/Framework.php:242
+#: src/Abilities/Framework.php:261
 msgid "Restore Settings from Backup"
 msgstr "Restaurar los ajustes desde la copia de seguridad"
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/Framework.php:245
+#: src/Abilities/Framework.php:264
 msgid ""
 "Restore the most recent network settings backup (site settings are not "
 "affected). Returns success: false when no backup is available."
@@ -178,7 +186,7 @@ msgstr ""
 "hay ninguna copia de seguridad disponible."
 
 #. translators: An AI reads this to decide when to call this destructive operation. Keep `success: false` verbatim; it is a literal response value the AI checks for.
-#: src/Abilities/Framework.php:247
+#: src/Abilities/Framework.php:266
 msgid ""
 "Restore the most recent site settings backup. Returns success: false when no "
 "backup is available."
@@ -207,42 +215,48 @@ msgstr ""
 "el modo `network` (uno por sitio y otro de red). En caso contrario, usa "
 "slugs distintos."
 
-#: src/REST/Controller.php:195
+#: src/REST/Controller.php:203
 msgid "Invalid nonce."
 msgstr "Nonce no válido."
 
-#: src/REST/Controller.php:237
+#: src/REST/Controller.php:245
 msgid "Invalid settings action."
 msgstr "Acción de ajustes no válida."
 
-#: src/REST/Controller.php:248
+#: src/REST/Controller.php:256
 msgid "Settings reset successfully."
 msgstr "Los ajustes se han restablecido correctamente."
 
-#: src/REST/Controller.php:257
+#: src/REST/Controller.php:265
 msgid "No backup of settings found or backup has expired."
 msgstr ""
 "No se ha encontrado ninguna copia de seguridad de los ajustes o la copia ha "
 "caducado."
 
-#: src/REST/Controller.php:262
+#: src/REST/Controller.php:270
 msgid "Settings successfully restored from backup."
 msgstr "Los ajustes se han restaurado desde la copia de seguridad."
 
-#: src/REST/Controller.php:268
+#: src/REST/Controller.php:276
 msgid "Failed to perform settings action: "
 msgstr "No se ha podido ejecutar la acción de ajustes: "
 
-#: src/REST/Controller.php:346
+#: src/REST/Controller.php:371
 msgid "Settings payload must be an object."
 msgstr "El payload de los ajustes debe ser un objeto."
+
+#. translators: %s: field label.
+#: src/Schema.php:326
+#, php-format
+msgid "%s contains characters that are not allowed."
+msgstr ""
 
 #: assets/js/components/fields/ButtonField.jsx:85
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: assets/js/components/fields/KeyField.jsx:39
-#: assets/js/components/fields/PasswordField.jsx:33
+#: assets/js/components/fields/KeyField.jsx:40
+#: assets/js/components/fields/PasswordField.jsx:35
 msgid "Clear stored value"
 msgstr "Borrar el valor guardado"
 
