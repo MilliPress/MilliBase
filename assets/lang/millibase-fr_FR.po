@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MilliBase\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-10T12:23:03+00:00\n"
-"PO-Revision-Date: 2026-09-10 12:22+0000\n"
+"PO-Revision-Date: 2026-09-11 12:54+0000\n"
 "Last-Translator: Philipp Wellmer <philipp@millipress.com>\n"
 "Language-Team: French (France) <https://translate.millipress.com/projects/"
 "millicache/millibase/fr_FR/>\n"
@@ -92,6 +92,9 @@ msgid ""
 "absent here rather than unconfigured; read those with `network-settings-"
 "export`."
 msgstr ""
+"Ce site fait partie d’une installation multisite : les modules gérés par le "
+"réseau sont donc absents ici, et non simplement non configurés ; ils se "
+"lisent avec `network-settings-export`."
 
 #: src/Abilities/Framework.php:152
 msgid "Reset Network Settings to Defaults"
@@ -245,7 +248,7 @@ msgstr "Le payload des réglages doit être un objet."
 #: src/Schema.php:326
 #, php-format
 msgid "%s contains characters that are not allowed."
-msgstr ""
+msgstr "%s contient des caractères non autorisés."
 
 #: assets/js/components/fields/ButtonField.jsx:85
 msgid "Cancel"
