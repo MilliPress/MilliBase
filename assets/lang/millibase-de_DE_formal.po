@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: MilliBase\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-08-11T10:05:40+00:00\n"
-"PO-Revision-Date: 2026-07-22 11:31+0000\n"
+"PO-Revision-Date: 2026-09-10 12:22+0000\n"
 "Last-Translator: Philipp Wellmer <philipp@millipress.com>\n"
 "Language-Team: German (Germany, Formal) <https://translate.millipress.com/"
 "projects/millicache/millibase/de_DE_formal/>\n"
@@ -45,13 +45,6 @@ msgstr "Einstellungen exportieren"
 
 #. translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate.
 #: src/Abilities/Framework.php:67
-#, fuzzy
-#| msgid ""
-#| "Export the network settings as an object keyed by module name (site "
-#| "settings are not included). Pass the optional `module` argument to limit "
-#| "which modules are populated; the response shape is always module → "
-#| "settings. Encrypted values are stripped unless `include_encrypted` is "
-#| "true."
 msgid ""
 "Export the network settings as an object keyed by module name (site settings "
 "are not included). Pass the optional `module` argument to limit which "
@@ -63,17 +56,13 @@ msgstr ""
 "Exportiert die Netzwerkeinstellungen als Objekt, gruppiert nach Modulnamen "
 "(Website-Einstellungen sind nicht enthalten). Das optionale Argument "
 "`module` schränkt ein, welche Module befüllt werden; die Antwort hat immer "
-"die Form Modul → Einstellungen. Verschlüsselte Werte werden entfernt, sofern "
-"`include_encrypted` nicht auf true steht."
+"die Form Modul → Einstellungen. Passwörter und API-Schlüssel werden nie "
+"zurückgegeben: Ein hinterlegter Wert erscheint als Reihe von "
+"Aufzählungspunkten, ein nicht hinterlegter als leere Zeichenkette. Ein "
+"maskierter Wert ist nie als der echte Wert zu behandeln."
 
 #. translators: An AI reads this to decide when to call this operation. Keep `module` verbatim; it is a literal API field name, not a word to translate.
 #: src/Abilities/Framework.php:69
-#, fuzzy
-#| msgid ""
-#| "Export the site settings as an object keyed by module name. Pass the "
-#| "optional `module` argument to limit which modules are populated; the "
-#| "response shape is always module → settings. Encrypted values are stripped "
-#| "unless `include_encrypted` is true."
 msgid ""
 "Export the site settings as an object keyed by module name. Pass the "
 "optional `module` argument to limit which modules are populated; the "
@@ -84,8 +73,10 @@ msgid ""
 msgstr ""
 "Exportiert die Website-Einstellungen als Objekt, gruppiert nach Modulnamen. "
 "Das optionale Argument `module` schränkt ein, welche Module befüllt werden; "
-"die Antwort hat immer die Form Modul → Einstellungen. Verschlüsselte Werte "
-"werden entfernt, sofern `include_encrypted` nicht auf true steht."
+"die Antwort hat immer die Form Modul → Einstellungen. Passwörter und API-"
+"Schlüssel werden nie zurückgegeben: Ein hinterlegter Wert erscheint als "
+"Reihe von Aufzählungspunkten, ein nicht hinterlegter als leere Zeichenkette. "
+"Ein maskierter Wert ist nie als der echte Wert zu behandeln."
 
 #: src/Abilities/Framework.php:82
 msgid ""
@@ -131,10 +122,6 @@ msgstr "Einstellungen sichern"
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
 #: src/Abilities/Framework.php:184
-#, fuzzy
-#| msgid ""
-#| "Take a backup of the current network settings (site settings are not "
-#| "included). The backup expires after 3 days."
 msgid ""
 "Take a backup of the current network settings (site settings are not "
 "included). There is one backup slot, so this replaces any earlier backup, "
@@ -142,7 +129,9 @@ msgid ""
 "expires."
 msgstr ""
 "Erstellt ein Backup der aktuellen Netzwerkeinstellungen (Website-"
-"Einstellungen sind nicht enthalten). Das Backup läuft nach 3 Tagen ab."
+"Einstellungen sind nicht enthalten) Es gibt nur einen Backup-Platz, daher "
+"ersetzt dies jedes frühere Backup, und settings-restore stellt immer dieses "
+"eine wieder her. Die Antwort meldet, wann es abläuft."
 
 #. translators: An AI reads this to decide when to call this operation. Keep the 3-day expiry; an AI may offer this as a safety net before a risky change.
 #: src/Abilities/Framework.php:186
@@ -151,16 +140,21 @@ msgid ""
 "this replaces any earlier backup, and settings-restore always restores this "
 "one. The response reports when it expires."
 msgstr ""
+"Erstellt ein Backup der aktuellen Website-Einstellungen. Es gibt nur einen "
+"Backup-Platz, daher ersetzt dies jedes frühere Backup, und settings-restore "
+"stellt immer dieses eine wieder her. Die Antwort meldet, wann es abläuft."
 
 #: src/Abilities/Framework.php:209
 msgid "The module that was backed up, or empty for all of them."
-msgstr ""
+msgstr "Das gesicherte Modul, oder leer für alle Module."
 
 #: src/Abilities/Framework.php:213
 msgid ""
 "ISO 8601 timestamp after which the backup is gone and settings-restore has "
 "nothing to restore."
 msgstr ""
+"ISO-8601-Zeitstempel, nach dem das Backup verschwunden ist und settings-"
+"restore nichts mehr wiederherstellen kann."
 
 #: src/Abilities/Framework.php:241
 msgid "Restore Network Settings from Backup"
