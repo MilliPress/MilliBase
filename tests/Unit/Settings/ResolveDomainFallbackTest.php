@@ -2,15 +2,11 @@
 /**
  * Config-file identifier without a request host: a plain PHP CLI process
  * (cron, scheduler, Artisan) has no $_SERVER['HTTP_HOST']. The WP_HOME
- * constant from wp-config.php names the install's own home and must take
- * over, while a present request host keeps precedence.
+ * constant (stubbed in tests/bootstrap.php) names the install's own home and
+ * must take over, while a present request host keeps precedence.
  */
 
 use MilliBase\Settings;
-
-if (! defined('WP_HOME')) {
-    define('WP_HOME', 'https://www.fallback-home.test/');
-}
 
 function rdf_settings(string $slug, string $dir): Settings {
     return new Settings([

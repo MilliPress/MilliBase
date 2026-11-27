@@ -194,6 +194,28 @@ final class ConfigFile {
 	}
 
 	/**
+	 * Whether a write could succeed: the nearest existing ancestor accepts new
+	 * entries, which is what the recursive wp_mkdir_p() in write() needs.
+	 *
+	 * @since 2.11.1
+	 *
+	 * @return bool
+	 */
+	public function is_writable(): bool {
+		$dir = rtrim( $this->directory, '/' );
+		while ( '' !== $dir && ! is_dir( $dir ) ) {
+			$parent = dirname( $dir );
+			if ( $parent === $dir ) {
+				return false;
+			}
+			$dir = $parent;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Pre-WP capable check; WP_Filesystem is not loaded here.
+		return '' !== $dir && is_writable( $dir );
+	}
+
+	/**
 	 * Get the full file path for the config file.
 	 *
 	 * @since 1.0.0

@@ -1779,12 +1779,14 @@ final class Settings {
 	 * standard `{slug}_setting_changed` events for every drifted key, then
 	 * sync the values into the row — the "last applied" memory — so each
 	 * change applies exactly once. The row write neither re-fires the events
-	 * nor rewrites the config file (a deployed file must stay untouched).
+	 * nor rewrites an existing config file (a deployed file must stay untouched);
+	 * a missing file is recreated from the row.
 	 *
 	 * Wired to `admin_init` by the Manager; only defaults-known keys are
 	 * considered, so a pre-defaults call is a safe no-op.
 	 *
 	 * @since 2.8.0
+	 * @since 2.11.1 A missing config file is recreated from the row.
 	 *
 	 * @return void
 	 */
@@ -1805,6 +1807,7 @@ final class Settings {
 
 		$changes = self::flatten_diff( $base, $effective );
 		if ( array() === $changes ) {
+			$this->restore_config_file();
 			return;
 		}
 
@@ -1834,6 +1837,9 @@ final class Settings {
 
 		// Fire after the write (native order): listener writes land on top and win.
 		$this->fire_setting_changed_hooks( $base, $effective );
+
+		// Last, so a recreated file mirrors the synced row, not the one before.
+		$this->restore_config_file();
 	}
 
 	/**
@@ -1889,6 +1895,27 @@ final class Settings {
 	 */
 	private function config_sync_marker_name(): string {
 		return $this->option_name . '_config_sync_failed';
+	}
+
+	/**
+	 * Recreate a config file that is simply gone (host renamed or normalized,
+	 * deploy without the settings directory) from the row. Best effort: unlike a
+	 * failed save this neither arms the sync marker nor stops the reconcile, so
+	 * a read-only directory costs one stat per admin_init and nothing else.
+	 *
+	 * @since 2.11.1
+	 *
+	 * @return void
+	 */
+	private function restore_config_file(): void {
+		if ( null === $this->config_file || $this->config_file->exists() || ! $this->config_file->is_writable() ) {
+			return;
+		}
+
+		$stored = $this->read_stored();
+		if ( array() !== $stored ) {
+			$this->config_file->write( $stored );
+		}
 	}
 
 	/**
@@ -2017,7 +2044,7 @@ final class Settings {
 	 *
 	 * @since 1.0.0
 	 * @since 2.4.3 Subdirectory multisite appends the blog's path segment.
-	 * @since 2.11.1 Single-site falls back to `WP_HOME` when no request host exists.
+	 * @since 2.11.1 Single-site falls back to `WP_HOME` without a request host; hosts are normalized so every source names the same file.
 	 *
 	 * @return string
 	 */
@@ -2057,6 +2084,44 @@ final class Settings {
 			$host        = is_string( $parsed_host ) ? $parsed_host : '';
 		}
 
+		return self::sanitize_identifier( self::normalize_host( $host ), $path );
+	}
+
+	/**
+	 * Canonicalize a host so every source yields the same file name: no port,
+	 * lower case, no trailing dot, Unicode as Punycode (as browsers send it).
+	 *
+	 * @since 2.11.1
+	 *
+	 * @param string $host Host as found in the URL or request.
+	 *
+	 * @return string
+	 */
+	private static function normalize_host( string $host ): string {
+		$host = strtolower( rtrim( (string) preg_replace( '/:\d+$/', '', $host ), '.' ) );
+
+		if ( '' !== $host && preg_match( '/[^\x00-\x7F]/', $host ) && function_exists( 'idn_to_ascii' ) ) {
+			// Non-transitional, as browsers encode (ß stays ß); IDNA_DEFAULT depends on the ICU version.
+			$ascii = idn_to_ascii( $host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46 );
+			if ( is_string( $ascii ) && '' !== $ascii ) {
+				$host = $ascii;
+			}
+		}
+
+		return $host;
+	}
+
+	/**
+	 * Build the file-name-safe identifier from host and blog path.
+	 *
+	 * @since 2.11.1
+	 *
+	 * @param string $host Host part.
+	 * @param string $path Blog path on subdirectory multisite, or empty.
+	 *
+	 * @return string
+	 */
+	private static function sanitize_identifier( string $host, string $path ): string {
 		$identifier = '' === $path ? $host : $host . '/' . $path;
 
 		return (string) preg_replace( '/[^a-zA-Z0-9_\-]/', '_', $identifier );

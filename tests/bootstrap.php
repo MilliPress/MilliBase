@@ -47,6 +47,11 @@ if (! defined('ABSPATH')) {
     define('ABSPATH', '/tmp/wp/');
 }
 
+// Stub WP_HOME as a site address with the admin's capitalisation: the file name must not inherit it.
+if (! defined('WP_HOME')) {
+    define('WP_HOME', 'https://www.Fallback-Home.test/');
+}
+
 // Stub FS_CHMOD_FILE constant.
 if (! defined('FS_CHMOD_FILE')) {
     define('FS_CHMOD_FILE', 0644);

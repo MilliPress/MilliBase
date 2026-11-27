@@ -2,7 +2,8 @@
 /**
  * reconcile_overrides(): constant/config-file overrides apply like writes —
  * the standard change events fire once per drift, the row becomes the
- * applied-state memory, and the config file is never rewritten by the sync.
+ * applied-state memory, and an existing config file is never rewritten by the
+ * sync (a missing one is recreated from the row).
  */
 
 use MilliBase\ConfigFile;
