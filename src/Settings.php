@@ -2011,8 +2011,13 @@ final class Settings {
 	 * paths). We fall back to `$_SERVER['HTTP_HOST']` only for standalone /
 	 * pre-WP reads.
 	 *
+	 * A plain PHP CLI process carries no request host at all. On single-site a
+	 * defined `WP_HOME` stands in, because WordPress pins `home_url()` to it
+	 * (`_config_wp_home`); multisite drops that filter, so it is skipped there.
+	 *
 	 * @since 1.0.0
 	 * @since 2.4.3 Subdirectory multisite appends the blog's path segment.
+	 * @since 2.11.1 Single-site falls back to `WP_HOME` when no request host exists.
 	 *
 	 * @return string
 	 */
@@ -2038,12 +2043,18 @@ final class Settings {
 			if ( 'subdirectory' === $mode ) {
 				$path = trim( (string) ( $parsed['path'] ?? '' ), '/' );
 			}
-		} elseif ( ServerVars::has( 'HTTP_HOST' ) ) {
+		} elseif ( '' !== ServerVars::get( 'HTTP_HOST' ) ) {
 			$host = ServerVars::get( 'HTTP_HOST' );
 			if ( 'subdirectory' === $mode && ServerVars::has( 'REQUEST_URI' ) ) {
 				$segments = explode( '/', ServerVars::get( 'REQUEST_URI' ), 3 );
 				$path     = $segments[1] ?? '';
 			}
+		} elseif ( null === $mode && defined( 'WP_HOME' ) ) {
+			// @phpstan-ignore phpstanWP.wpConstant.fetch (intentional pre-WP fallback; WP context uses home_url() above)
+			$home = WP_HOME;
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- Pre-WP: wp_parse_url() is not loaded yet.
+			$parsed_host = is_string( $home ) ? parse_url( $home, PHP_URL_HOST ) : null;
+			$host        = is_string( $parsed_host ) ? $parsed_host : '';
 		}
 
 		$identifier = '' === $path ? $host : $host . '/' . $path;
