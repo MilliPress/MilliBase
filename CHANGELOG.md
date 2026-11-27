@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.11.1](https://github.com/MilliPress/MilliBase/compare/v2.11.0...v2.11.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* **settings:** fall back to WP_HOME when a single-site CLI process has no request host ([71f8486](https://github.com/MilliPress/MilliBase/commit/71f8486bc44a385e0fa50b3f04256e6fa98d78ea))
+* **settings:** normalize the host so every source names the same config file ([c38c2f8](https://github.com/MilliPress/MilliBase/commit/c38c2f8de151049bfc0f37e5f5a22e288563b4d2))
+
 ## [2.11.0](https://github.com/MilliPress/MilliBase/compare/v2.10.0...v2.11.0) (2026-09-08)
 
 
